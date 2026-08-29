@@ -159,6 +159,63 @@ def partition_sha256(partitions: list[np.ndarray]) -> str:
     ).hexdigest()
 
 
+def duplicate_groups_crossing_clients(
+    duplicate_groups: list[np.ndarray], partitions: list[np.ndarray]
+) -> int:
+    """划分完成后记录重复曲线组跨客户端数量，不参与划分优化。"""
+
+    node_to_client = {
+        int(node): client_id
+        for client_id, partition in enumerate(partitions)
+        for node in partition.tolist()
+    }
+    return sum(
+        len({node_to_client[int(node)] for node in group.tolist()}) > 1
+        for group in duplicate_groups
+    )
+
+
+def official_cut_edge_records(
+    source: Path,
+    cut_edges: tuple[tuple[int, int], ...],
+) -> list[dict[str, object]]:
+    """从 canonical NPZ 读取七条切边的官方设备类型和来源证据。"""
+
+    with np.load(source, allow_pickle=False) as archive:
+        edge_index = np.asarray(archive["edge_index"], dtype=np.int64)
+        edge_type = np.asarray(archive["edge_type"]).astype(str)
+        edge_source = np.asarray(archive["edge_source"]).astype(str)
+        node_ids = np.asarray(archive["node_ids"]).astype(str)
+
+    lookup: dict[tuple[int, int], tuple[str, str]] = {}
+    for position in range(edge_index.shape[1]):
+        left, right = (int(value) for value in edge_index[:, position])
+        key = (min(left, right), max(left, right))
+        evidence = (str(edge_type[position]), str(edge_source[position]))
+        previous = lookup.get(key)
+        if previous is not None and previous != evidence:
+            raise RuntimeError(f"inconsistent official evidence for edge {key}")
+        lookup[key] = evidence
+
+    records: list[dict[str, object]] = []
+    for left, right in cut_edges:
+        key = (min(left, right), max(left, right))
+        if key not in lookup:
+            raise RuntimeError(f"cut edge {key} lacks official source evidence")
+        device_type, source_reference = lookup[key]
+        records.append(
+            {
+                "left_index": left,
+                "left_node_id": str(node_ids[left]),
+                "right_index": right,
+                "right_node_id": str(node_ids[right]),
+                "edge_type": device_type,
+                "edge_source": source_reference,
+            }
+        )
+    return records
+
+
 def write_csv(path: Path, rows: list[dict[str, object]], fields: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
@@ -177,9 +234,18 @@ def write_report(
     path: Path,
     source: Path,
     partition_hash: str,
+    target_counts: list[int],
+    legacy_target_counts: list[int],
+    cut_edge_records: list[dict[str, object]],
+    duplicate_group_count: int,
+    duplicate_cross_client_count: int,
+    legacy_duplicate_cross_client_count: int,
     knn_rows: list[dict[str, object]],
     client_rows: list[dict[str, object]],
 ) -> None:
+    total_range_violation = sum(
+        max(10 - count, 0) + max(count - 13, 0) for count in target_counts
+    )
     lines = [
         "# Target Topology Audit",
         "",
@@ -191,14 +257,46 @@ def write_report(
         "- Candidate k values: 2, 4, 6, 8 (diagnostic only; no k is selected here).",
         "- Symmetrization: retain an undirected edge when either endpoint selects the other.",
         "- Tie break: ascending `node_id` after ascending official shortest-path hop distance.",
-        "- Client partition: existing `SmartDS.client_partitions(8)`.",
+        "- Client partition: deterministic official-tree partition from seven cut edges.",
+        "- Partition objective: minimize total 10--13 range violation, then total squared deviation from 11.5, then the number of out-of-range regions.",
+        "- Partition inputs: official adjacency, target positions, and node IDs only.",
         f"- Client partition SHA-256: `{partition_hash}`",
+        "",
+        "## Topology-based Client Partition",
+        "",
+        f"- Target counts by client: `{target_counts}`",
+        f"- Legacy duplicate-aware target counts: `{legacy_target_counts}`",
+        f"- Duplicate load-curve groups: {duplicate_group_count}",
+        f"- Duplicate groups crossing new clients: {duplicate_cross_client_count}",
+        f"- Duplicate groups crossing legacy clients: {legacy_duplicate_cross_client_count}",
+        "",
+        "The exact tree dynamic program found no seven-edge cut whose eight region counts all lie in 10--13. "
+        f"The minimum total range violation is {total_range_violation} targets, yielding {target_counts}.",
+        "",
+        "The duplicate-curve statistics are computed only after the topology partition is frozen; they do not affect any cut decision.",
+        "",
+        "### Seven Cut Official Tree Edges",
+        "",
+        "| Left index | Left node ID | Right index | Right node ID | Type | Official source |",
+        "|---:|---|---:|---|---|---|",
+    ]
+    for record in cut_edge_records:
+        escaped_source = str(record["edge_source"]).replace("|", "\\|")
+        lines.append(
+            f"| {record['left_index']} | `{record['left_node_id']}` | "
+            f"{record['right_index']} | `{record['right_node_id']}` | "
+            f"{record['edge_type']} | `{escaped_source}` |"
+        )
+
+    lines.extend(
+        [
         "",
         "## Global Target Graph Statistics",
         "",
         "| k | Edges | Density | Avg degree | Max degree | Components | Isolated | Hop min | Hop median | Hop mean | Hop P75 | Hop P90 | Hop max | Cross-client ratio |",
         "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
+        ]
+    )
     for row in knn_rows:
         lines.append(
             "| {k} | {edge_count} | {density} | {average_degree} | {max_degree} | "
@@ -251,7 +349,8 @@ def main() -> None:
 
     distances = full_target_hop_distances(data.adj, target_indices)
     target_node_ids = data.node_ids[target_indices]
-    partitions = data.client_partitions(8)
+    partitions, cut_edges = data.topology_client_partition(8)
+    legacy_partitions = data.legacy_duplicate_aware_client_partitions(8)
     target_lookup = {
         int(full_index): target_index
         for target_index, full_index in enumerate(target_indices.tolist())
@@ -357,6 +456,16 @@ def main() -> None:
         args.report,
         source,
         partition_sha256(partitions),
+        [len(partition) for partition in partitions],
+        [len(partition) for partition in legacy_partitions],
+        official_cut_edge_records(source, cut_edges),
+        sum(len(group) > 1 for group in data.duplicate_groups),
+        duplicate_groups_crossing_clients(
+            [group for group in data.duplicate_groups if len(group) > 1], partitions
+        ),
+        duplicate_groups_crossing_clients(
+            [group for group in data.duplicate_groups if len(group) > 1], legacy_partitions
+        ),
         knn_rows,
         client_rows,
     )

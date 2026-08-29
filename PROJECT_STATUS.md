@@ -4,7 +4,7 @@ Formal experiment stage 0: target topology and client partition freeze.
 
 # Data Status
 
-`data/processed/smartds_full_graph_v2.npz` 为当前唯一正式候选：273 个节点、272 条官方物理边、92 个预测节点；本地一致性验证已建立。
+`data/processed/smartds_full_graph_v2.npz` 已通过一致性验证；8-client 官方树切边划分及 k=2/4/6/8 拓扑诊断已完成记录。
 
 # Model Status
 
@@ -12,7 +12,7 @@ PA-STFed 代码可解析配置和 dry-run，尚未基于 canonical 数据重新�
 
 # Current Blocker
 
-92 个目标节点在完整物理图上的消息传播表示仍需冻结；旧负荷序列与官方重建序列不一致，旧结果不可复用。
+Topology-kNN 的 k 尚未选择；Stage 0 仅记录候选图和客户端连通性，不使用模型精度作决定。
 
 # Next Steps
 

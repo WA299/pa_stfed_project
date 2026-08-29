@@ -52,6 +52,7 @@ class SmartDS:
     edge_index: np.ndarray
     load_ts: np.ndarray
     node_ids: np.ndarray
+    target_mask: np.ndarray
     source: Path
     _raw_components_cache: tuple[np.ndarray, ...] | None = field(
         default=None, init=False, repr=False
@@ -80,7 +81,14 @@ class SmartDS:
         if not path.is_file():
             raise FileNotFoundError(f"SmartDS archive not found: {path}")
         with np.load(path, allow_pickle=False) as archive:
-            required = {"node_coords", "adj", "edge_index", "load_ts", "node_ids"}
+            required = {
+                "node_coords",
+                "adj",
+                "edge_index",
+                "load_ts",
+                "node_ids",
+                "target_mask",
+            }
             missing = required.difference(archive.files)
             if missing:
                 raise ValueError(f"Missing NPZ fields: {sorted(missing)}")
@@ -91,6 +99,7 @@ class SmartDS:
                 edge_index=np.asarray(archive["edge_index"], dtype=np.int64),
                 load_ts=np.asarray(archive["load_ts"], dtype=np.float32),
                 node_ids=np.asarray(archive["node_ids"]),
+                target_mask=np.asarray(archive["target_mask"], dtype=bool),
                 source=path,
             )
         data.validate()
@@ -108,6 +117,8 @@ class SmartDS:
             raise ValueError("edge_index must have shape (2, E)")
         if self.node_ids.shape != (n,):
             raise ValueError("node_ids must have shape (N,)")
+        if self.target_mask.shape != (n,):
+            raise ValueError("target_mask must have shape (N,)")
         if not np.isfinite(self.node_coords).all():
             raise ValueError("node_coords must contain only finite values")
         if not np.isfinite(self.adj).all() or np.any(self.adj < 0):
@@ -130,7 +141,9 @@ class SmartDS:
 
     @property
     def active_mask(self) -> np.ndarray:
-        return np.any(self.load_ts != 0.0, axis=0)
+        """返回 canonical target 标记，不从负荷数值重新推断节点角色。"""
+
+        return self.target_mask.copy()
 
     @property
     def active_indices(self) -> np.ndarray:
@@ -538,14 +551,185 @@ class SmartDS:
         self._feature_cache[key] = features
         return features
 
+    def topology_client_partition(
+        self, clients: int
+    ) -> tuple[list[np.ndarray], tuple[tuple[int, int], ...]]:
+        """通过切除官方树边构造确定性的拓扑连续客户端区域。
+
+        划分只使用官方邻接、target 位置和 ``node_id``，不读取负荷序列
+        数值。树动态规划保留一个可与父节点连接的开放分量，并决定每条
+        父子边保留或切断。对于当前 92 targets / 8 clients，目标按以下
+        字典序优化：相对 10--13 的总超界幅度、相对 11.5 的总平方
+        偏差、超界分量数。该顺序避免用一个严重失衡区域换取更少的超界
+        区域。完全并列时按被切边端点的 ``node_id`` 排序。
+
+        返回每个客户端的 target 全图索引，以及被切除的官方无向树边。
+        客户端编号按各区域最小 ``node_id`` 确定，因而可跨运行复现。
+        """
+
+        if clients < 1:
+            raise ValueError("clients must be >= 1")
+        targets = self.active_indices
+        target_count = len(targets)
+        if target_count == 0:
+            raise ValueError("SmartDS contains no non-zero load nodes")
+        if clients > target_count:
+            raise ValueError("clients cannot exceed the number of target nodes")
+
+        graph = nx.from_numpy_array((self.adj > 0).astype(np.uint8))
+        if not nx.is_tree(graph):
+            raise ValueError(
+                "topology client partition requires one connected official tree"
+            )
+
+        node_ids = [str(node_id) for node_id in self.node_ids.tolist()]
+        root = min(graph.nodes, key=lambda node: (node_ids[int(node)], int(node)))
+        target_weights = self.active_mask.astype(np.int64)
+        average = target_count / clients
+        preferred_low = max(1, int(np.floor(average)) - 1)
+        preferred_high = int(np.ceil(average)) + 1
+
+        # 候选值为 (已闭合分量的三项代价, 已切官方边)。开放分量的代价
+        # 只有在切断父边或到达根节点时才计入，保证动态规划的最优子结构。
+        Candidate = tuple[tuple[int, int, int], tuple[tuple[int, int], ...]]
+
+        def component_score(size: int) -> tuple[int, int, int]:
+            below = max(preferred_low - size, 0)
+            above = max(size - preferred_high, 0)
+            range_distance = below + above
+            # 用整数形式 clients^2 * (size - average)^2 避免浮点并列误差。
+            squared_deviation = (size * clients - target_count) ** 2
+            return range_distance, squared_deviation, int(range_distance > 0)
+
+        def edge_key(edge: tuple[int, int]) -> tuple[str, str, int, int]:
+            left, right = edge
+            if (node_ids[left], left) > (node_ids[right], right):
+                left, right = right, left
+            return node_ids[left], node_ids[right], left, right
+
+        def canonical_edge(left: int, right: int) -> tuple[int, int]:
+            if (node_ids[left], left) <= (node_ids[right], right):
+                return left, right
+            return right, left
+
+        def merge_cuts(
+            *groups: tuple[tuple[int, int], ...],
+        ) -> tuple[tuple[int, int], ...]:
+            return tuple(sorted((edge for group in groups for edge in group), key=edge_key))
+
+        def candidate_key(candidate: Candidate) -> tuple[object, ...]:
+            score, cuts = candidate
+            return (*score, tuple(edge_key(edge) for edge in cuts))
+
+        def add_scores(
+            left: tuple[int, int, int], right: tuple[int, int, int]
+        ) -> tuple[int, int, int]:
+            return tuple(a + b for a, b in zip(left, right, strict=True))  # type: ignore[return-value]
+
+        def keep_best(
+            states: dict[tuple[int, int], Candidate],
+            state: tuple[int, int],
+            candidate: Candidate,
+        ) -> None:
+            previous = states.get(state)
+            if previous is None or candidate_key(candidate) < candidate_key(previous):
+                states[state] = candidate
+
+        def solve_subtree(node: int, parent: int | None) -> dict[tuple[int, int], Candidate]:
+            # state=(已闭合分量数, 与 node 相连的开放分量 target 数)
+            states: dict[tuple[int, int], Candidate] = {
+                (0, int(target_weights[node])): ((0, 0, 0), ())
+            }
+            children = sorted(
+                (int(neighbor) for neighbor in graph.neighbors(node) if neighbor != parent),
+                key=lambda child: (node_ids[child], child),
+            )
+            for child in children:
+                child_states = solve_subtree(child, node)
+                combined: dict[tuple[int, int], Candidate] = {}
+                for (closed_left, open_left), left_candidate in states.items():
+                    for (closed_right, open_right), right_candidate in child_states.items():
+                        base_closed = closed_left + closed_right
+                        if base_closed > clients - 1:
+                            continue
+                        base_score = add_scores(left_candidate[0], right_candidate[0])
+                        base_cuts = merge_cuts(left_candidate[1], right_candidate[1])
+
+                        # 保留父子边：两个开放分量合并。
+                        keep_best(
+                            combined,
+                            (base_closed, open_left + open_right),
+                            (base_score, base_cuts),
+                        )
+
+                        # 切断父子边：child 的开放分量在此闭合。
+                        if base_closed + 1 <= clients - 1:
+                            cut_score = add_scores(base_score, component_score(open_right))
+                            cut_edge = canonical_edge(node, child)
+                            keep_best(
+                                combined,
+                                (base_closed + 1, open_left),
+                                (cut_score, merge_cuts(base_cuts, (cut_edge,))),
+                            )
+                states = combined
+            return states
+
+        root_states = solve_subtree(int(root), None)
+        finalists: list[tuple[tuple[object, ...], Candidate]] = []
+        for (closed_count, open_size), candidate in root_states.items():
+            if closed_count != clients - 1:
+                continue
+            final_score = add_scores(candidate[0], component_score(open_size))
+            final_candidate = (final_score, candidate[1])
+            finalists.append((candidate_key(final_candidate), final_candidate))
+        if not finalists:
+            raise RuntimeError(f"unable to partition official tree into {clients} regions")
+
+        _, best = min(finalists, key=lambda item: item[0])
+        cut_edges = best[1]
+        if len(cut_edges) != clients - 1:
+            raise RuntimeError("tree partition did not select clients - 1 cut edges")
+
+        partitioned_graph = graph.copy()
+        partitioned_graph.remove_edges_from(cut_edges)
+        components = [set(component) for component in nx.connected_components(partitioned_graph)]
+        components.sort(
+            key=lambda component: min((node_ids[node], node) for node in component)
+        )
+        if len(components) != clients:
+            raise RuntimeError("cut edges did not produce the requested number of regions")
+
+        target_set = set(int(index) for index in targets.tolist())
+        partitions = [
+            np.asarray(
+                sorted(
+                    target_set.intersection(component),
+                    key=lambda node: (node_ids[node], node),
+                ),
+                dtype=np.int64,
+            )
+            for component in components
+        ]
+        flattened = [node for partition in partitions for node in partition.tolist()]
+        if len(flattened) != target_count or set(flattened) != target_set:
+            raise RuntimeError("tree regions do not cover every target exactly once")
+        return partitions, cut_edges
+
     def client_partitions(self, clients: int) -> list[np.ndarray]:
+        """返回基于官方树切边得到的拓扑连续 target 客户端划分。"""
+
+        partitions, _ = self.topology_client_partition(clients)
+        return partitions
+
+    def legacy_duplicate_aware_client_partitions(self, clients: int) -> list[np.ndarray]:
         """按空间顺序划分客户端，并保证完全相同的负荷曲线不被拆开。
 
         SmartDS 中存在多个节点共享同一条负荷序列。若直接对节点编号
         ``array_split``，相同曲线可能落在不同客户端，使客户端之间的
         Non-IID 统计失真。这里把每个重复曲线组视为不可拆分单元，再用
         连续空间分段的动态规划寻找接近等量的 K 个分区。分区仍是合成
-        网络上的空间聚合，不表示真实台区边界。
+        网络上的空间聚合，不表示真实台区边界。该方法仅保留用于与新的
+        官方树切边划分做历史审计，不再是 ``client_partitions`` 默认实现。
         """
 
         if clients < 1:
