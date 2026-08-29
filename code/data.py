@@ -18,12 +18,20 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 
 
-# ``raw`` 和 ``inf`` 保留为历史兼容模式：它们直接在 273 节点图上寻路，
-# 其中 ``inf`` 的 MST 端点可能落在零负荷节点上。正式拓扑消融使用下面三种
-# 模式：``forest`` 是零负荷中继投影后的原始拓扑图（实验别名，不预设无环），
-# ``mst_no_tag`` 在该图上增加候选桥接边但不提供边来源，``mst_tag`` 则显式
-# 编码推断边来源。
-GraphMode = Literal["raw", "inf", "legacy_inf", "forest", "mst_no_tag", "mst_tag", "projected", "projected_inf"]
+# ``topology_knn`` 是 Stage 1 起的正式图模式。其余模式仅为历史兼容：
+# ``raw``/``inf`` 在 273 节点图上寻路；``forest``/``mst_no_tag``/``mst_tag``
+# 属于旧投影与启发式补边方案，不再注册到正式实验矩阵。
+GraphMode = Literal[
+    "raw",
+    "topology_knn",
+    "inf",
+    "legacy_inf",
+    "forest",
+    "mst_no_tag",
+    "mst_tag",
+    "projected",
+    "projected_inf",
+]
 
 
 @dataclass(frozen=True)
@@ -73,6 +81,12 @@ class SmartDS:
     # NumPy 切片、归一化和周期特征拼接。不同节点子集仍保持独立归一化。
     _feature_cache: dict[tuple[int, tuple[int, ...], int, int], np.ndarray] = field(
         default_factory=dict, init=False, repr=False
+    )
+    _topology_knn_cache: dict[
+        int, tuple[np.ndarray, np.ndarray, float, float]
+    ] = field(default_factory=dict, init=False, repr=False)
+    _topology_knn_contract_checked: set[int] = field(
+        default_factory=set, init=False, repr=False
     )
 
     @classmethod
@@ -377,16 +391,51 @@ class SmartDS:
     def graph_view(
         self,
         node_indices: Iterable[int],
-        mode: GraphMode = "mst_tag",
+        mode: GraphMode = "topology_knn",
         hop_radius: int = 2,
+        target_knn_k: int = 6,
     ) -> GraphView:
         indices = np.asarray(list(node_indices), dtype=np.int64)
         if indices.ndim != 1 or len(indices) == 0:
             raise ValueError("node_indices must be a non-empty one-dimensional sequence")
         if len(np.unique(indices)) != len(indices):
             raise ValueError("node_indices must not contain duplicates")
+        if mode == "topology_knn":
+            self.assert_topology_knn_contract(target_knn_k)
+            targets = self.active_indices
+            target_lookup = {
+                int(node): position for position, node in enumerate(targets.tolist())
+            }
+            if any(int(node) not in target_lookup for node in indices.tolist()):
+                raise ValueError("topology_knn node_indices must contain target nodes only")
+            global_adjacency, global_hops, hop_scale, geo_scale = self.topology_knn_graph(
+                target_knn_k
+            )
+            local_lookup = {int(node): position for position, node in enumerate(indices.tolist())}
+            n_local = len(indices)
+            adjacency = np.eye(n_local, dtype=np.float32)
+            features = np.zeros((n_local, n_local, 3), dtype=np.float32)
+            for local_i, global_i in enumerate(indices.tolist()):
+                source_position = target_lookup[int(global_i)]
+                for target_position in np.flatnonzero(global_adjacency[source_position] > 0):
+                    global_j = int(targets[int(target_position)])
+                    local_j = local_lookup.get(global_j)
+                    if local_j is None:
+                        continue
+                    adjacency[local_i, local_j] = 1.0
+                    features[local_i, local_j, 0] = (
+                        global_hops[source_position, int(target_position)] / hop_scale
+                    )
+                    features[local_i, local_j, 1] = (
+                        np.linalg.norm(self.node_coords[global_i] - self.node_coords[global_j])
+                        / geo_scale
+                    )
+                    # 第三维仅为兼容模型输入的占位，不表示 MST 或其他推断边。
+                    features[local_i, local_j, 2] = 0.0
+            return GraphView(indices, adjacency, features, ())
+
         if hop_radius < 1:
-            raise ValueError("hop_radius must be >= 1")
+            raise ValueError("hop_radius must be >= 1 for legacy graph modes")
 
         if mode == "raw":
             base_adj = (self.adj > 0).astype(np.float32)
@@ -785,6 +834,94 @@ class SmartDS:
             np.concatenate(groups[boundaries[k] : boundaries[k + 1]]).astype(np.int64)
             for k in range(clients)
         ]
+
+    def topology_knn_graph(
+        self, k: int
+    ) -> tuple[np.ndarray, np.ndarray, float, float]:
+        """在完整官方图上构造 target symmetric topology-kNN。
+
+        返回 target 节点顺序下的邻接矩阵、官方最短 hop 矩阵，以及由全局
+        kNN 边集合计算的 hop/坐标距离固定归一化尺度。客户端只允许对该
+        全局图取诱导子图，不能重新计算本地 kNN 或本地尺度。
+        """
+
+        k = int(k)
+        cached = self._topology_knn_cache.get(k)
+        if cached is not None:
+            adjacency, hops, hop_scale, geo_scale = cached
+            return adjacency.copy(), hops.copy(), hop_scale, geo_scale
+        targets = self.active_indices
+        if not 1 <= k < len(targets):
+            raise ValueError(f"target_knn_k must be in [1, {len(targets) - 1}]")
+        full_graph = nx.from_numpy_array((self.adj > 0).astype(np.uint8))
+        if not nx.is_connected(full_graph):
+            raise ValueError("topology_knn requires a connected official full graph")
+        target_ids = [str(node_id) for node_id in self.node_ids[targets].tolist()]
+        target_lookup = {int(node): position for position, node in enumerate(targets.tolist())}
+        distances = np.full((len(targets), len(targets)), np.inf, dtype=np.float64)
+        for source_position, source_node in enumerate(targets.tolist()):
+            lengths = nx.single_source_shortest_path_length(full_graph, int(source_node))
+            for target_node, target_position in target_lookup.items():
+                if target_node not in lengths:
+                    raise ValueError("official graph has unreachable target nodes")
+                distances[source_position, target_position] = lengths[target_node]
+        adjacency = np.zeros((len(targets), len(targets)), dtype=np.float32)
+        for source in range(len(targets)):
+            candidates = [position for position in range(len(targets)) if position != source]
+            candidates.sort(
+                key=lambda position: (int(distances[source, position]), target_ids[position])
+            )
+            for target in candidates[:k]:
+                adjacency[source, target] = 1.0
+                adjacency[target, source] = 1.0
+        edge_positions = np.argwhere(np.triu(adjacency > 0, k=1))
+        if edge_positions.size == 0:
+            raise RuntimeError("topology_knn produced no target edges")
+        geo_values = np.asarray(
+            [
+                np.linalg.norm(self.node_coords[targets[left]] - self.node_coords[targets[right]])
+                for left, right in edge_positions.tolist()
+            ],
+            dtype=np.float64,
+        )
+        hop_values = np.asarray(
+            [distances[left, right] for left, right in edge_positions.tolist()],
+            dtype=np.float64,
+        )
+        hop_scale = max(float(np.median(hop_values)), 1e-6)
+        geo_scale = max(float(np.median(geo_values)), 1e-6)
+        result = (adjacency, distances.astype(np.float32), hop_scale, geo_scale)
+        self._topology_knn_cache[k] = result
+        return result[0].copy(), result[1].copy(), result[2], result[3]
+
+    def assert_topology_knn_contract(self, k: int) -> None:
+        """锁定 Stage 0 的全局图和 8-client 拓扑划分不变量。"""
+
+        k = int(k)
+        if k in self._topology_knn_contract_checked:
+            return
+        adjacency, _, _, _ = self.topology_knn_graph(k)
+        graph = nx.from_numpy_array((adjacency > 0).astype(np.uint8))
+        if k == 6:
+            assert graph.number_of_nodes() == 92, "global target graph must have 92 nodes"
+            assert graph.number_of_edges() == 352, "global target graph must have 352 edges"
+            assert nx.number_connected_components(graph) == 1, "global target graph must be connected"
+            partitions = self.client_partitions(8)
+            counts = [len(partition) for partition in partitions]
+            assert counts == [15, 12, 9, 10, 11, 12, 11, 12], (
+                f"unexpected frozen client target counts: {counts}"
+            )
+            for partition in partitions:
+                induced = graph.subgraph(
+                    [int(np.flatnonzero(self.active_indices == node)[0]) for node in partition.tolist()]
+                )
+                assert nx.number_connected_components(induced) == 1, (
+                    "each frozen client induced target graph must be connected"
+                )
+                assert nx.number_of_isolates(induced) == 0, (
+                    "each frozen client induced target graph must have no isolates"
+                )
+        self._topology_knn_contract_checked.add(k)
 
 
 class LoadWindowDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):

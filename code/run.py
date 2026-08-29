@@ -1170,7 +1170,12 @@ def centralized(cfg: dict, device: torch.device) -> dict:
     # 时误把测试集用于普通验证矩阵。
     evaluate_test = bool(cfg["training"].get("evaluate_test", False))
     test_set = make_dataset(data, nodes, "test", cfg) if evaluate_test else None
-    graph = data.graph_view(nodes, cfg["data"]["graph"], int(cfg["data"]["hop_radius"]))
+    graph = data.graph_view(
+        nodes,
+        cfg["data"]["graph"],
+        int(cfg["data"].get("hop_radius", 2)),
+        int(cfg["data"].get("target_knn_k", 6)),
+    )
     model = make_model(cfg, len(nodes), device)
 
     optimizer = torch.optim.AdamW(
@@ -1211,6 +1216,7 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         loss_sum = torch.zeros((), device=device)
         batch_count = 0
         for inputs, targets in train_loader:
+            target_device = targets.to(device, non_blocking=transfer_non_blocking)
             with autocast_context(cfg["training"], device):
                 prediction = model(
                     inputs.to(device, non_blocking=transfer_non_blocking),
@@ -1219,16 +1225,28 @@ def centralized(cfg: dict, device: torch.device) -> dict:
                 )["prediction"]
                 loss = charbonnier_loss(
                     prediction,
-                    targets.to(device, non_blocking=transfer_non_blocking),
+                    target_device,
                     float(cfg["model"]["robust_kappa"]),
                 )
+            if bool(cfg["training"].get("smoke_checks", False)):
+                if prediction.shape != target_device.shape:
+                    raise RuntimeError(
+                        f"smoke shape mismatch: prediction={prediction.shape}, "
+                        f"target={target_device.shape}"
+                    )
+                if not torch.isfinite(prediction).all() or not torch.isfinite(loss):
+                    raise RuntimeError("smoke detected NaN/Inf in prediction or loss")
             optimizer.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(
+            gradient_norm = torch.nn.utils.clip_grad_norm_(
                 model.parameters(),
                 float(cfg["training"]["grad_clip_norm"]),
             )
+            if bool(cfg["training"].get("smoke_checks", False)) and not torch.isfinite(
+                gradient_norm
+            ):
+                raise RuntimeError("smoke detected NaN/Inf in gradients")
             scaler.step(optimizer)
             scaler.update()
             # 不在每个 batch 调用 .cpu()/.item()，避免强制 CUDA 同步。
@@ -1362,7 +1380,7 @@ def centralized(cfg: dict, device: torch.device) -> dict:
             "total": int(bounds.total),
         },
         "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
-        "graph_mode": str(cfg["data"].get("graph", "mst_tag")),
+        "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
         "graph_effective_nodes": int(len(graph.node_indices)),
         "graph_effective_undirected_edges": int(np.count_nonzero(np.triu(graph.adjacency > 0, k=1))),
         "graph_inferred_bridge_metadata": int(len(graph.bridge_edges)),
@@ -1489,7 +1507,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
         else []
     )
     graphs = [
-        data.graph_view(nodes, cfg["data"]["graph"], int(cfg["data"]["hop_radius"]))
+        data.graph_view(
+            nodes,
+            cfg["data"]["graph"],
+            int(cfg["data"].get("hop_radius", 2)),
+            int(cfg["data"].get("target_knn_k", 6)),
+        )
         for nodes in partitions
     ]
     # 客户端子图和 DataLoader 在轮次之间不变，提前构造并复用，避免每轮
@@ -1839,7 +1862,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "val_end": int(bounds.val_end),
             "total": int(bounds.total),
         },
-        "graph_mode": str(cfg["data"].get("graph", "mst_tag")),
+        "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
         "graph_client_effective_undirected_edges": [
             int(np.count_nonzero(np.triu(graph.adjacency > 0, k=1))) for graph in graphs
         ],
@@ -2051,7 +2074,8 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "history": int(cfg["data"]["history"]),
             "horizon": int(cfg["data"]["horizon"]),
             "graph": cfg["data"]["graph"],
-            "hop_radius": int(cfg["data"]["hop_radius"]),
+            "target_knn_k": int(cfg["data"].get("target_knn_k", 6)),
+            "hop_radius": int(cfg["data"].get("hop_radius", 2)),
         },
         "training": {
             "batch_size": int(cfg["training"]["batch_size"]),

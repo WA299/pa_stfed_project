@@ -1,24 +1,24 @@
 # Current Stage
 
-Formal experiment stage 0: target topology and client partition freeze.
+Formal experiment stage 1: frozen topology-kNN integration smoke validation.
 
 # Data Status
 
-`data/processed/smartds_full_graph_v2.npz` 已通过一致性验证；8-client 官方树切边划分及 k=2/4/6/8 拓扑诊断已完成记录。
+Stage 0 已冻结 topology-based 8-client partition 与全局 symmetric topology-kNN（k=6）。
 
 # Model Status
 
-PA-STFed 代码可解析配置和 dry-run，尚未基于 canonical 数据重新开展正式训练。
+Centralized PA-STFed 2-epoch 与 FedAvg 2-round smoke 均已通过；未运行测试集，正式论文训练尚未开始。
 
 # Current Blocker
 
-Topology-kNN 的 k 尚未选择；Stage 0 仅记录候选图和客户端连通性，不使用模型精度作决定。
+当前无实现阻塞；smoke 产物已清理，不得作为论文结果。
 
 # Next Steps
 
-1. 冻结 full-graph 到模型输入的映射规则。
-2. 运行小规模非正式 smoke test。
-3. 再确定正式多随机种子实验矩阵。
+1. 审核正式实验矩阵与计算预算。
+2. 冻结正式运行命令和结果审计字段。
+3. 经确认后再启动正式多随机种子实验。
 
 # Latest Commit
 

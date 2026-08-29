@@ -5,7 +5,7 @@
 ## experiments.yaml 依次覆盖为 2026、2027、2028。
 seed: 2026
 # 代码/数据口径版本；正式实验重新开始后用于隔离旧数据阶段的结果。
-code_revision: 20260830_official_smartds_v1
+code_revision: 20260830_frozen_topology_knn_stage1
 # 正式训练强制使用 CUDA；若 PyTorch 不支持 CUDA，程序会在训练前直接报错。
 device: cuda
 
@@ -30,9 +30,11 @@ data:
   history: 96
   # 多步预测长度：12 个 15 分钟点，即预测未来 3 小时。
   horizon: 12
-  # 使用官方 Line + Transformer 物理拓扑；不再使用欧氏 MST 补边。
-  graph: raw
-  # 在273节点官方全图上允许结构节点作为最短路径中继。
+  # 正式物理图：先在273节点官方图上计算target距离，再构造全局symmetric kNN。
+  graph: topology_knn
+  # Stage 0 已冻结为6；客户端只能取全局图的诱导子图，不能本地重新建图。
+  target_knn_k: 6
+  # 仅供raw/forest/MST等legacy模式使用；topology_knn不读取该参数。
   hop_radius: 2
 
 model:

@@ -135,6 +135,14 @@ def train_local(
                 loss = charbonnier_loss(
                     output, targets, float(config["model"]["robust_kappa"])
                 )
+            if bool(training_config.get("smoke_checks", False)):
+                if output.shape != targets.shape:
+                    raise RuntimeError(
+                        f"smoke shape mismatch: prediction={output.shape}, "
+                        f"target={targets.shape}"
+                    )
+                if not torch.isfinite(output).all() or not torch.isfinite(loss):
+                    raise RuntimeError("smoke detected NaN/Inf in prediction or loss")
             if proximal_state is not None:
                 # 标准 FedProx 近端项为 mu/2 * ||theta_k - theta_global||_2^2。
                 proximal = _shared_squared_distance(model, proximal_state, personalized_head)
@@ -142,7 +150,13 @@ def train_local(
             optimizer.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), float(config["training"]["grad_clip_norm"]))
+            gradient_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), float(config["training"]["grad_clip_norm"])
+            )
+            if bool(training_config.get("smoke_checks", False)) and not torch.isfinite(
+                gradient_norm
+            ):
+                raise RuntimeError("smoke detected NaN/Inf in gradients")
             scaler.step(optimizer)
             scaler.update()
             # 每个 batch 都 .cpu() 会强制同步 CUDA；只在本地 epoch 结束时取一次标量。

@@ -36,6 +36,54 @@ formal_federated_training: &formal_federated_training
   evaluate_test: false
 
 experiments:
+  # Stage 1 本地烟测：仅验证数值与训练流程，不进入正式结果汇总或论文表格。
+  stage1_smoke_centralized:
+    task: centralized
+    tag: stage1_smoke_centralized_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      model: {architecture: pa_stfed}
+      training:
+        <<: *formal_centralized_training
+        epochs: 2
+        patience: 2
+        centralized_batch_size: 8
+        eval_batch_size: 16
+        num_workers: 0
+        persistent_workers: false
+        max_train_windows: 128
+        max_val_windows: 64
+        max_train_diagnostic_windows: 64
+        smoke_checks: true
+        evaluate_test: false
+      privacy: {enabled: false}
+
+  stage1_smoke_fedavg:
+    task: federated
+    tag: stage1_smoke_fedavg_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training:
+        <<: *formal_federated_training
+        federated_batch_size: 64
+        eval_batch_size: 64
+        max_train_windows: 128
+        max_val_windows: 64
+        max_train_diagnostic_windows: 64
+        smoke_checks: true
+        evaluate_test: false
+      federated:
+        algorithm: FedAvg
+        rounds: 2
+        local_epochs: 1
+        mu: 0.0
+        personalized_head: false
+      privacy: {enabled: false}
+
   baseline:
     task: baselines
     tag: baseline_grouped_seed{seed}
@@ -88,48 +136,14 @@ experiments:
       federated: {algorithm: LocalOnly, mu: 0.0, personalized_head: false}
       privacy: {enabled: false}
 
-  # 生死实验一：先投影零负荷中继，再比较原始森林、MST无来源标记和MST有来源标记。
-  topology_forest:
-    task: centralized
-    tag: topology_forest_seed{seed}
-    seed_count: 3
-    include_in_all: false
-    overrides:
-      data: {graph: forest}
-      model: {architecture: pa_stfed}
-      training: {<<: *formal_centralized_training}
-      privacy: {enabled: false}
-
-  topology_mst_no_tag:
-    task: centralized
-    tag: topology_mst_no_tag_seed{seed}
-    seed_count: 3
-    include_in_all: false
-    overrides:
-      data: {graph: mst_no_tag}
-      model: {architecture: pa_stfed}
-      training: {<<: *formal_centralized_training}
-      privacy: {enabled: false}
-
-  topology_mst_tag:
-    task: centralized
-    tag: topology_mst_tag_seed{seed}
-    seed_count: 3
-    include_in_all: false
-    overrides:
-      data: {graph: mst_tag}
-      model: {architecture: pa_stfed}
-      training: {<<: *formal_centralized_training}
-      privacy: {enabled: false}
-
-  # 生死实验二：固定投影后带标记拓扑，仅开关物理图和本地功能图分支。
+  # 固定 Stage 0 的全局 topology-kNN(k=6)，仅开关物理图和功能图分支。
   spatial_physical_only:
     task: centralized
     tag: spatial_physical_only_seed{seed}
     seed_count: 3
     include_in_all: false
     overrides:
-      data: {graph: mst_tag}
+      data: {graph: topology_knn, target_knn_k: 6}
       model:
         architecture: pa_stfed
         use_physical: true
@@ -145,7 +159,7 @@ experiments:
     seed_count: 3
     include_in_all: false
     overrides:
-      data: {graph: mst_tag}
+      data: {graph: topology_knn, target_knn_k: 6}
       model:
         architecture: pa_stfed
         use_physical: false
@@ -161,7 +175,7 @@ experiments:
     seed_count: 3
     include_in_all: false
     overrides:
-      data: {graph: mst_tag}
+      data: {graph: topology_knn, target_knn_k: 6}
       model:
         architecture: pa_stfed
         use_physical: true
