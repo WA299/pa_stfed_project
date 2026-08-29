@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "checks": {
+    "node_ids_unique": true,
+    "edge_index_in_bounds": true,
+    "adjacency_symmetric": true,
+    "adjacency_edge_index_consistent": true,
+    "edge_attributes_aligned": true,
+    "edge_types_are_official": true,
+    "mst_not_present": true,
+    "target_load_shape": true,
+    "full_load_shape": true,
+    "target_load_finite": true,
+    "targets_have_nonzero_series": true,
+    "full_load_finite": true,
+    "metadata_timesteps_match": true,
+    "mapping_reversible": true,
+    "full_to_target_inverse": true,
+    "every_edge_has_official_source": true,
+    "targets_have_official_load": true,
+    "no_nan_inf_any_numeric": true,
+    "full_graph_connected_components_metadata": true,
+    "projection_density_metadata": true,
+    "all_checks_passed": true
+  },
+  "processed": "E:\\pa_stfed_project\\data-rebuild\\data\\processed\\official_v1_2018_P10R_p10rdt7719",
+  "raw_root": "E:\\pa_stfed_project\\data-rebuild\\data\\raw\\SMARTDS\\candidate_v09_2018_P10R_p10rdt7719_source",
+  "feeder_root": "p10rhs0_1247/p10rhs0_1247--p10rdt7719"
+}

@@ -1,0 +1,17 @@
+{
+  "processing_version": "smartds_graph_v2_evidence_first_20260829",
+  "created_at_utc": "2026-08-29T12:59:29.680600+00:00",
+  "status": "BLOCKED_LOAD_SERIES_MAPPING_UNVERIFIED",
+  "legacy_sha256": "06a8c1d583159c1e3e972cdf12250e665e93f7f425fc83db57c772aa95cdb82f",
+  "raw_root": "E:\\pa_stfed_project\\data-rebuild\\data\\raw\\SMARTDS\\candidate_v09_2018_P10R_p10rdt7719_source",
+  "canonical_topology": false,
+  "feeder_root": "p10rhs0_1247/p10rhs0_1247--p10rdt7719",
+  "profile_mapping_status": "BLOCKED_VALUES_MISMATCH",
+  "profile_mapping_verified": false,
+  "quarantined_provisional_artifacts": [
+    "blocked_provisional/smartds_full_graph_v2.npz.blocked",
+    "blocked_provisional/smartds_target_graph_v2.npz.blocked"
+  ],
+  "blocker": "官方拓扑证据已匹配，但 legacy load_ts 无法按官方 OpenDSS-native (Loads.dss kW × LoadShapes.dss mult) 或 parquet-native 口径逐点复现；未生成可用于正式实验的 canonical graph",
+  "topology_evidence_available": true
+}

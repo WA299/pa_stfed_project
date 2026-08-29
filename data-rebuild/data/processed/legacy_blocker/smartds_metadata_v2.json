@@ -1,0 +1,9 @@
+{
+  "processing_version": "smartds_graph_v2_evidence_first_20260829",
+  "created_at_utc": "2026-08-29T11:16:02.775111+00:00",
+  "status": "BLOCKED_NO_VERIFIED_CANONICAL_SOURCE",
+  "legacy_sha256": "06a8c1d583159c1e3e972cdf12250e665e93f7f425fc83db57c772aa95cdb82f",
+  "raw_root": "E:\\pa_stfed_project\\data-rebuild\\data\\raw\\SMARTDS",
+  "canonical_topology": false,
+  "blocker": "官方 OpenDSS 原始文件未能完整覆盖 273 个 legacy 节点，未生成 canonical graph"
+}

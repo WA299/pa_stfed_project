@@ -1,0 +1,6 @@
+graph,nodes,undirected_edges,components,inferred_edges,note
+raw_full,273,216,57,0,原始273节点图；包含零负荷节点
+active_induced,92,0,92,0,删除零负荷节点后的诱导子图，仅用于诊断，不作为正式图
+projected_raw,92,54,56,0,零负荷节点中继投影后的原始拓扑图；投影可能形成环，不预设为森林
+legacy_inf,273,272,1,56,历史全节点MST；桥接端点可能为零负荷节点
+mst_projected,92,109,1,55,零负荷中继投影图后仅在有效节点之间执行MST

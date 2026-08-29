@@ -1,0 +1,42 @@
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.cache/
+*.cache
+*.tmp
+*.temp
+*.part
+*.zip
+
+# 训练权重和检查点体积较大，保留本地文件但不纳入 Git。
+*.pt
+*.pth
+*.ckpt
+**/checkpoints/
+**/checkpoint/
+
+# TensorBoard / 训练运行日志。
+**/events.out.tfevents.*
+**/tfevents.*
+**/tensorboard/
+**/runs/
+
+# 官方 SMART-DS 原始文件体积较大；使用 MANIFEST 和 SHA256 追溯，原始文件不上传。
+data/raw/**
+!data/raw/SMARTDS/
+!data/raw/SMARTDS/MANIFEST.json
+!data/raw/SMARTDS/**/MANIFEST.json
+!data/raw/SMARTDS/**/PROFILE_MANIFEST.json
+data-rebuild/data/raw/**
+!data-rebuild/data/raw/
+!data-rebuild/data/raw/SMARTDS/
+!data-rebuild/data/raw/SMARTDS/MANIFEST.json
+!data-rebuild/data/raw/SMARTDS/**/MANIFEST.json
+!data-rebuild/data/raw/SMARTDS/**/PROFILE_MANIFEST.json
+
+# 自动生成的 Python 缓存和编辑器工程缓存。
+.idea/
+*.swp
+*.swo

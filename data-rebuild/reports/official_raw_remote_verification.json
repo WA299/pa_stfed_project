@@ -1,0 +1,158 @@
+{
+  "verification_timestamp_utc": "2026-08-29T13:57:51.763346+00:00",
+  "provider": "Open Energy Data Initiative (OEDI)",
+  "official_object_prefix": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss",
+  "version": "v0.9",
+  "year": 2018,
+  "dataset": "Full_Texas",
+  "region": "P10R",
+  "scenario": "base_timeseries",
+  "feeder_root": "p10rhs0_1247/p10rhs0_1247--p10rdt7719",
+  "scope": {
+    "mode": "feeder_scoped",
+    "feeder_root": "p10rhs0_1247/p10rhs0_1247--p10rdt7719",
+    "parent_root": "p10rhs0_1247"
+  },
+  "files": [
+    {
+      "relative_path": "Buscoords.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/Buscoords.dss",
+      "local_sha256": "db5982e8223ea8add220c03b6858fc0f8f31cc5f5f68292716dadd6566d9824c",
+      "remote_sha256": "db5982e8223ea8add220c03b6858fc0f8f31cc5f5f68292716dadd6566d9824c",
+      "local_bytes": 4542676,
+      "remote_bytes": 4542676,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "LoadShapes.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/LoadShapes.dss",
+      "local_sha256": "29696ebdc99d039efeb8151b18663afc8a6c20764a8c672a3363f93b239e13bb",
+      "remote_sha256": "29696ebdc99d039efeb8151b18663afc8a6c20764a8c672a3363f93b239e13bb",
+      "local_bytes": 100719,
+      "remote_bytes": 100719,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/Buscoords.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/Buscoords.dss",
+      "local_sha256": "a3cacda9a05eb8122b2225b97ed1b6bef3edab646435c8f5832dccda6d546fe0",
+      "remote_sha256": "a3cacda9a05eb8122b2225b97ed1b6bef3edab646435c8f5832dccda6d546fe0",
+      "local_bytes": 332516,
+      "remote_bytes": 332516,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/Lines.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/Lines.dss",
+      "local_sha256": "404a0fe8c77db7e0912a46fe8357130decfe0b6615eaf7039365fb5a6e0fffbe",
+      "remote_sha256": "404a0fe8c77db7e0912a46fe8357130decfe0b6615eaf7039365fb5a6e0fffbe",
+      "local_bytes": 7774,
+      "remote_bytes": 7774,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/LoadShapes.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/LoadShapes.dss",
+      "local_sha256": "389d7db50597c922440bc66dd62310140dfaadacfc1c48996946622b0a1c8af5",
+      "remote_sha256": "389d7db50597c922440bc66dd62310140dfaadacfc1c48996946622b0a1c8af5",
+      "local_bytes": 67170,
+      "remote_bytes": 67170,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/Master.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/Master.dss",
+      "local_sha256": "c86a597670446162fd2fdf1aff5a83b9486ceb1a76efce288c98b101f6e567f5",
+      "remote_sha256": "c86a597670446162fd2fdf1aff5a83b9486ceb1a76efce288c98b101f6e567f5",
+      "local_bytes": 2081,
+      "remote_bytes": 2081,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Buscoords.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Buscoords.dss",
+      "local_sha256": "25a8666835874fef0616f84186177f4ea6854f8670dccdd2f70820a5aec33d33",
+      "remote_sha256": "25a8666835874fef0616f84186177f4ea6854f8670dccdd2f70820a5aec33d33",
+      "local_bytes": 13968,
+      "remote_bytes": 13968,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Intermediates.txt",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Intermediates.txt",
+      "local_sha256": "13082989670a34697a87f78c0f059a2b47737162d61edd27981d664249b692a2",
+      "remote_sha256": "13082989670a34697a87f78c0f059a2b47737162d61edd27981d664249b692a2",
+      "local_bytes": 31868,
+      "remote_bytes": 31868,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/LineCodes.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/LineCodes.dss",
+      "local_sha256": "112fddb792ba4178fe9d50cc6b6c891097fbc944f20c848ab28f95ecd3313c70",
+      "remote_sha256": "112fddb792ba4178fe9d50cc6b6c891097fbc944f20c848ab28f95ecd3313c70",
+      "local_bytes": 3987,
+      "remote_bytes": 3987,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Lines.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Lines.dss",
+      "local_sha256": "36c7de1449f6fd67d53174523654d5f996c929a3ee4c382feb6d3ec8467ae750",
+      "remote_sha256": "36c7de1449f6fd67d53174523654d5f996c929a3ee4c382feb6d3ec8467ae750",
+      "local_bytes": 38770,
+      "remote_bytes": 38770,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Loads.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Loads.dss",
+      "local_sha256": "eba16b87876df8a92e58209c1cb0aba8f484bc137b5fd5952a530fcc3e094101",
+      "remote_sha256": "eba16b87876df8a92e58209c1cb0aba8f484bc137b5fd5952a530fcc3e094101",
+      "local_bytes": 34092,
+      "remote_bytes": 34092,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/LoadShapes.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/LoadShapes.dss",
+      "local_sha256": "4a1a35bd9380a88d3a7398f62bbd9af7be61cfd37e9a9997d7acc160a649327f",
+      "remote_sha256": "4a1a35bd9380a88d3a7398f62bbd9af7be61cfd37e9a9997d7acc160a649327f",
+      "local_bytes": 13619,
+      "remote_bytes": 13619,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Master.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Master.dss",
+      "local_sha256": "77429899f2c5f5ed18710c74fcb0545b1d0ffd75cb39aae65255afb2a90a2ef3",
+      "remote_sha256": "77429899f2c5f5ed18710c74fcb0545b1d0ffd75cb39aae65255afb2a90a2ef3",
+      "local_bytes": 732,
+      "remote_bytes": 732,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Transformers.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/p10rhs0_1247--p10rdt7719/Transformers.dss",
+      "local_sha256": "5b84ca0c6201ac4b45eb4e2fb5e00991ac1ea518daf648bf24ed870021361107",
+      "remote_sha256": "5b84ca0c6201ac4b45eb4e2fb5e00991ac1ea518daf648bf24ed870021361107",
+      "local_bytes": 21214,
+      "remote_bytes": 21214,
+      "status": "PASS"
+    },
+    {
+      "relative_path": "p10rhs0_1247/Transformers.dss",
+      "official_url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss/p10rhs0_1247/Transformers.dss",
+      "local_sha256": "2ff23e5b22bc136eabee7e18555547ef66e8989d90c48ec86c51f9e728dec942",
+      "remote_sha256": "2ff23e5b22bc136eabee7e18555547ef66e8989d90c48ec86c51f9e728dec942",
+      "local_bytes": 526,
+      "remote_bytes": 526,
+      "status": "PASS"
+    }
+  ],
+  "all_files_verified": true,
+  "notes": [
+    "仅核对当前 feeder scope 的 OpenDSS 文件；profile/parquet 由 PROFILE_MANIFEST.json 单独记录。",
+    "Intermediates.txt 只作为官方几何证据，不被解释为额外物理节点或边。"
+  ]
+}

@@ -1,0 +1,264 @@
+# PA-STFed 结项实验矩阵
+# 默认 all 只运行 baseline、集中式、FedAvg、FedProx、个性化头、本地独立训练和一个结构消融。
+# 额外基线、DP 与最终测试必须显式指定实验名，避免无边界烧算力。
+
+seeds: [2026, 2027, 2028]
+
+formal_centralized_training: &formal_centralized_training
+  centralized_batch_size: 16
+  eval_batch_size: 64
+  epochs: 30
+  patience: 7
+  max_train_windows: null
+  max_val_windows: null
+  max_train_diagnostic_windows: 2048
+  learning_rate: 0.002
+  weight_decay: 0.0001
+  selection_metric: wape
+  early_stop_min_delta: 0.01
+  evaluate_test: false
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 2
+    min_lr: 0.00001
+
+formal_federated_training: &formal_federated_training
+  federated_batch_size: 512
+  eval_batch_size: 256
+  # Windows 下多进程 DataLoader 会为每个 batch 创建共享内存映射；在长时间
+  # 联邦运行中容易触发 error 1455。客户端子图很小，改为主进程加载可避免
+  # 该系统级故障，GPU 计算仍由模型前向/反向过程承担。
+  num_workers: 0
+  persistent_workers: false
+  selection_metric: wape
+  early_stop_min_delta: 0.01
+  evaluate_test: false
+
+experiments:
+  baseline:
+    task: baselines
+    tag: baseline_grouped_seed{seed}
+    seed_count: 1
+    overrides:
+      training: {<<: *formal_centralized_training}
+
+  centralized:
+    task: centralized
+    tag: centralized_seed{seed}
+    seed_count: 3
+    overrides:
+      model: {architecture: pa_stfed}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  fedavg:
+    task: federated
+    tag: fedavg_grouped_seed{seed}
+    seed_count: 3
+    overrides:
+      training: {<<: *formal_federated_training}
+      federated: {algorithm: FedAvg, mu: 0.0, personalized_head: false}
+      privacy: {enabled: false}
+
+  fedprox_005:
+    task: federated
+    tag: fedprox005_grouped_seed{seed}
+    seed_count: 3
+    overrides:
+      training: {<<: *formal_federated_training}
+      federated: {algorithm: FedProx, mu: 0.005, personalized_head: false}
+      privacy: {enabled: false}
+
+  personalized_head:
+    task: federated
+    tag: personalized_head_seed{seed}
+    seed_count: 3
+    overrides:
+      training: {<<: *formal_federated_training}
+      federated: {algorithm: FedAvg, mu: 0.0, personalized_head: true}
+      privacy: {enabled: false}
+
+  local_only:
+    task: federated
+    tag: local_only_seed{seed}
+    seed_count: 3
+    overrides:
+      training: {<<: *formal_federated_training}
+      federated: {algorithm: LocalOnly, mu: 0.0, personalized_head: false}
+      privacy: {enabled: false}
+
+  # 生死实验一：先投影零负荷中继，再比较原始森林、MST无来源标记和MST有来源标记。
+  topology_forest:
+    task: centralized
+    tag: topology_forest_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: forest}
+      model: {architecture: pa_stfed}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  topology_mst_no_tag:
+    task: centralized
+    tag: topology_mst_no_tag_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: mst_no_tag}
+      model: {architecture: pa_stfed}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  topology_mst_tag:
+    task: centralized
+    tag: topology_mst_tag_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: mst_tag}
+      model: {architecture: pa_stfed}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  # 生死实验二：固定投影后带标记拓扑，仅开关物理图和本地功能图分支。
+  spatial_physical_only:
+    task: centralized
+    tag: spatial_physical_only_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: mst_tag}
+      model:
+        architecture: pa_stfed
+        use_physical: true
+        use_functional: false
+        use_spatial_gate: false
+        use_temporal_gate: true
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  spatial_functional_only:
+    task: centralized
+    tag: spatial_functional_only_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: mst_tag}
+      model:
+        architecture: pa_stfed
+        use_physical: false
+        use_functional: true
+        use_spatial_gate: false
+        use_temporal_gate: true
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  spatial_dual_graph:
+    task: centralized
+    tag: spatial_dual_graph_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      data: {graph: mst_tag}
+      model:
+        architecture: pa_stfed
+        use_physical: true
+        use_functional: true
+        use_spatial_gate: true
+        use_temporal_gate: true
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  # LSTM：Kong et al., IEEE Transactions on Smart Grid, 2019。
+  load_lstm_validation:
+    task: centralized
+    tag: load_lstm_validation_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      model: {architecture: lstm, hidden_dim: 64}
+      baselines: {lstm_layers: 2}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  # iTransformer：Liu et al., ICLR 2024。
+  itransformer_validation:
+    task: centralized
+    tag: itransformer_validation_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      model: {architecture: itransformer, hidden_dim: 64}
+      baselines: {itransformer_layers: 2, itransformer_heads: 4}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  # AGCRN 与 Graph WaveNet 是通用时空图迁移基线，原始论文主要面向交通。
+  agcrn:
+    task: centralized
+    tag: agcrn_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      model: {architecture: agcrn, hidden_dim: 64}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  gwnet:
+    task: centralized
+    tag: gwnet_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      model: {architecture: gwnet, hidden_dim: 64}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  # 每轮 8/8 客户端全参与，故 q=1；记录 C=1、sigma=3.2、delta=1e-5 和 epsilon。
+  dp_fedavg:
+    task: federated
+    tag: dp_fedavg_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      training: {<<: *formal_federated_training}
+      federated: {algorithm: FedAvg, mu: 0.0, personalized_head: false, uniform_mean: true}
+      privacy: {enabled: true, clip_norm: 1.0, noise_multiplier: 3.2, delta: 0.00001}
+
+  centralized_test:
+    task: centralized
+    tag: centralized_test_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      model: {architecture: pa_stfed}
+      training:
+        <<: *formal_centralized_training
+        evaluate_test: true
+      privacy: {enabled: false}
+
+  fedavg_test:
+    task: federated
+    tag: fedavg_test_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      training:
+        <<: *formal_federated_training
+        evaluate_test: true
+      federated: {algorithm: FedAvg, mu: 0.0, personalized_head: false}
+      privacy: {enabled: false}
+
+  personalized_head_test:
+    task: federated
+    tag: personalized_head_test_seed{seed}
+    seed_count: 3
+    include_in_all: false
+    overrides:
+      training:
+        <<: *formal_federated_training
+        evaluate_test: true
+      federated: {algorithm: FedAvg, mu: 0.0, personalized_head: true}
+      privacy: {enabled: false}

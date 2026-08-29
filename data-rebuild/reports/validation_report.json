@@ -1,0 +1,15 @@
+{
+  "status": "FAIL",
+  "reason": "canonical 闸门未通过: BLOCKED_LOAD_SERIES_MAPPING_UNVERIFIED; profile_mapping_status=BLOCKED_VALUES_MISMATCH",
+  "checks": {
+    "metadata_exists": true,
+    "canonical_gate": false,
+    "profile_mapping_verified": false,
+    "official_series_verified": false,
+    "no_unquarantined_provisional_artifacts": true
+  },
+  "unquarantined_provisional_artifacts": [],
+  "processed": "E:\\pa_stfed_project\\data-rebuild\\data\\processed\\candidate_v09_2018_P10R_p10rdt7719",
+  "raw_root": "E:\\pa_stfed_project\\data-rebuild\\data\\raw\\SMARTDS\\candidate_v09_2018_P10R_p10rdt7719_source",
+  "feeder_root": "p10rhs0_1247/p10rhs0_1247--p10rdt7719"
+}

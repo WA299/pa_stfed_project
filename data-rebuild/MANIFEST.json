@@ -1,0 +1,1041 @@
+{
+  "manifest_version": "2.0",
+  "created_at_utc": "2026-08-29T13:58:52.633203+00:00",
+  "provider": "Open Energy Data Initiative (OEDI)",
+  "official_source": {
+    "version": "v0.9",
+    "year": 2018,
+    "dataset": "Full_Texas",
+    "region": "P10R",
+    "scenario": "base_timeseries",
+    "substation": "p10rhs0_1247",
+    "feeder": "p10rhs0_1247--p10rdt7719",
+    "object_prefix": "s3://oedi-data-lake/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/",
+    "source_status": "BLOCKED_LOAD_SERIES_MAPPING_UNVERIFIED",
+    "profile_mapping_status": "BLOCKED_VALUES_MISMATCH",
+    "audit_report": "reports/audit_report.json",
+    "documentation_url": "https://github.com/openEDI/documentation/blob/main/SMART-DS/Readme.md",
+    "documentation_commit": "9cdf598733f94d72de09ce0015f4dda671982f9f",
+    "documentation_sha256": "11d9667d9f06798ac2c37cc3841060399bc4ff0d7227b296f31b0db981a2c74e",
+    "download_date": "2026-08-29",
+    "openDSS_remote_verification": {
+      "report": "reports/official_raw_remote_verification.json",
+      "official_object_prefix": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/opendss",
+      "all_files_verified": true,
+      "file_count": 15
+    }
+  },
+  "legacy": {
+    "relative_path": "data/legacy/smartds_graph_legacy.npz",
+    "sha256": "06a8c1d583159c1e3e972cdf12250e665e93f7f425fc83db57c772aa95cdb82f"
+  },
+  "source_root": "data/raw/SMARTDS/candidate_v09_2018_P10R_p10rdt7719_source",
+  "files": [
+    {
+      "relative_path": "Buscoords.dss",
+      "sha256": "db5982e8223ea8add220c03b6858fc0f8f31cc5f5f68292716dadd6566d9824c",
+      "bytes": 4542676
+    },
+    {
+      "relative_path": "load_data/com_37245-South-Central.parquet",
+      "sha256": "402e239101d9518bad11e4e8ad60457391848f22e3e2f7c9be1901ff7a6cf917",
+      "bytes": 2811814
+    },
+    {
+      "relative_path": "load_data/com_37592-South-Central.parquet",
+      "sha256": "8591193d201f08ef05c00b57e34d0c8c1d7a056e16dff0f06d4cb4fa8b1072b9",
+      "bytes": 2834361
+    },
+    {
+      "relative_path": "load_data/com_37875-South-Central.parquet",
+      "sha256": "988c89450394383eef2f04c6f7af80cc2867b35e3ce12712851f5416a9421e93",
+      "bytes": 2236908
+    },
+    {
+      "relative_path": "load_data/com_38868-South-Central.parquet",
+      "sha256": "78d36c11947506899008f66d513542b32c4b8142704fcd8ac9a99c817c02c63d",
+      "bytes": 1182448
+    },
+    {
+      "relative_path": "load_data/res_10645-South-Central.parquet",
+      "sha256": "d79aeb81377cc9b1e27980aa1824af13af587828d952edacff3db87eec186166",
+      "bytes": 1835462
+    },
+    {
+      "relative_path": "load_data/res_11241-South-Central.parquet",
+      "sha256": "2901427370fc983580c15e9bd063a243537f2cd59d20f96cf6c6d7846510c0e0",
+      "bytes": 1901873
+    },
+    {
+      "relative_path": "load_data/res_11396-South-Central.parquet",
+      "sha256": "52f0cdf7e1360222c864c4f44d19cd77d3c5421bef2253713426765a97360f2b",
+      "bytes": 2275023
+    },
+    {
+      "relative_path": "load_data/res_1176-South-Central.parquet",
+      "sha256": "3d3fb50a27d2aaa04aa331ed94b58604b339301f52264607d54003e652ac4985",
+      "bytes": 1097090
+    },
+    {
+      "relative_path": "load_data/res_11856-South-Central.parquet",
+      "sha256": "4bfb0fa145349905671bb1debf9938cd19eb0aeb0f2a132c91383eaa5a4b6c44",
+      "bytes": 1818074
+    },
+    {
+      "relative_path": "load_data/res_12756-South-Central.parquet",
+      "sha256": "1dd42912de4e3d13dcca241e66079a37ec9020250dfc6aad0eebc2680a2af223",
+      "bytes": 2210987
+    },
+    {
+      "relative_path": "load_data/res_12784-South-Central.parquet",
+      "sha256": "a0d51d3ed9dcfe579d01f828469ffa818e43486adc615cc59b56367c40693378",
+      "bytes": 1839892
+    },
+    {
+      "relative_path": "load_data/res_13043-South-Central.parquet",
+      "sha256": "a5ed187c67476f686931aabf03dc317cb72d87ae3854e5c242a7bab19d43c177",
+      "bytes": 2295699
+    },
+    {
+      "relative_path": "load_data/res_14610-South-Central.parquet",
+      "sha256": "5a710311530f6241b749e7f4b8aeb9159dc924131cce5320a5ecf907b94661c2",
+      "bytes": 1853569
+    },
+    {
+      "relative_path": "load_data/res_15647-South-Central.parquet",
+      "sha256": "be4eef13c0be5dd328f26974530ad24c4b665dd81ba14edc3f2ba40857bd85d2",
+      "bytes": 2141325
+    },
+    {
+      "relative_path": "load_data/res_1591-South-Central.parquet",
+      "sha256": "e01abffc1ba162d568154085bb7a94a4c812951bb60c8cb68c8539b95ddb43ee",
+      "bytes": 1706538
+    },
+    {
+      "relative_path": "load_data/res_16002-South-Central.parquet",
+      "sha256": "d1b120b69bcce74d28852c23ac20eb5a96db342d32745c7a4726197dcdccc4c2",
+      "bytes": 1621654
+    },
+    {
+      "relative_path": "load_data/res_16296-South-Central.parquet",
+      "sha256": "a9b7f0da963d5ee4af183692ac32f30751361015e538cc81d81f9a173d6a2f46",
+      "bytes": 2085349
+    },
+    {
+      "relative_path": "load_data/res_16966-South-Central.parquet",
+      "sha256": "a3044b7fd76651dd20503e24b7b1d6702c07d9003279beb27290c94a299dbe71",
+      "bytes": 2274100
+    },
+    {
+      "relative_path": "load_data/res_17175-South-Central.parquet",
+      "sha256": "ebd21df097b250e70bef09fe7ab01d31d93120b8c5f2038acd72a0a51396ea7b",
+      "bytes": 2134193
+    },
+    {
+      "relative_path": "load_data/res_18285-South-Central.parquet",
+      "sha256": "eca0a6c30073a3790d59e4a7a1878f807cc6c08d8d3ce801d7b1fd9d25f8d025",
+      "bytes": 1842825
+    },
+    {
+      "relative_path": "load_data/res_19358-South-Central.parquet",
+      "sha256": "7353cc3daab6512d07e1110fc7f201217405d7714f35aa8d70bd84e99d79ebca",
+      "bytes": 1764449
+    },
+    {
+      "relative_path": "load_data/res_20395-South-Central.parquet",
+      "sha256": "45e26ccf5c3f9ae4e4bbde8e65f03fac3754bcae3d97f7cee863d58724c58c18",
+      "bytes": 1596380
+    },
+    {
+      "relative_path": "load_data/res_21326-South-Central.parquet",
+      "sha256": "3afb282fdfd389138351fba608406322e6ea4e494a185ff9cc66153fef29183b",
+      "bytes": 1889711
+    },
+    {
+      "relative_path": "load_data/res_22201-South-Central.parquet",
+      "sha256": "684eec624b66b569a2e0691dd3553f01f3887853c1ac74f65867721e25d4efe9",
+      "bytes": 2086173
+    },
+    {
+      "relative_path": "load_data/res_22490-South-Central.parquet",
+      "sha256": "7a39ed0f91ec491a4ff876f6209d77439868c5d5ef2f1f8a04186cb6673b7ddd",
+      "bytes": 903754
+    },
+    {
+      "relative_path": "load_data/res_23115-South-Central.parquet",
+      "sha256": "6b301a23b3cb986fcb7e77d36a48a96b75dfd9ebcf6323acc143dbe8e81b9fc7",
+      "bytes": 1704293
+    },
+    {
+      "relative_path": "load_data/res_23787-South-Central.parquet",
+      "sha256": "473e0705dbc86e1a8ae797c7c2cfd892a0aea9e6c9e9cd22e411a807e7ab53a3",
+      "bytes": 663187
+    },
+    {
+      "relative_path": "load_data/res_23991-South-Central.parquet",
+      "sha256": "1c3cff4afe66a63419833a72bd5907635903152356c63b38c9a13745cee8f92f",
+      "bytes": 1075307
+    },
+    {
+      "relative_path": "load_data/res_25276-South-Central.parquet",
+      "sha256": "7e36bc8cee3885f4f4d366053eb2af0205b5a64c788d819686567fb22bf1ac56",
+      "bytes": 2128991
+    },
+    {
+      "relative_path": "load_data/res_25634-South-Central.parquet",
+      "sha256": "4fb6c8c69254894124987ec59b1be2cf40e91a7d5eec94846c33609f73642a5e",
+      "bytes": 2305637
+    },
+    {
+      "relative_path": "load_data/res_26086-South-Central.parquet",
+      "sha256": "4b0fe7ff3a48b3287587a300f63f5e088ff77ad4b34f36cb5e0ac83e3d94584e",
+      "bytes": 2281027
+    },
+    {
+      "relative_path": "load_data/res_29728-South-Central.parquet",
+      "sha256": "fd266fe8099be7b9cffe539474984e7cd9eb22fb49b8fc610d3f58ea6bc5583d",
+      "bytes": 2138415
+    },
+    {
+      "relative_path": "load_data/res_30417-South-Central.parquet",
+      "sha256": "63236700dce598878c82ad99939ff8ff148dedfdcb7b6ba0f0d35d7d990af175",
+      "bytes": 477657
+    },
+    {
+      "relative_path": "load_data/res_31093-South-Central.parquet",
+      "sha256": "da5f0fa86d131ddd28227156e5ef65d05726f900b2901a89b02c6e405e1894a3",
+      "bytes": 1280969
+    },
+    {
+      "relative_path": "load_data/res_31842-South-Central.parquet",
+      "sha256": "59f47d4b3d771beac7877a96902e4a34607dfd688090285887d9308c29fe4e15",
+      "bytes": 2132921
+    },
+    {
+      "relative_path": "load_data/res_33754-South-Central.parquet",
+      "sha256": "285b315a56b04ce1ea48d042848f0bc3331a922ba37034e7df40c45bff434efc",
+      "bytes": 2199631
+    },
+    {
+      "relative_path": "load_data/res_35047-South-Central.parquet",
+      "sha256": "ecd1200b2158a4e603707d487e5e83174ae00f95d95d02e49ba261f7c73b7cb9",
+      "bytes": 1737921
+    },
+    {
+      "relative_path": "load_data/res_36432-South-Central.parquet",
+      "sha256": "452a070de99231a6574a7c5ba02fe2245e44ceeea6ec1113d2c812eb6136e71d",
+      "bytes": 1780803
+    },
+    {
+      "relative_path": "load_data/res_37494-South-Central.parquet",
+      "sha256": "2a9099621908e6b998cace98135d9dc54fa46a676ac468230ff4a22fd2616ae6",
+      "bytes": 2161268
+    },
+    {
+      "relative_path": "load_data/res_38206-South-Central.parquet",
+      "sha256": "6e1e334d938b57a8a41d9a68bc948a21a5c0035de6278aeb73c55409b141332a",
+      "bytes": 1842325
+    },
+    {
+      "relative_path": "load_data/res_38844-South-Central.parquet",
+      "sha256": "c554cb72d90304ca221932d4e62a8e406e26dfe13aff45ee29e71b7a230ff10f",
+      "bytes": 1578357
+    },
+    {
+      "relative_path": "load_data/res_38930-South-Central.parquet",
+      "sha256": "31622a6e767ffbaa341f62526a8281a76f3b23792fc88a36fb32ddbb4aa36e3e",
+      "bytes": 2213242
+    },
+    {
+      "relative_path": "load_data/res_39358-South-Central.parquet",
+      "sha256": "b9cb252b69664a7b91be571542f5a6443d20d84e07b3180ddb973d8f443cd43f",
+      "bytes": 1671758
+    },
+    {
+      "relative_path": "load_data/res_39365-South-Central.parquet",
+      "sha256": "b58418011002c3df45c181c5da9bc64a41a6fa07c78906e45a981290e26dbdc4",
+      "bytes": 2080066
+    },
+    {
+      "relative_path": "load_data/res_4055-South-Central.parquet",
+      "sha256": "2c389d1a8b15e41dedfb51923e51ffb7c411b3afbf77d5c5db4c6736de90ebdf",
+      "bytes": 1326231
+    },
+    {
+      "relative_path": "load_data/res_41217-South-Central.parquet",
+      "sha256": "cdfe839008e31b70ed0f323e3ad987203026cac61c0b3fa9495dfaad43254f47",
+      "bytes": 869473
+    },
+    {
+      "relative_path": "load_data/res_41516-South-Central.parquet",
+      "sha256": "87a32d536151edfc346ad5b208b43d1544d8000318d654c7faa975d52ada21a0",
+      "bytes": 2100596
+    },
+    {
+      "relative_path": "load_data/res_42503-South-Central.parquet",
+      "sha256": "698d33b6ebce406c3a423f2425682573d95148c8844e296795780a225b5ba9fe",
+      "bytes": 1797051
+    },
+    {
+      "relative_path": "load_data/res_43370-South-Central.parquet",
+      "sha256": "9bf639ee65b00e251bf7d24225b0a852e85fe965c935539f112f82e60386eec5",
+      "bytes": 1648315
+    },
+    {
+      "relative_path": "load_data/res_4528-South-Central.parquet",
+      "sha256": "37def936a7b4c63269aaa6abc3144e720ba0b73514d71fd95fcdb11fffd3fd09",
+      "bytes": 1908525
+    },
+    {
+      "relative_path": "load_data/res_4557-South-Central.parquet",
+      "sha256": "c2717e92e5db2a0395aee9bfe3d04990aaa66179b71306f09972a799f18cc9dc",
+      "bytes": 1798313
+    },
+    {
+      "relative_path": "load_data/res_5149-South-Central.parquet",
+      "sha256": "037eb632aa0eec6692944257f029f4549e96e493510720c4285ee787a314afc7",
+      "bytes": 2192130
+    },
+    {
+      "relative_path": "load_data/res_5492-South-Central.parquet",
+      "sha256": "0b5f5e3821b43e29e05bcd6f92fdc88fc30330687e823cb19100170af4cd787f",
+      "bytes": 2334679
+    },
+    {
+      "relative_path": "load_data/res_6795-South-Central.parquet",
+      "sha256": "21b0b0e23156439fa7c5963bae32971d158c4950f0ddb4d4f60af4f01deaba0e",
+      "bytes": 1829807
+    },
+    {
+      "relative_path": "load_data/res_7138-South-Central.parquet",
+      "sha256": "16854a3d1b792b2f5f41ff1381dc92c0833b712d58f898b3066b6dcab1926ed2",
+      "bytes": 1519901
+    },
+    {
+      "relative_path": "load_data/res_7563-South-Central.parquet",
+      "sha256": "f71a0c29d20123f69339d567f09b07af686847ea4ce83fb69bcf8177eedee032",
+      "bytes": 888241
+    },
+    {
+      "relative_path": "load_data/res_7607-South-Central.parquet",
+      "sha256": "95c2a9823708ee0c79649a6439c3ee80af6571647b51862db4c4dc16fc65d843",
+      "bytes": 2028070
+    },
+    {
+      "relative_path": "load_data/res_7860-South-Central.parquet",
+      "sha256": "d4e27b0507e6341e8698988d021c63339d172143f6d69849710c3bde276ab4f0",
+      "bytes": 911005
+    },
+    {
+      "relative_path": "load_data/res_8080-South-Central.parquet",
+      "sha256": "0e368f0a6928bbb4d634325bfa0a584cb504eca8c89a18d6d345f0aa5cd043ec",
+      "bytes": 1774831
+    },
+    {
+      "relative_path": "load_data/res_8514-South-Central.parquet",
+      "sha256": "bb4bfaa3f3f7ab7ceb9e9d4413605d0ca15c63a70e703879aa421390d65864e5",
+      "bytes": 2127745
+    },
+    {
+      "relative_path": "load_data/res_8828-South-Central.parquet",
+      "sha256": "ddba57f0f6eb09dbbf1bce510440f3702954ae8493a16c9e0df5e10cd97662a1",
+      "bytes": 1770323
+    },
+    {
+      "relative_path": "LoadShapes.dss",
+      "sha256": "29696ebdc99d039efeb8151b18663afc8a6c20764a8c672a3363f93b239e13bb",
+      "bytes": 100719
+    },
+    {
+      "relative_path": "Master.dss",
+      "sha256": "8b7d6b913bb6428fb334f2a6da8d73a3bf81dc8517675e6137ebfbef92b5700e",
+      "bytes": 41189
+    },
+    {
+      "relative_path": "p10rhs0_1247/Buscoords.dss",
+      "sha256": "a3cacda9a05eb8122b2225b97ed1b6bef3edab646435c8f5832dccda6d546fe0",
+      "bytes": 332516
+    },
+    {
+      "relative_path": "p10rhs0_1247/Lines.dss",
+      "sha256": "404a0fe8c77db7e0912a46fe8357130decfe0b6615eaf7039365fb5a6e0fffbe",
+      "bytes": 7774
+    },
+    {
+      "relative_path": "p10rhs0_1247/LoadShapes.dss",
+      "sha256": "389d7db50597c922440bc66dd62310140dfaadacfc1c48996946622b0a1c8af5",
+      "bytes": 67170
+    },
+    {
+      "relative_path": "p10rhs0_1247/Master.dss",
+      "sha256": "c86a597670446162fd2fdf1aff5a83b9486ceb1a76efce288c98b101f6e567f5",
+      "bytes": 2081
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Buscoords.dss",
+      "sha256": "25a8666835874fef0616f84186177f4ea6854f8670dccdd2f70820a5aec33d33",
+      "bytes": 13968
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Intermediates.txt",
+      "sha256": "13082989670a34697a87f78c0f059a2b47737162d61edd27981d664249b692a2",
+      "bytes": 31868
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/LineCodes.dss",
+      "sha256": "112fddb792ba4178fe9d50cc6b6c891097fbc944f20c848ab28f95ecd3313c70",
+      "bytes": 3987
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Lines.dss",
+      "sha256": "36c7de1449f6fd67d53174523654d5f996c929a3ee4c382feb6d3ec8467ae750",
+      "bytes": 38770
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Loads.dss",
+      "sha256": "eba16b87876df8a92e58209c1cb0aba8f484bc137b5fd5952a530fcc3e094101",
+      "bytes": 34092
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/LoadShapes.dss",
+      "sha256": "4a1a35bd9380a88d3a7398f62bbd9af7be61cfd37e9a9997d7acc160a649327f",
+      "bytes": 13619
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Master.dss",
+      "sha256": "77429899f2c5f5ed18710c74fcb0545b1d0ffd75cb39aae65255afb2a90a2ef3",
+      "bytes": 732
+    },
+    {
+      "relative_path": "p10rhs0_1247/p10rhs0_1247--p10rdt7719/Transformers.dss",
+      "sha256": "5b84ca0c6201ac4b45eb4e2fb5e00991ac1ea518daf648bf24ed870021361107",
+      "bytes": 21214
+    },
+    {
+      "relative_path": "p10rhs0_1247/Transformers.dss",
+      "sha256": "2ff23e5b22bc136eabee7e18555547ef66e8989d90c48ec86c51f9e728dec942",
+      "bytes": 526
+    },
+    {
+      "relative_path": "profiles/com_kvar_37245-South-Central_pu.csv",
+      "sha256": "b87fc50b2b1eaaed21be6d34217e36d6f6a2d6e9c594f777e78227f2c3726cf4",
+      "bytes": 658023
+    },
+    {
+      "relative_path": "profiles/com_kvar_37592-South-Central_pu.csv",
+      "sha256": "1a6b5160dad759f07990947438487f6c151d2eec933bd2d7da1555db6485cd30",
+      "bytes": 669355
+    },
+    {
+      "relative_path": "profiles/com_kvar_37875-South-Central_pu.csv",
+      "sha256": "c8d86686f2be22efd08136b15344e7ae0200d599988dc0685fdb7cf1e4f0f7f5",
+      "bytes": 676022
+    },
+    {
+      "relative_path": "profiles/com_kvar_38868-South-Central_pu.csv",
+      "sha256": "8d93edf5f8ec8650f09f14a720193f3e4b31d3e66bcce5a8b66042deb4f94a00",
+      "bytes": 639286
+    },
+    {
+      "relative_path": "profiles/com_kw_37245-South-Central_pu.csv",
+      "sha256": "6e807b1aba22d2a86dde98c5a2821b03ca5fbef60d9c44738fcd728289e1f0b9",
+      "bytes": 680006
+    },
+    {
+      "relative_path": "profiles/com_kw_37592-South-Central_pu.csv",
+      "sha256": "fd3846f87c3c2c0e26deb651dafe5ddd93a1d7e3de9497fe13a338826d12f2fb",
+      "bytes": 667941
+    },
+    {
+      "relative_path": "profiles/com_kw_37875-South-Central_pu.csv",
+      "sha256": "f173d167f5e488082d455e9c1de1e597df4905c10e9803f4a598e7d35a6392a8",
+      "bytes": 671984
+    },
+    {
+      "relative_path": "profiles/com_kw_38868-South-Central_pu.csv",
+      "sha256": "1373941e6c429fb01920d47ed8827915d9732d8f072a0e974cd295e6d01b8745",
+      "bytes": 664790
+    },
+    {
+      "relative_path": "profiles/res_kvar_10645-South-Central_pu.csv",
+      "sha256": "2d65a205949c39d269b852b99b66b11ca55d79127f019c2d20802a4852ea21fc",
+      "bytes": 680345
+    },
+    {
+      "relative_path": "profiles/res_kvar_11241-South-Central_pu.csv",
+      "sha256": "b8f2a7751b7babd6bd71344039ef88df1fe341870eea5a7e2d6899ff5e0361fe",
+      "bytes": 692650
+    },
+    {
+      "relative_path": "profiles/res_kvar_11396-South-Central_pu.csv",
+      "sha256": "107730228e2e41033bd9333a146206e687c5dcff353338c554f58e99f6336e64",
+      "bytes": 686420
+    },
+    {
+      "relative_path": "profiles/res_kvar_1176-South-Central_pu.csv",
+      "sha256": "2c36410ff3eaf55d9b72d10f4caf6d07cf0e3ee81a23b8faab45eed5bbc32e2e",
+      "bytes": 696950
+    },
+    {
+      "relative_path": "profiles/res_kvar_11856-South-Central_pu.csv",
+      "sha256": "18c11efb68d2874b75a9d2c48be1f0a3a0c96b752c547ca74c4b655e0e7d953b",
+      "bytes": 690410
+    },
+    {
+      "relative_path": "profiles/res_kvar_12756-South-Central_pu.csv",
+      "sha256": "33d35fd904db5138dcd91931218198b6d288222106605b7df44b1b354c341ceb",
+      "bytes": 686716
+    },
+    {
+      "relative_path": "profiles/res_kvar_12784-South-Central_pu.csv",
+      "sha256": "46d398d69f4af4feee55ef64b89d0dd257e30ba751f4ee8df4fe7662ae419509",
+      "bytes": 680394
+    },
+    {
+      "relative_path": "profiles/res_kvar_13043-South-Central_pu.csv",
+      "sha256": "3fa2174fec33abce6a8090464142ece9ab1463d6bb0a266ada567d6b4b5b8fb9",
+      "bytes": 688464
+    },
+    {
+      "relative_path": "profiles/res_kvar_14610-South-Central_pu.csv",
+      "sha256": "8ccdc9ce542035b3dbe9614fd6827e9751f6d58a81024dd6d2b8ac2cad3f7208",
+      "bytes": 682891
+    },
+    {
+      "relative_path": "profiles/res_kvar_15647-South-Central_pu.csv",
+      "sha256": "7a064a2bd56fe8ba505119d189a0d35b3334ef54a826d405afe0da7a69d141cc",
+      "bytes": 686314
+    },
+    {
+      "relative_path": "profiles/res_kvar_1591-South-Central_pu.csv",
+      "sha256": "a755b95caa4a82fbea1ae5c2c0eb278c3a3711c17d5dc41f406e3ab8f3482650",
+      "bytes": 693186
+    },
+    {
+      "relative_path": "profiles/res_kvar_16002-South-Central_pu.csv",
+      "sha256": "e6c370809d9161082d901aba9672a87af349ceb0784acb7aa9fc19e68752c20f",
+      "bytes": 682068
+    },
+    {
+      "relative_path": "profiles/res_kvar_16296-South-Central_pu.csv",
+      "sha256": "f16a5041bab384868457920717d1595e48b8c3cd1a0645d98c4fffd447710a3b",
+      "bytes": 685510
+    },
+    {
+      "relative_path": "profiles/res_kvar_16966-South-Central_pu.csv",
+      "sha256": "1521f0b63c8a92bdbf84354d98f6a3c096adc4fd044eca17ee78e1c8ff9db09e",
+      "bytes": 688897
+    },
+    {
+      "relative_path": "profiles/res_kvar_17175-South-Central_pu.csv",
+      "sha256": "e4996336f1cae91dd13e46f1e0c993d236a1e7caa0b3e21ae64e50fdba56f6e2",
+      "bytes": 673102
+    },
+    {
+      "relative_path": "profiles/res_kvar_18285-South-Central_pu.csv",
+      "sha256": "a0d5c13edf8075b1a65756c00e8a4eb6f7d58f5bef6306374f7ac3487fa7ddee",
+      "bytes": 690050
+    },
+    {
+      "relative_path": "profiles/res_kvar_19358-South-Central_pu.csv",
+      "sha256": "2b9ca405497d73e5758b18ce98a974708414a37843112f780d0b2774faa45e20",
+      "bytes": 674334
+    },
+    {
+      "relative_path": "profiles/res_kvar_20395-South-Central_pu.csv",
+      "sha256": "670ea1139cb4693a33f297acaf9b0565dff60ddd3e6036365f830605f4740a9a",
+      "bytes": 685565
+    },
+    {
+      "relative_path": "profiles/res_kvar_21326-South-Central_pu.csv",
+      "sha256": "6409de19925fa1af4a89dbd857784e2d6ff4320fe227a37afe419a527a6ff56b",
+      "bytes": 684168
+    },
+    {
+      "relative_path": "profiles/res_kvar_22201-South-Central_pu.csv",
+      "sha256": "09d48ad01c373b72bbd12521f94972bf017ed543f7b381d24f92408e49d9aa81",
+      "bytes": 676475
+    },
+    {
+      "relative_path": "profiles/res_kvar_22490-South-Central_pu.csv",
+      "sha256": "70c9f12aeddb9b542ed771a1e7b3e0dcf1d23734f6a327523e674a0688142384",
+      "bytes": 686077
+    },
+    {
+      "relative_path": "profiles/res_kvar_23115-South-Central_pu.csv",
+      "sha256": "309ba82b0f076dfd0574256f86ceaf842ae02186de113d9744a9e4544e1b288c",
+      "bytes": 685265
+    },
+    {
+      "relative_path": "profiles/res_kvar_23787-South-Central_pu.csv",
+      "sha256": "8da8e99836359fbd66f0fe92ee4a2a81828b5ac00c2c7e45086db3d181816a8c",
+      "bytes": 683563
+    },
+    {
+      "relative_path": "profiles/res_kvar_23991-South-Central_pu.csv",
+      "sha256": "273860499cdb6bf16da75744b715f72fcb854c46f8480642be6830136f39310d",
+      "bytes": 685457
+    },
+    {
+      "relative_path": "profiles/res_kvar_25276-South-Central_pu.csv",
+      "sha256": "5b629b1d9282fd7c931c49dfb2ac23d5f460e44cc9506fff76520c309e198a34",
+      "bytes": 678007
+    },
+    {
+      "relative_path": "profiles/res_kvar_25634-South-Central_pu.csv",
+      "sha256": "6812da689eec32f32b39bbe032a80591407420634e14d3cd1104d12a1826dd95",
+      "bytes": 667500
+    },
+    {
+      "relative_path": "profiles/res_kvar_26086-South-Central_pu.csv",
+      "sha256": "16d5bc3d8e3ab75cac2ea28683717af002c6442822baaf0179cad68d12caff33",
+      "bytes": 674716
+    },
+    {
+      "relative_path": "profiles/res_kvar_29728-South-Central_pu.csv",
+      "sha256": "a40bae5d8579ea86b762ece978b64a25fbbc398f45d2b2bfa718e551cbe000fb",
+      "bytes": 677748
+    },
+    {
+      "relative_path": "profiles/res_kvar_30417-South-Central_pu.csv",
+      "sha256": "8f151f38583d138864172ca47a5d618f215bedeb41263e686d975610c6ead51d",
+      "bytes": 679622
+    },
+    {
+      "relative_path": "profiles/res_kvar_31093-South-Central_pu.csv",
+      "sha256": "2da55ef67bd9c6cb1cf27588371b21f4c65bf80840a600bb3b9281882634436d",
+      "bytes": 690557
+    },
+    {
+      "relative_path": "profiles/res_kvar_31842-South-Central_pu.csv",
+      "sha256": "327ced7d2d4a4e2db2e9ea25e4f90e55e184f70fd79ed9c68c2d0c8bd85b8644",
+      "bytes": 686038
+    },
+    {
+      "relative_path": "profiles/res_kvar_33754-South-Central_pu.csv",
+      "sha256": "98866c45d9c1243c3dcd9f24842bd215a357469ba03fb4286de86fb629515919",
+      "bytes": 693926
+    },
+    {
+      "relative_path": "profiles/res_kvar_35047-South-Central_pu.csv",
+      "sha256": "5a67cbc5f37d16d9a07e1505801c41f996f71358e0a69b25f7c4a7e12c479cc1",
+      "bytes": 681377
+    },
+    {
+      "relative_path": "profiles/res_kvar_36432-South-Central_pu.csv",
+      "sha256": "ccfe5410e30dbb79bf8d3d84a8fe04c24427e58c5047edcabde9543e778ae7cf",
+      "bytes": 663448
+    },
+    {
+      "relative_path": "profiles/res_kvar_37494-South-Central_pu.csv",
+      "sha256": "77b1ee5064bc69e269e2ae883c29dd9890ce1246790f706266d477817c099fc5",
+      "bytes": 686308
+    },
+    {
+      "relative_path": "profiles/res_kvar_38206-South-Central_pu.csv",
+      "sha256": "8979b45cf7149054a0897a906a785d18f1103f83813ea3ff754efd162b8f82da",
+      "bytes": 697224
+    },
+    {
+      "relative_path": "profiles/res_kvar_38844-South-Central_pu.csv",
+      "sha256": "1edec84b8e175173edd204b009c002c6b67499d4ed0e2ab9e6c46d94657d4080",
+      "bytes": 684144
+    },
+    {
+      "relative_path": "profiles/res_kvar_38930-South-Central_pu.csv",
+      "sha256": "91ba9f31789f69d6f8cb8a4eb81c9ba4c9c602dbaa27d80fac9d5ce90b4de015",
+      "bytes": 687880
+    },
+    {
+      "relative_path": "profiles/res_kvar_39358-South-Central_pu.csv",
+      "sha256": "76fa7c31f9c7a39453337bdfe2f0438b6fff423a6abb1f62fac9f05deb457709",
+      "bytes": 686119
+    },
+    {
+      "relative_path": "profiles/res_kvar_39365-South-Central_pu.csv",
+      "sha256": "cd4657d435840b28a6f260dd6d80092f395135d257158cf2e6927eccf5937c1b",
+      "bytes": 673710
+    },
+    {
+      "relative_path": "profiles/res_kvar_4055-South-Central_pu.csv",
+      "sha256": "19f8519c2176cb398884640baa21713ec38f1e6f563f922bc016cbd9c6bca271",
+      "bytes": 683555
+    },
+    {
+      "relative_path": "profiles/res_kvar_41217-South-Central_pu.csv",
+      "sha256": "135b1049ce2294c49182e2291441ecf319caee14ae4e8445bd08333b0e0f09c0",
+      "bytes": 677468
+    },
+    {
+      "relative_path": "profiles/res_kvar_41516-South-Central_pu.csv",
+      "sha256": "81a59dfbad517ff2806641cb3179c6f7f28882e33c658e08c67858d06f00884b",
+      "bytes": 688341
+    },
+    {
+      "relative_path": "profiles/res_kvar_42503-South-Central_pu.csv",
+      "sha256": "e0e7415ae5c796ab2509e24283a2722540c447569ffb4badd08b22d74dc9cbe8",
+      "bytes": 690301
+    },
+    {
+      "relative_path": "profiles/res_kvar_43370-South-Central_pu.csv",
+      "sha256": "33e6049966deeb1481c21bb1d6ab93e8f038452f587664b6921a7bfbea9e8981",
+      "bytes": 677688
+    },
+    {
+      "relative_path": "profiles/res_kvar_4528-South-Central_pu.csv",
+      "sha256": "17391229290152d2140f31e93b2b5a888b7631029b964794b1c18b4bd00bc1ee",
+      "bytes": 664147
+    },
+    {
+      "relative_path": "profiles/res_kvar_4557-South-Central_pu.csv",
+      "sha256": "15313a4ea873babc4bee665c8507c1ece408ba234e5d9f1c51fb0d006c3a9e3f",
+      "bytes": 689410
+    },
+    {
+      "relative_path": "profiles/res_kvar_5149-South-Central_pu.csv",
+      "sha256": "21c2bb3cc91ca8142b86b919d0921cef2816d0dee98a1cc12acd0b9b23b51a3b",
+      "bytes": 677356
+    },
+    {
+      "relative_path": "profiles/res_kvar_5492-South-Central_pu.csv",
+      "sha256": "a00afb1ac1dc687d310ad29823937c7486e6f4886ae69faeeb0968daea25b460",
+      "bytes": 665229
+    },
+    {
+      "relative_path": "profiles/res_kvar_6795-South-Central_pu.csv",
+      "sha256": "35f30c98210fcc99b03af944e7bf7f239a17e2af312976aaebba46220dd4eda7",
+      "bytes": 682110
+    },
+    {
+      "relative_path": "profiles/res_kvar_7138-South-Central_pu.csv",
+      "sha256": "fcc1b430f923a411478802eeeb576b3e95e57b435e26231c8d45521949595bdd",
+      "bytes": 694189
+    },
+    {
+      "relative_path": "profiles/res_kvar_7563-South-Central_pu.csv",
+      "sha256": "07b76466a5876be4442490a7febf99b2d1e688732ec4c63fc85bdca98696e1ab",
+      "bytes": 699193
+    },
+    {
+      "relative_path": "profiles/res_kvar_7607-South-Central_pu.csv",
+      "sha256": "6084de06918299a62d0d4d2e4ab872109b7ac1fb829b59fe3a8cd185e7d68d9e",
+      "bytes": 691937
+    },
+    {
+      "relative_path": "profiles/res_kvar_7860-South-Central_pu.csv",
+      "sha256": "6b074f4f9c1dee08268cf00952891c6ff217939734cf46190140a6d982cc935a",
+      "bytes": 684747
+    },
+    {
+      "relative_path": "profiles/res_kvar_8080-South-Central_pu.csv",
+      "sha256": "98ba928ade08f526e1aad421709def1eb959b01cdaf94085b77fdf2d9142da1c",
+      "bytes": 667323
+    },
+    {
+      "relative_path": "profiles/res_kvar_8514-South-Central_pu.csv",
+      "sha256": "2d88a560d75f21afe4ead349995d8a77f52e28ed7f0141ceafea8fab7fa85c94",
+      "bytes": 660958
+    },
+    {
+      "relative_path": "profiles/res_kvar_8828-South-Central_pu.csv",
+      "sha256": "ffcb392afd13f5fbb8addff4f633401eef6cd472734c9b1026a086926888415b",
+      "bytes": 675798
+    },
+    {
+      "relative_path": "profiles/res_kw_10645-South-Central_pu.csv",
+      "sha256": "9730718a5a25959e176699fac3b7623b17537313b257660fc5cfb627b3cefe9b",
+      "bytes": 695803
+    },
+    {
+      "relative_path": "profiles/res_kw_11241-South-Central_pu.csv",
+      "sha256": "efbc3d500c108416bbfe9299bb00e9a1b878acb5b2763f4ced1d038229dfb4d2",
+      "bytes": 699393
+    },
+    {
+      "relative_path": "profiles/res_kw_11396-South-Central_pu.csv",
+      "sha256": "b960d8f2e2acfeed958c45ea9df258841bc92788063618b91938aaee974d593c",
+      "bytes": 692513
+    },
+    {
+      "relative_path": "profiles/res_kw_1176-South-Central_pu.csv",
+      "sha256": "66452a0178f876c427a4a87f986c7552ceaf4ffa05e21b9fad126b8743b47dac",
+      "bytes": 703163
+    },
+    {
+      "relative_path": "profiles/res_kw_11856-South-Central_pu.csv",
+      "sha256": "babb011eda4b18860960222de7b9420d632c6df270bf45d0f8db1ef7adaff03e",
+      "bytes": 701310
+    },
+    {
+      "relative_path": "profiles/res_kw_12756-South-Central_pu.csv",
+      "sha256": "e6714f47d8c0dd7ea492500193b3b10b1cd8ab05e5551039adb2863fffdea0d8",
+      "bytes": 693846
+    },
+    {
+      "relative_path": "profiles/res_kw_12784-South-Central_pu.csv",
+      "sha256": "d40e229f469a191ef9c4da65ce2424a9686406719066165ca36a10d9bd7e7b96",
+      "bytes": 684342
+    },
+    {
+      "relative_path": "profiles/res_kw_13043-South-Central_pu.csv",
+      "sha256": "94407f0a9ec419f104a45524f7ebd8032602dc6ef6eda0a70079270c3b9909b5",
+      "bytes": 690797
+    },
+    {
+      "relative_path": "profiles/res_kw_14610-South-Central_pu.csv",
+      "sha256": "de3e54bced338d36177c40e03e05ea33b98a185985a3074a80484ce83c462e09",
+      "bytes": 692066
+    },
+    {
+      "relative_path": "profiles/res_kw_15647-South-Central_pu.csv",
+      "sha256": "92aa44353dabeaed04dad44b78ac17f0bce563db44e5048676af14d09d5e3303",
+      "bytes": 688579
+    },
+    {
+      "relative_path": "profiles/res_kw_1591-South-Central_pu.csv",
+      "sha256": "83d03b3425cef3f21f2095fe3e97deac2968498fda39efe819ef237d93f720c6",
+      "bytes": 699619
+    },
+    {
+      "relative_path": "profiles/res_kw_16002-South-Central_pu.csv",
+      "sha256": "055cb33f6939aad6953bb06426e6867a166014d194abd7cf681ef9b5b3e6c977",
+      "bytes": 693015
+    },
+    {
+      "relative_path": "profiles/res_kw_16296-South-Central_pu.csv",
+      "sha256": "fe996cf8618118bdae663224a35f4f195ca755c900246bd8f7f4e44cbf02003e",
+      "bytes": 694293
+    },
+    {
+      "relative_path": "profiles/res_kw_16966-South-Central_pu.csv",
+      "sha256": "34b3dee1eefa90e830a4dd0f686fac63417f9501bf6f9c303ed2995d4f61e512",
+      "bytes": 695729
+    },
+    {
+      "relative_path": "profiles/res_kw_17175-South-Central_pu.csv",
+      "sha256": "8210f52e6b5029854da0a70d24a8cc4f890db6d9ac811f9e60b2ffa1d48c386a",
+      "bytes": 687246
+    },
+    {
+      "relative_path": "profiles/res_kw_18285-South-Central_pu.csv",
+      "sha256": "f1403393b9c9eaefb51bd6507391497c6024249d13d528f2e2f03fd521aeda0b",
+      "bytes": 697177
+    },
+    {
+      "relative_path": "profiles/res_kw_19358-South-Central_pu.csv",
+      "sha256": "d12b5562f595ea8e45c2323ce6cf411244b2b9ffb09de19ee4d0a18a568bd0ed",
+      "bytes": 694841
+    },
+    {
+      "relative_path": "profiles/res_kw_20395-South-Central_pu.csv",
+      "sha256": "fafa14270a1d54eead98452b3f81bf1c6256ceb760bd38c87c72227e2018d9d3",
+      "bytes": 693112
+    },
+    {
+      "relative_path": "profiles/res_kw_21326-South-Central_pu.csv",
+      "sha256": "caf7dc66f3068b5857997cd0138831e3bfa7e3f88d82464b05383fc4c5876dca",
+      "bytes": 698202
+    },
+    {
+      "relative_path": "profiles/res_kw_22201-South-Central_pu.csv",
+      "sha256": "a69b2ca08abf0b773c6af894e0559234695239f87959c0945c8ed5100e357056",
+      "bytes": 691056
+    },
+    {
+      "relative_path": "profiles/res_kw_22490-South-Central_pu.csv",
+      "sha256": "39074a2cf0849d2daf8744978588becc53295d25ebfa123e79a3e75341b12663",
+      "bytes": 698988
+    },
+    {
+      "relative_path": "profiles/res_kw_23115-South-Central_pu.csv",
+      "sha256": "4708f5bccee41fcdd317f7456cf295b50367238f3036a1db391b074df6efad5f",
+      "bytes": 704993
+    },
+    {
+      "relative_path": "profiles/res_kw_23787-South-Central_pu.csv",
+      "sha256": "23764813df734a7f4f88378de5159ad6f60c4bffcae3b9ba58a46991060e80ec",
+      "bytes": 702331
+    },
+    {
+      "relative_path": "profiles/res_kw_23991-South-Central_pu.csv",
+      "sha256": "1391ac52ff2b3a3c8ab959666699e1d2e52c2730eab886904222acdb1f1fc731",
+      "bytes": 700779
+    },
+    {
+      "relative_path": "profiles/res_kw_25276-South-Central_pu.csv",
+      "sha256": "d09dced057c90d749da0a00ca45b8193023d3c38a4265b219e9b8e9754e82681",
+      "bytes": 689613
+    },
+    {
+      "relative_path": "profiles/res_kw_25634-South-Central_pu.csv",
+      "sha256": "7c039168879df63cc298cae8090c700a2fed4a91a23b42159b5bebf25adc36df",
+      "bytes": 689765
+    },
+    {
+      "relative_path": "profiles/res_kw_26086-South-Central_pu.csv",
+      "sha256": "1243e5403b624fbf8d8f5d0fc5e6ae8123fd2b4e04251850600210f4d0ee6dab",
+      "bytes": 686324
+    },
+    {
+      "relative_path": "profiles/res_kw_29728-South-Central_pu.csv",
+      "sha256": "2a41eb17e2bbe0774a9bc0af2b9936d95b95faeb095abf60a1d278b215572138",
+      "bytes": 696337
+    },
+    {
+      "relative_path": "profiles/res_kw_30417-South-Central_pu.csv",
+      "sha256": "140a595caa6f01fb7d5514853aa11f3cc5ac1472c1736ab0bd1d87691be83516",
+      "bytes": 684242
+    },
+    {
+      "relative_path": "profiles/res_kw_31093-South-Central_pu.csv",
+      "sha256": "c0312dde1ae1fcfffe2b325369cd1cbdcf0a6fb739874d3d4a636c26d507a79b",
+      "bytes": 695636
+    },
+    {
+      "relative_path": "profiles/res_kw_31842-South-Central_pu.csv",
+      "sha256": "a9a278be3b81a0a5b5e6d672e34f8d22a41357973caa01a31387d17c2fe0a1eb",
+      "bytes": 692607
+    },
+    {
+      "relative_path": "profiles/res_kw_33754-South-Central_pu.csv",
+      "sha256": "8070d36dfac5afee5e3d78d33f602d49a9ed0daf5f6852350f841efc911402e4",
+      "bytes": 696712
+    },
+    {
+      "relative_path": "profiles/res_kw_35047-South-Central_pu.csv",
+      "sha256": "df501a4f465acfb711f3d4247ec1e9388f4d1aa3ef9ed517d8b325d25f0137b7",
+      "bytes": 690834
+    },
+    {
+      "relative_path": "profiles/res_kw_36432-South-Central_pu.csv",
+      "sha256": "f51340d75ab27b141e762058fd3f2cee2582307b547f868d1d9b92cc25ff13a6",
+      "bytes": 700150
+    },
+    {
+      "relative_path": "profiles/res_kw_37494-South-Central_pu.csv",
+      "sha256": "57f78d5f0c2db6b450bb6012d6cae40c89cacb821a6f29f3cd47f16c1e9d21df",
+      "bytes": 693480
+    },
+    {
+      "relative_path": "profiles/res_kw_38206-South-Central_pu.csv",
+      "sha256": "fef4db21a225a6ae440dc57895aa2761667aac9219fb104fcc289691ee282147",
+      "bytes": 712453
+    },
+    {
+      "relative_path": "profiles/res_kw_38844-South-Central_pu.csv",
+      "sha256": "a336b1128a5c20099591b8366ad0acee80fa14df76d8516a1ff15536bbc44585",
+      "bytes": 692952
+    },
+    {
+      "relative_path": "profiles/res_kw_38930-South-Central_pu.csv",
+      "sha256": "e38f6a47ca3a6e9f5cd7f39ee094b6a9f2799eb0b4b494effaaaf311967b8fa7",
+      "bytes": 693613
+    },
+    {
+      "relative_path": "profiles/res_kw_39358-South-Central_pu.csv",
+      "sha256": "312560067518796751f53547d0c6e1f774d6bfb65c9fc4b1ea71a17145be1b96",
+      "bytes": 693356
+    },
+    {
+      "relative_path": "profiles/res_kw_39365-South-Central_pu.csv",
+      "sha256": "96815105aa75f1e025ffd79cb4195ae2e32056e83f4f1e764ba683ff4009f546",
+      "bytes": 694368
+    },
+    {
+      "relative_path": "profiles/res_kw_4055-South-Central_pu.csv",
+      "sha256": "79190ddaa5c18a18fe4fdfc8b51f76f7e402855bc8af17af7648634ea2006853",
+      "bytes": 697814
+    },
+    {
+      "relative_path": "profiles/res_kw_41217-South-Central_pu.csv",
+      "sha256": "dfe7cdd5724dde8e2f496ee5df40134542ba2571277e80f668c25cd9f5245042",
+      "bytes": 687905
+    },
+    {
+      "relative_path": "profiles/res_kw_41516-South-Central_pu.csv",
+      "sha256": "39bf263903c9cc871ef6e2611a9a71fc3f47bf3529b5fd25a7054984965bb862",
+      "bytes": 698309
+    },
+    {
+      "relative_path": "profiles/res_kw_42503-South-Central_pu.csv",
+      "sha256": "1aaaa5264eecd1cbc9617880edf9e2083e8cf974314bd04f46211d38516623f4",
+      "bytes": 701679
+    },
+    {
+      "relative_path": "profiles/res_kw_43370-South-Central_pu.csv",
+      "sha256": "25f2e91928961dccd941aa46311b42dc9edf3de3e0c0c73fa1329c3692af5d9d",
+      "bytes": 686906
+    },
+    {
+      "relative_path": "profiles/res_kw_4528-South-Central_pu.csv",
+      "sha256": "32711d9a04d97aff823ba04aed70ce28f52e7e9b5a74d3f7f0dffbc25a8d007c",
+      "bytes": 691123
+    },
+    {
+      "relative_path": "profiles/res_kw_4557-South-Central_pu.csv",
+      "sha256": "a7b0dd1da5fb03313ebd4b466766b2f5c095769387f3d5f490da046e32379c8e",
+      "bytes": 698877
+    },
+    {
+      "relative_path": "profiles/res_kw_5149-South-Central_pu.csv",
+      "sha256": "e9a4ad41ee2d1e20a2c022ce1e29f987f26f585baca6df6a5e8aa6b53ccf172a",
+      "bytes": 688153
+    },
+    {
+      "relative_path": "profiles/res_kw_5492-South-Central_pu.csv",
+      "sha256": "9dd9451ad4cc5ed66013a6c9eccbe97a4ca8038ecc120019a9223e3d12063d25",
+      "bytes": 685993
+    },
+    {
+      "relative_path": "profiles/res_kw_6795-South-Central_pu.csv",
+      "sha256": "1e033cd817f3fa51ee0a37b9bd8e7786d8a3d459cc9c06b69919a4ad4813273a",
+      "bytes": 693965
+    },
+    {
+      "relative_path": "profiles/res_kw_7138-South-Central_pu.csv",
+      "sha256": "ee1c65e9675bdc76989e6392e28f5bfc7bb549c869497220c49e4ffa5cbf70fd",
+      "bytes": 704625
+    },
+    {
+      "relative_path": "profiles/res_kw_7563-South-Central_pu.csv",
+      "sha256": "ab6ee666b28ba6919827b789204335bd146ca196ac20f714c09573b58e563a2d",
+      "bytes": 703393
+    },
+    {
+      "relative_path": "profiles/res_kw_7607-South-Central_pu.csv",
+      "sha256": "46558e56ed57436780a889323c17be85e0cd6f16e891612a9c145b39e4a0c87f",
+      "bytes": 695128
+    },
+    {
+      "relative_path": "profiles/res_kw_7860-South-Central_pu.csv",
+      "sha256": "0b77214e7e8ca5e1b519c0f1c57ed6d2d95302aa771e6b8ca851600d3b606a08",
+      "bytes": 700874
+    },
+    {
+      "relative_path": "profiles/res_kw_8080-South-Central_pu.csv",
+      "sha256": "c3a6d356c916bc04916ae6ccea8c86b6c531741102eca25a43437e467c1e3cb3",
+      "bytes": 696825
+    },
+    {
+      "relative_path": "profiles/res_kw_8514-South-Central_pu.csv",
+      "sha256": "c54e181735c3197e990442a324a50bce0e8dc8c5a70374962284d1c176851882",
+      "bytes": 697799
+    },
+    {
+      "relative_path": "profiles/res_kw_8828-South-Central_pu.csv",
+      "sha256": "d0f2d1146469c5a87904d22715b92a3a8ca9994291e04936948d1cfa04b86168",
+      "bytes": 696668
+    },
+    {
+      "relative_path": "reference/SMART-DS_Readme.md",
+      "sha256": "11d9667d9f06798ac2c37cc3841060399bc4ff0d7227b296f31b0db981a2c74e",
+      "bytes": 60372
+    }
+  ],
+  "profile_manifest": "data/raw/SMARTDS/candidate_v09_2018_P10R_p10rdt7719_source/PROFILE_MANIFEST.json",
+  "notes": [
+    "设备边只来自 feeder-scoped OpenDSS Line/Transformer 文件及父级 substation 文件。",
+    "profile 文件只下载 Loads.dss/LoadShapes.dss 实际引用的最小集合。",
+    "未验证的 MST、欧氏距离和节点命名关系不得进入 canonical physical graph。"
+  ]
+}
