@@ -1,6 +1,6 @@
 # Current Stage
 
-正在冻结官方 SMART-DS canonical 数据口径，并确认 PA-STFed 的物理图输入设计。
+Formal experiment stage 0: target topology and client partition freeze.
 
 # Data Status
 
