@@ -1,9 +1,0 @@
-{
-  "status": "INVALIDATED_BLOCKED",
-  "method": "旧版 provisional NPZ 的历史确定性比较；不代表当前 canonical 数据闸门通过",
-  "full_graph_sha256": "BCB32B80AB8FC957DEB7C5748887303FDD320B709FBFB72A6871862D20C34ABD",
-  "target_graph_sha256": "FA6941469E80287A492CBAE4DB4F560820A31B13E58CFCB68998D9CED0755AE3",
-  "reference_output": "data/processed/candidate_v09_2018_P10R_p10rdt7719/blocked_provisional",
-  "rerun_output": "data/processed/_determinism_check/blocked_provisional",
-  "note": "旧比较在负荷序列映射审计前执行，现已因 BLOCKED_LOAD_SERIES_MAPPING_UNVERIFIED 作废；待官方数值映射通过后重新生成。"
-}

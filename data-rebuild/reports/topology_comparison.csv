@@ -1,6 +1,0 @@
-﻿scheme,nodes,undirected_edges,components,imputed_edges,canonical,notes
-legacy_raw_full,273,216,57,0,false,旧 NPZ 邻接矩阵；不是官方 OpenDSS 证据
-legacy_target_induced,92,0,92,0,false,删除零负荷节点后的诱导图，仅作诊断
-legacy_target_relay_projection,92,54,56,0,false,零负荷节点作为中继的拓扑投影；仍缺官方设备证据
-legacy_full_euclidean_mst,273,272,1,56,false,历史欧氏 MST 数量对照；禁止进入 canonical physical graph
-official_full_physical,273,272,1,0,true,scope 内 OpenDSS Line/Transformer 设备关系；含零负荷结构中继节点

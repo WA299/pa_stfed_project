@@ -29,12 +29,9 @@ data/raw/**
 !data/raw/SMARTDS/MANIFEST.json
 !data/raw/SMARTDS/**/MANIFEST.json
 !data/raw/SMARTDS/**/PROFILE_MANIFEST.json
-data-rebuild/data/raw/**
-!data-rebuild/data/raw/
-!data-rebuild/data/raw/SMARTDS/
-!data-rebuild/data/raw/SMARTDS/MANIFEST.json
-!data-rebuild/data/raw/SMARTDS/**/MANIFEST.json
-!data-rebuild/data/raw/SMARTDS/**/PROFILE_MANIFEST.json
+
+# 文献 PDF 仅保留本地，不再提交到 GitHub。
+literature/*.pdf
 
 # 自动生成的 Python 缓存和编辑器工程缓存。
 .idea/

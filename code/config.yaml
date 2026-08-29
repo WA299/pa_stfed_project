@@ -1,0 +1,164 @@
+# PA-STFed 正式实验基础配置。
+# 具体算法、消融开关和 DP 参数统一由 experiments.yaml 覆盖。
+
+## 全局随机种子：用于 Python、NumPy、PyTorch 初始化；多种子复核时由
+## experiments.yaml 依次覆盖为 2026、2027、2028。
+seed: 2026
+# 代码/数据口径版本；正式实验重新开始后用于隔离旧数据阶段的结果。
+code_revision: 20260830_official_smartds_v1
+# 正式训练强制使用 CUDA；若 PyTorch 不支持 CUDA，程序会在训练前直接报错。
+device: cuda
+
+# CUDA 数学内核配置。最终多随机种子报告保留确定性模式；AMP 和 TF32
+# 只降低内存与内核启动开销，不改变数据划分或模型定义。
+runtime:
+  allow_tf32: true
+  deterministic: true
+  cudnn_benchmark: false
+
+data:
+  # 由官方 OpenDSS 文件重建的 canonical SmartDS 全图；包含结构节点和负荷序列。
+  source: data/processed/smartds_full_graph_v2.npz
+  # 原始采样间隔；15 分钟对应每天 96 个时间步。
+  sampling_interval_minutes: 15
+  # 正式协议锁定为严格时间顺序的 80/10/10：约 292 天训练、36.5 天验证、
+  # 36.5 天最终测试。禁止随机打乱，否则会产生未来信息泄漏。
+  train_ratio: 0.80
+  # 验证集占全部时间点的比例；剩余 10% 只在锁定超参数后作最终测试。
+  val_ratio: 0.10
+  # 输入历史窗口长度：96 个 15 分钟点，即回看 24 小时。
+  history: 96
+  # 多步预测长度：12 个 15 分钟点，即预测未来 3 小时。
+  horizon: 12
+  # 使用官方 Line + Transformer 物理拓扑；不再使用欧氏 MST 补边。
+  graph: raw
+  # 在273节点官方全图上允许结构节点作为最短路径中继。
+  hop_radius: 2
+
+model:
+  # 主模型名称；集中式和联邦主实验均使用 PA-STFed。
+  architecture: pa_stfed
+  # 隐藏维度；必须能被 spatial_heads 与 transformer_heads 整除。
+  hidden_dim: 64
+  # 静态功能图节点嵌入维度，控制客户端个性化关系矩阵容量。
+  functional_dim: 16
+  # 物理边感知 GAT 的注意力头数；64/4=16 为每头维度。
+  spatial_heads: 4
+  # 时间 Transformer 编码器层数；层数越大表达力越强，但显存和过拟合风险也越高。
+  transformer_layers: 2
+  # Transformer 多头数；必须整除 hidden_dim。
+  transformer_heads: 4
+  # Dropout 概率，用于抑制 SmartDS 小子图上的过拟合。
+  dropout: 0.10
+  # Charbonnier 稳健损失的尺度参数 κ，控制小残差区与大残差区的分界。
+  robust_kappa: 0.5
+  # 四个开关由消融实验覆盖；主模型全部开启。
+  use_physical: true
+  use_functional: true
+  use_spatial_gate: true
+  use_temporal_gate: true
+  # 残差锚定消融默认关闭；开启后以最后观测负荷为多步基线，网络学习修正量。
+  use_residual_anchor: false
+
+baselines:
+  # LSTM 负荷预测基线使用两层编码器；输入为负荷和相对周期特征。
+  lstm_layers: 2
+  # iTransformer 在节点×特征变量 token 上使用两层、四头编码器。
+  itransformer_layers: 2
+  itransformer_heads: 4
+  # AGCRN 常用节点嵌入维度 10、Chebyshev 阶数 2。
+  # AGCRN 节点嵌入维度；控制自适应图的节点表示容量。
+  agcrn_embedding_dim: 10
+  # AGCRN Chebyshev 图卷积阶数；2 表示使用局部低阶传播。
+  agcrn_cheb_order: 2
+  # 四层扩张率 1/2/4/8，对 96 点历史形成 16 点局部时间感受野。
+  # Graph WaveNet 节点嵌入维度；用于生成自适应邻接关系。
+  gwnet_embedding_dim: 10
+  # Graph WaveNet 时空扩张层数；4 层对应 1、2、4、8 的时间扩张率。
+  gwnet_layers: 4
+
+training:
+  # 4090 上 32 会产生大量小 kernel；128 可在当前节点规模下提高吞吐，
+  # 如显存不足可退回 64。正式比较时所有模型必须保持一致。
+  # 通用 batch 默认值；正式训练优先读取下面三个任务专用 batch。
+  batch_size: 128
+  # 集中式空间注意力张量随节点数平方增长，因此使用较安全的 batch=16；
+  # 联邦客户端只有 10--13 个有效节点，使用 batch=512 提高 GPU 利用率。
+  centralized_batch_size: 16
+  # 联邦客户端节点少，增大 batch 可减少 GPU 空闲时间。
+  federated_batch_size: 512
+  # 验证/测试 batch 只影响推理吞吐，不改变模型梯度。
+  eval_batch_size: 64
+  # 训练 DataLoader worker 数；特征已预缓存，2 个 worker 足够。
+  num_workers: 2
+  # 验证/测试不保留 worker，避免 8 个客户端生成大量空闲进程。
+  eval_num_workers: 0
+  # 使用页锁定内存，配合 non_blocking=True 加速 CPU 到 GPU 的拷贝。
+  pin_memory: true
+  # 训练 worker 在不同 epoch 间复用，避免反复创建进程。
+  persistent_workers: true
+  # 每个 worker 预取的 batch 数；过大将增加 CPU 内存占用。
+  prefetch_factor: 2
+  # CUDA 上启用自动混合精度；CPU 或无 CUDA 时自动关闭。
+  amp: true
+  # 优先使用 BF16；不支持 BF16 的 GPU 会在代码中自动回退到 FP16。
+  amp_dtype: bf16
+  # 集中式最大 epoch；满足 patience 后提前停止并恢复最佳 epoch。
+  epochs: 30
+  # 验证主指标连续 7 个 epoch 未改善就停止；具体任务可在实验清单中覆盖。
+  patience: 7
+  # 以验证 WAPE 选择 checkpoint；所有正式模型必须使用相同口径。
+  selection_metric: wape
+  # WAPE 至少下降 0.01 个百分点才算改善，用于过滤浮点噪声。
+  early_stop_min_delta: 0.01
+  # AdamW 初始学习率；正式对比实验保持一致。
+  learning_rate: 0.002
+  # AdamW 权重衰减系数，用于抑制过拟合。
+  weight_decay: 0.0001
+  # 优化器梯度裁剪，不等同于 DP 客户端更新裁剪阈值 C。
+  grad_clip_norm: 5.0
+  # 验证指标进入平台期后将学习率减半，缓解固定学习率后期震荡。
+  scheduler:
+    name: reduce_on_plateau
+    factor: 0.5
+    patience: 2
+    min_lr: 0.00001
+  # 最佳 checkpoint 只在固定训练子集上额外计算一次指标，用于审计过拟合。
+  max_train_diagnostic_windows: 2048
+  # 配对区块 Bootstrap 的时间块长度（窗口数）；96 个窗口约对应一天，
+  # 仅在最终结果分析时使用，不参与模型选择。
+  bootstrap_block_windows: 96
+  # 锁参和模型比较阶段只访问验证集；最终测试由独立任务显式覆盖为 true。
+  evaluate_test: false
+
+federated:
+  # 联邦客户端数量；92 个有效节点按空间顺序划分为 8 个客户端，并保证
+  # 完全相同的负荷曲线组不跨客户端，避免人为削弱客户端异构性。
+  clients: 8
+  # 每轮完整遍历一次本地训练窗口；最大 20 轮并使用相同的早停阈值。
+  rounds: 20
+  # 每轮每个客户端完整遍历本地训练集的次数；1 可控制 Non-IID 客户端漂移。
+  local_epochs: 1
+  # 联邦验证宏平均 RMSE 连续 5 轮未改善则提前停止。
+  patience: 5
+  # 聚合算法；mu=0 时等价于 FedAvg，mu>0 时加入 FedProx 近端约束。
+  algorithm: FedProx
+  # mu=0 时为 FedAvg；正式 FedProx 实验在 experiments.yaml 中指定 mu。
+  # FedProx 近端系数 μ；正式对照由 experiments.yaml 覆盖。
+  mu: 0.005
+  # DP 客户端级机制要求等权均值。
+  uniform_mean: true
+  # 主 FedAvg/FedProx 实验将预测头纳入服务器聚合；仅个性化联邦消融设为 true。
+  personalized_head: false
+
+privacy:
+  # 主实验关闭 DP；DP 对照在 experiments.yaml 中显式开启。
+  enabled: false
+  # 客户端共享更新的 L2 裁剪阈值 C；仅 enabled=true 时生效。
+  clip_norm: 1.0
+  # 高斯噪声倍率 σ；均值聚合后的噪声标准差为 σC/客户端数。
+  noise_multiplier: 3.2
+  # (ε,δ)-DP 中的 δ，必须与报告和 RDP Accountant 保持一致。
+  delta: 0.00001
+  # 当前 R=20、sigma=3.2 时计划 epsilon 约为 7.74。
+  max_epsilon: 10.0
