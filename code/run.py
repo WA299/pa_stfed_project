@@ -2231,6 +2231,83 @@ def load_result_brief(path: Path) -> dict | None:
     return result_brief(payload)
 
 
+def collect_existing_formal_items() -> list[dict]:
+    """收集已有正式结果，按 ``(experiment, seed)`` 去重。
+
+    ``run_all`` 可能被分批调用。旧实现每次从空列表开始写 manifest，导致后
+    一批实验覆盖前一批记录。这里同时读取旧 manifest 和结果目录；结果文件
+    是最终事实来源，可补回 manifest 中因中断或旧版本逻辑遗漏的完成项。
+    """
+
+    by_key: dict[tuple[str, int], dict] = {}
+    manifest_path = OUTPUTS / "all_manifest.json"
+    if manifest_path.exists():
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            payload = {}
+        for item in payload.get("items", []) if isinstance(payload, dict) else []:
+            if not isinstance(item, dict):
+                continue
+            if item.get("status") not in {"completed", "skipped_existing"}:
+                continue
+            try:
+                key = (str(item["experiment"]), int(item["seed"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+            brief = item.get("result")
+            if brief is None:
+                brief = load_result_brief(Path(str(item.get("result_path", ""))))
+            if brief is None:
+                continue
+            normalized = dict(item)
+            normalized["result"] = brief
+            by_key[key] = normalized
+
+    mode_to_task = {
+        "centralized": "centralized",
+        "federated": "federated",
+        "baseline": "baselines",
+    }
+    suffix_by_task = {
+        "centralized": "_centralized_result.json",
+        "federated": "_federated_result.json",
+        "baselines": "_baseline_result.json",
+    }
+    for path in sorted(OUTPUTS.glob("*_result.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        mode = str(payload.get("mode", ""))
+        task = mode_to_task.get(mode)
+        if task is None or payload.get("experiment_name") is None:
+            continue
+        try:
+            key = (str(payload["experiment_name"]), int(payload["seed"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        # 已有 manifest 项优先；结果目录只负责补齐缺失的正式记录。
+        if key in by_key:
+            continue
+        brief = result_brief(payload)
+        suffix = suffix_by_task[task]
+        tag = path.name[:-len(suffix)] if path.name.endswith(suffix) else path.stem
+        by_key[key] = {
+            "experiment": key[0],
+            "seed": key[1],
+            "task": task,
+            "tag": tag,
+            "result_path": str(path),
+            "status": "completed",
+            "result": brief,
+        }
+
+    return [by_key[key] for key in sorted(by_key)]
+
+
 def summarize_all_items(items: list[dict]) -> dict:
     """将 all_manifest 中的成功结果按实验名汇总为均值、标准差和样本数。"""
 
@@ -2367,19 +2444,42 @@ def run_all(
     # include_in_all 只控制默认是否加入矩阵，不再代表“调参模式”。
     # 显式指定的任意实验都统一写入正式 manifest，避免旧调参逻辑串入结果汇总。
     manifest_path = OUTPUTS / "all_manifest.json"
+    existing_items = collect_existing_formal_items()
+    existing_experiments = {str(item["experiment"]) for item in existing_items}
+    existing_seeds = {int(item["seed"]) for item in existing_items}
+    all_experiment_names = sorted(existing_experiments | set(names))
+    merged_seed_counts: dict[str, int] = {}
+    for experiment_name in all_experiment_names:
+        merged_seeds = {
+            int(item["seed"])
+            for item in existing_items
+            if str(item.get("experiment")) == experiment_name
+        }
+        if experiment_name in names:
+            merged_seeds.update(selected_job_seeds(experiment_name))
+        merged_seed_counts[experiment_name] = len(merged_seeds)
     manifest = {
         "run_kind": "formal",
         "status": "dry_run" if dry_run else "running",
-        "seeds": seeds,
-        "experiments": names,
-        "seed_count_by_experiment": {
-            name: len(selected_job_seeds(name)) for name in names
-        },
+        # manifest 是增量账本：保留旧实验，并将本次请求的配置并入元数据。
+        "seeds": sorted(existing_seeds | {int(seed) for seed in seeds}),
+        "experiments": all_experiment_names,
+        "seed_count_by_experiment": merged_seed_counts,
         "resume": resume,
         "skip_dp": skip_dp,
         "dry_run": dry_run,
-        "items": [],
+        "items": existing_items,
     }
+
+    def upsert_item(item: dict) -> None:
+        """按 experiment+seed 更新一条记录，避免分批运行产生重复项。"""
+
+        key = (str(item["experiment"]), int(item["seed"]))
+        for index, previous in enumerate(manifest["items"]):
+            if (str(previous.get("experiment")), int(previous.get("seed", -1))) == key:
+                manifest["items"][index] = item
+                return
+        manifest["items"].append(item)
 
     def save_manifest() -> None:
         manifest_path.write_text(
@@ -2393,7 +2493,7 @@ def run_all(
             for seed in job_seeds:
                 cfg, task = experiment_config(base_cfg, name, int(seed))
                 print(json.dumps(config_brief(cfg, task, name), ensure_ascii=False, indent=2))
-                manifest["items"].append({
+                upsert_item({
                     "experiment": name,
                     "seed": int(seed),
                     "task": task,
@@ -2401,6 +2501,14 @@ def run_all(
                     "status": "dry_run",
                     "result_path": str(expected_result_path(cfg, task)),
                 })
+        save_manifest()
+        summary_path = OUTPUTS / "all_summary.json"
+        summary_path.write_text(
+            json.dumps(summarize_all_items(manifest["items"]), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        manifest["summary_path"] = str(summary_path)
+        manifest["failed_count"] = 0
         save_manifest()
         print(f"[PA-STFed][ALL] dry-run complete; manifest={manifest_path}")
         return manifest
@@ -2427,7 +2535,8 @@ def run_all(
 
             if resume and result_file_is_valid(result_path, config_signature(cfg)):
                 item["status"] = "skipped_existing"
-                manifest["items"].append(item)
+                item["result"] = load_result_brief(result_path)
+                upsert_item(item)
                 save_manifest()
                 print(f"[PA-STFed][ALL] skip existing {name} seed={seed}")
                 continue
@@ -2444,7 +2553,7 @@ def run_all(
                 item["error"] = repr(exc)
                 item["traceback"] = traceback.format_exc()
                 print(f"[PA-STFed][ALL] failed {name} seed={seed}: {exc}")
-            manifest["items"].append(item)
+            upsert_item(item)
             save_manifest()
             gc.collect()
             if torch.cuda.is_available():

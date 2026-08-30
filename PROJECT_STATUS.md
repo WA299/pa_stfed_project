@@ -1,6 +1,6 @@
 # Current Stage
 
-Stage 2B centralized validation seeds 2026/2027/2028 completed.
+Stage 3 federated validation prepared; dry-run passed, no federated training started.
 
 # Data Status
 
@@ -8,17 +8,17 @@ Stage 0 已冻结 topology-based 8-client partition 与全局 symmetric topology
 
 # Model Status
 
-PA-STFed、LSTM、iTransformer、AGCRN、Graph WaveNet、Physical-only、Functional-only 的三随机种子 centralized validation 已完成；未运行 federated 与 test。
+PA-STFed、LSTM、iTransformer、AGCRN、Graph WaveNet、Physical-only、Functional-only 的三随机种子 centralized validation 已完成。Stage 3 的 LocalOnly/FedAvg/FedProx/Personalized 配置 dry-run 已通过；尚未运行 federated 与 test。
 
 # Current Blocker
 
-当前无实现阻塞。Stage 2B 结果为 validation-only，尚不能替代最终 test 结果。
+当前无实现阻塞。centralized 结果为 validation-only；联邦正式训练尚未开始。
 
 # Next Steps
 
-1. 汇总三 seed validation 的均值、标准差与模型对比。
-2. 审核后决定是否进入 federated validation（不改变已冻结拓扑）。
-3. 通过审计后再规划 test 阶段。
+1. 审核 Stage 2B 三 seed validation 汇总。
+2. 确认后运行 Stage 3 联邦 validation（不改变已冻结拓扑）。
+3. 联邦结果审计通过后再规划 test 阶段。
 
 # Latest Commit
 

@@ -134,14 +134,15 @@ training:
   evaluate_test: false
 
 federated:
-  # 联邦客户端数量；92 个有效节点按空间顺序划分为 8 个客户端，并保证
-  # 完全相同的负荷曲线组不跨客户端，避免人为削弱客户端异构性。
+  # 联邦客户端数量；92 个目标节点按官方 Line+Transformer 树拓扑切分为
+  # 8 个连续区域。该 partition 只使用官方拓扑和目标节点位置，不读取负荷数值，
+  # 也不强制 duplicate load-curve groups 位于同一客户端。
   clients: 8
   # 每轮完整遍历一次本地训练窗口；最大 20 轮并使用相同的早停阈值。
   rounds: 20
   # 每轮每个客户端完整遍历本地训练集的次数；1 可控制 Non-IID 客户端漂移。
   local_epochs: 1
-  # 联邦验证宏平均 RMSE 连续 5 轮未改善则提前停止。
+  # 联邦验证宏平均 WAPE 连续 5 轮未改善则提前停止。
   patience: 5
   # 聚合算法；mu=0 时等价于 FedAvg，mu>0 时加入 FedProx 近端约束。
   algorithm: FedProx
