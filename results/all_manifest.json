@@ -1,0 +1,283 @@
+{
+  "run_kind": "formal",
+  "status": "completed",
+  "seeds": [
+    2026
+  ],
+  "experiments": [
+    "baseline",
+    "centralized",
+    "load_lstm_validation",
+    "itransformer_validation",
+    "agcrn",
+    "gwnet",
+    "spatial_physical_only",
+    "spatial_functional_only"
+  ],
+  "seed_count_by_experiment": {
+    "baseline": 1,
+    "centralized": 1,
+    "load_lstm_validation": 1,
+    "itransformer_validation": 1,
+    "agcrn": 1,
+    "gwnet": 1,
+    "spatial_physical_only": 1,
+    "spatial_functional_only": 1
+  },
+  "resume": false,
+  "skip_dp": false,
+  "dry_run": false,
+  "items": [
+    {
+      "experiment": "baseline",
+      "seed": 2026,
+      "task": "baselines",
+      "tag": "baseline_grouped_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\baseline_grouped_seed2026_baseline_result.json",
+      "status": "completed",
+      "result": {
+        "centralized": {
+          "persistence": {
+            "mae": 0.4805693030357361,
+            "rmse": 0.9912992119789124,
+            "wape": 40.981754302978516,
+            "smape": 35.6702880859375,
+            "mape": 53.10832977294922,
+            "mape_valid_ratio": 1.0
+          },
+          "daily_naive": {
+            "mae": 0.5635517239570618,
+            "rmse": 1.093593716621399,
+            "wape": 48.05828857421875,
+            "smape": 39.60308837890625,
+            "mape": 59.950958251953125,
+            "mape_valid_ratio": 1.0
+          }
+        },
+        "federated_macro": {
+          "persistence": {
+            "mae": 0.47459032759070396,
+            "rmse": 0.9581205174326897,
+            "wape": 41.11890244483948,
+            "smape": 35.59163761138916,
+            "mape": 53.162109375,
+            "mape_valid_ratio": 1.0
+          },
+          "daily_naive": {
+            "mae": 0.5558183044195175,
+            "rmse": 1.0620280131697655,
+            "wape": 48.16601252555847,
+            "smape": 39.46851563453674,
+            "mape": 59.92104530334473,
+            "mape_valid_ratio": 1.0
+          }
+        }
+      }
+    },
+    {
+      "experiment": "centralized",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "centralized_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\centralized_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3444482088088989,
+          "rmse": 0.714534342288971,
+          "wape": 29.373685836791992,
+          "smape": 28.94763946533203,
+          "mape": 33.14823532104492,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.328492134809494,
+          "rmse": 0.717915415763855,
+          "wape": 21.291515350341797,
+          "smape": 22.128843307495117,
+          "mape": 23.689023971557617,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "load_lstm_validation",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "load_lstm_validation_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\load_lstm_validation_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3560527563095093,
+          "rmse": 0.7417169213294983,
+          "wape": 30.363292694091797,
+          "smape": 30.358606338500977,
+          "mape": 34.2152099609375,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3382202982902527,
+          "rmse": 0.7398855090141296,
+          "wape": 21.922056198120117,
+          "smape": 23.17020034790039,
+          "mape": 24.86726188659668,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 15,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "itransformer_validation",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "itransformer_validation_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\itransformer_validation_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3513806164264679,
+          "rmse": 0.7299190163612366,
+          "wape": 29.964862823486328,
+          "smape": 29.598709106445312,
+          "mape": 33.49445724487305,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3337584435939789,
+          "rmse": 0.7293762564659119,
+          "wape": 21.632858276367188,
+          "smape": 22.69606590270996,
+          "mape": 24.373140335083008,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 20,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "agcrn",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "agcrn_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\agcrn_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3460615277290344,
+          "rmse": 0.7091513872146606,
+          "wape": 29.51126480102539,
+          "smape": 30.005163192749023,
+          "mape": 34.085880279541016,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32001543045043945,
+          "rmse": 0.7100234031677246,
+          "wape": 20.742090225219727,
+          "smape": 22.241228103637695,
+          "mape": 23.694198608398438,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 5,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "gwnet",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "gwnet_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\gwnet_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.34012991189956665,
+          "rmse": 0.713005781173706,
+          "wape": 29.005434036254883,
+          "smape": 28.474411010742188,
+          "mape": 32.04159164428711,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.31284299492836,
+          "rmse": 0.7053324580192566,
+          "wape": 20.277202606201172,
+          "smape": 21.09901237487793,
+          "mape": 21.84127426147461,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 22,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "spatial_physical_only",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "spatial_physical_only_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\spatial_physical_only_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3573618531227112,
+          "rmse": 0.7398973703384399,
+          "wape": 30.47492790222168,
+          "smape": 30.01479148864746,
+          "mape": 34.57747268676758,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3476274311542511,
+          "rmse": 0.7509008646011353,
+          "wape": 22.53178596496582,
+          "smape": 23.728403091430664,
+          "mape": 25.79573631286621,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 4,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "spatial_functional_only",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "spatial_functional_only_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\spatial_functional_only_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.35170066356658936,
+          "rmse": 0.7322019934654236,
+          "wape": 29.992156982421875,
+          "smape": 29.63343048095703,
+          "mape": 33.734718322753906,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3284991979598999,
+          "rmse": 0.7231557965278625,
+          "wape": 21.291975021362305,
+          "smape": 22.29142951965332,
+          "mape": 23.653675079345703,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 24,
+        "selection_metric": "wape"
+      }
+    }
+  ],
+  "failed_count": 0,
+  "summary_path": "E:\\pa_stfed_project\\results\\all_summary.json"
+}

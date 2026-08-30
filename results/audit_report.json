@@ -1,0 +1,944 @@
+{
+  "code_revision": "20260830_frozen_topology_knn_stage1",
+  "config_signature": "7881931a4fe7190bc4789887deed5cfebd3d7426db746d1c77af01ce973f9d7a",
+  "audit_timestamp_utc": "2026-08-29T18:19:12.214814+00:00",
+  "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
+  "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
+  "fields": {
+    "node_coords": [
+      273,
+      2
+    ],
+    "adj": [
+      273,
+      273
+    ],
+    "edge_index": [
+      2,
+      544
+    ],
+    "load_ts": [
+      35040,
+      273
+    ],
+    "node_ids": [
+      273
+    ]
+  },
+  "active_load_nodes": 92,
+  "zero_only_nodes": 181,
+  "training_active_load_nodes": 92,
+  "active_mask_stable_across_full_series": true,
+  "raw_components": 1,
+  "raw_undirected_edges": 272,
+  "legacy_imputed_bridge_edges": 0,
+  "legacy_imputed_undirected_edges": 272,
+  "active_induced_components": 92,
+  "active_induced_undirected_edges": 0,
+  "projected_raw_components": 1,
+  "projected_raw_undirected_edges": 4186,
+  "corrected_mst_bridge_edges": 0,
+  "corrected_mst_undirected_edges": 4186,
+  "topology_comparison": [
+    {
+      "graph": "raw_full",
+      "nodes": 273,
+      "undirected_edges": 272,
+      "components": 1,
+      "inferred_edges": 0,
+      "note": "原始273节点图；包含零负荷节点"
+    },
+    {
+      "graph": "active_induced",
+      "nodes": 92,
+      "undirected_edges": 0,
+      "components": 92,
+      "inferred_edges": 0,
+      "note": "删除零负荷节点后的诱导子图，仅用于诊断，不作为正式图"
+    },
+    {
+      "graph": "projected_raw",
+      "nodes": 92,
+      "undirected_edges": 4186,
+      "components": 1,
+      "inferred_edges": 0,
+      "note": "零负荷节点中继投影后的原始拓扑图；投影可能形成环，不预设为森林"
+    },
+    {
+      "graph": "legacy_inf",
+      "nodes": 273,
+      "undirected_edges": 272,
+      "components": 1,
+      "inferred_edges": 0,
+      "note": "历史全节点MST；桥接端点可能为零负荷节点"
+    },
+    {
+      "graph": "mst_projected",
+      "nodes": 92,
+      "undirected_edges": 4186,
+      "components": 1,
+      "inferred_edges": 0,
+      "note": "零负荷中继投影图后仅在有效节点之间执行MST"
+    }
+  ],
+  "hop_distance_summary": {
+    "G_raw_active_pairs": {
+      "pairs_total": 4186,
+      "connected_pairs": 4186,
+      "unreachable_pairs": 0,
+      "coverage": 1.0,
+      "min": 2,
+      "median": 26.0,
+      "p90": 51.0,
+      "p95": 56.0,
+      "max": 66,
+      "histogram": {
+        "2": 16,
+        "3": 18,
+        "4": 19,
+        "5": 36,
+        "6": 74,
+        "7": 105,
+        "8": 90,
+        "9": 107,
+        "10": 134,
+        "11": 153,
+        "12": 107,
+        "13": 87,
+        "14": 83,
+        "15": 99,
+        "16": 95,
+        "17": 95,
+        "18": 100,
+        "19": 94,
+        "20": 92,
+        "21": 114,
+        "22": 78,
+        "23": 66,
+        "24": 85,
+        "25": 73,
+        "26": 86,
+        "27": 92,
+        "28": 77,
+        "29": 73,
+        "30": 109,
+        "31": 94,
+        "32": 90,
+        "33": 100,
+        "34": 106,
+        "35": 81,
+        "36": 78,
+        "37": 101,
+        "38": 47,
+        "39": 55,
+        "40": 59,
+        "41": 66,
+        "42": 63,
+        "43": 56,
+        "44": 55,
+        "45": 54,
+        "46": 36,
+        "47": 48,
+        "48": 33,
+        "49": 25,
+        "50": 32,
+        "51": 45,
+        "52": 55,
+        "53": 35,
+        "54": 44,
+        "55": 34,
+        "56": 60,
+        "57": 56,
+        "58": 34,
+        "59": 26,
+        "60": 19,
+        "61": 16,
+        "62": 11,
+        "63": 2,
+        "64": 3,
+        "65": 9,
+        "66": 1
+      }
+    },
+    "G_legacy_inf_active_pairs": {
+      "pairs_total": 4186,
+      "connected_pairs": 4186,
+      "unreachable_pairs": 0,
+      "coverage": 1.0,
+      "min": 2,
+      "median": 26.0,
+      "p90": 51.0,
+      "p95": 56.0,
+      "max": 66,
+      "histogram": {
+        "2": 16,
+        "3": 18,
+        "4": 19,
+        "5": 36,
+        "6": 74,
+        "7": 105,
+        "8": 90,
+        "9": 107,
+        "10": 134,
+        "11": 153,
+        "12": 107,
+        "13": 87,
+        "14": 83,
+        "15": 99,
+        "16": 95,
+        "17": 95,
+        "18": 100,
+        "19": 94,
+        "20": 92,
+        "21": 114,
+        "22": 78,
+        "23": 66,
+        "24": 85,
+        "25": 73,
+        "26": 86,
+        "27": 92,
+        "28": 77,
+        "29": 73,
+        "30": 109,
+        "31": 94,
+        "32": 90,
+        "33": 100,
+        "34": 106,
+        "35": 81,
+        "36": 78,
+        "37": 101,
+        "38": 47,
+        "39": 55,
+        "40": 59,
+        "41": 66,
+        "42": 63,
+        "43": 56,
+        "44": 55,
+        "45": 54,
+        "46": 36,
+        "47": 48,
+        "48": 33,
+        "49": 25,
+        "50": 32,
+        "51": 45,
+        "52": 55,
+        "53": 35,
+        "54": 44,
+        "55": 34,
+        "56": 60,
+        "57": 56,
+        "58": 34,
+        "59": 26,
+        "60": 19,
+        "61": 16,
+        "62": 11,
+        "63": 2,
+        "64": 3,
+        "65": 9,
+        "66": 1
+      }
+    },
+    "G_projected_raw_active_pairs": {
+      "pairs_total": 4186,
+      "connected_pairs": 4186,
+      "unreachable_pairs": 0,
+      "coverage": 1.0,
+      "min": 1,
+      "median": 1.0,
+      "p90": 1.0,
+      "p95": 1.0,
+      "max": 1,
+      "histogram": {
+        "1": 4186
+      }
+    },
+    "G_mst_projected_active_pairs": {
+      "pairs_total": 4186,
+      "connected_pairs": 4186,
+      "unreachable_pairs": 0,
+      "coverage": 1.0,
+      "min": 1,
+      "median": 1.0,
+      "p90": 1.0,
+      "p95": 1.0,
+      "max": 1,
+      "histogram": {
+        "1": 4186
+      }
+    }
+  },
+  "federated_parameter_audit": {
+    "code_locations": {
+      "prefix_definition": "model.py:17-23",
+      "state_extraction": "model.py:603-612",
+      "state_loading": "model.py:615-621",
+      "local_training": "federated.py:81-156",
+      "aggregation": "federated.py:159-219",
+      "server_loop": "run.py:1275-1650"
+    },
+    "shared_fedavg_fedprox": [
+      "input_projection.weight",
+      "input_projection.bias",
+      "physical.source_attention",
+      "physical.target_attention",
+      "physical.edge_attention",
+      "physical.node_projection.weight",
+      "physical.edge_projection.0.weight",
+      "physical.edge_projection.0.bias",
+      "functional.value.weight",
+      "functional.value.bias",
+      "spatial_gate.weight",
+      "spatial_gate.bias",
+      "temporal.position",
+      "temporal.encoder.layers.0.self_attn.in_proj_weight",
+      "temporal.encoder.layers.0.self_attn.in_proj_bias",
+      "temporal.encoder.layers.0.self_attn.out_proj.weight",
+      "temporal.encoder.layers.0.self_attn.out_proj.bias",
+      "temporal.encoder.layers.0.linear1.weight",
+      "temporal.encoder.layers.0.linear1.bias",
+      "temporal.encoder.layers.0.linear2.weight",
+      "temporal.encoder.layers.0.linear2.bias",
+      "temporal.encoder.layers.0.norm1.weight",
+      "temporal.encoder.layers.0.norm1.bias",
+      "temporal.encoder.layers.0.norm2.weight",
+      "temporal.encoder.layers.0.norm2.bias",
+      "temporal.encoder.layers.1.self_attn.in_proj_weight",
+      "temporal.encoder.layers.1.self_attn.in_proj_bias",
+      "temporal.encoder.layers.1.self_attn.out_proj.weight",
+      "temporal.encoder.layers.1.self_attn.out_proj.bias",
+      "temporal.encoder.layers.1.linear1.weight",
+      "temporal.encoder.layers.1.linear1.bias",
+      "temporal.encoder.layers.1.linear2.weight",
+      "temporal.encoder.layers.1.linear2.bias",
+      "temporal.encoder.layers.1.norm1.weight",
+      "temporal.encoder.layers.1.norm1.bias",
+      "temporal.encoder.layers.1.norm2.weight",
+      "temporal.encoder.layers.1.norm2.bias",
+      "temporal_gate.weight",
+      "temporal_gate.bias",
+      "head.0.weight",
+      "head.0.bias",
+      "head.1.weight",
+      "head.1.bias",
+      "head.4.weight",
+      "head.4.bias"
+    ],
+    "local_functional_embeddings_all_federated_modes": [
+      "functional.embedding_1",
+      "functional.embedding_2"
+    ],
+    "local_prediction_head_only_personalized": [
+      "head.0.weight",
+      "head.0.bias",
+      "head.1.weight",
+      "head.1.bias",
+      "head.4.weight",
+      "head.4.bias"
+    ],
+    "shared_personalized_encoder_and_non_head": [
+      "input_projection.weight",
+      "input_projection.bias",
+      "physical.source_attention",
+      "physical.target_attention",
+      "physical.edge_attention",
+      "physical.node_projection.weight",
+      "physical.edge_projection.0.weight",
+      "physical.edge_projection.0.bias",
+      "functional.value.weight",
+      "functional.value.bias",
+      "spatial_gate.weight",
+      "spatial_gate.bias",
+      "temporal.position",
+      "temporal.encoder.layers.0.self_attn.in_proj_weight",
+      "temporal.encoder.layers.0.self_attn.in_proj_bias",
+      "temporal.encoder.layers.0.self_attn.out_proj.weight",
+      "temporal.encoder.layers.0.self_attn.out_proj.bias",
+      "temporal.encoder.layers.0.linear1.weight",
+      "temporal.encoder.layers.0.linear1.bias",
+      "temporal.encoder.layers.0.linear2.weight",
+      "temporal.encoder.layers.0.linear2.bias",
+      "temporal.encoder.layers.0.norm1.weight",
+      "temporal.encoder.layers.0.norm1.bias",
+      "temporal.encoder.layers.0.norm2.weight",
+      "temporal.encoder.layers.0.norm2.bias",
+      "temporal.encoder.layers.1.self_attn.in_proj_weight",
+      "temporal.encoder.layers.1.self_attn.in_proj_bias",
+      "temporal.encoder.layers.1.self_attn.out_proj.weight",
+      "temporal.encoder.layers.1.self_attn.out_proj.bias",
+      "temporal.encoder.layers.1.linear1.weight",
+      "temporal.encoder.layers.1.linear1.bias",
+      "temporal.encoder.layers.1.linear2.weight",
+      "temporal.encoder.layers.1.linear2.bias",
+      "temporal.encoder.layers.1.norm1.weight",
+      "temporal.encoder.layers.1.norm1.bias",
+      "temporal.encoder.layers.1.norm2.weight",
+      "temporal.encoder.layers.1.norm2.bias",
+      "temporal_gate.weight",
+      "temporal_gate.bias"
+    ],
+    "counts": {
+      "state_entries_total": 47,
+      "shared_fedavg_fedprox": 45,
+      "local_functional_embeddings": 2,
+      "local_head_personalized": 6,
+      "shared_personalized": 39
+    },
+    "non_parameter_local_objects": [
+      "client graph adjacency and edge_features",
+      "client node index partition",
+      "raw load windows and normalization statistics"
+    ],
+    "interpretation": "FedAvg/FedProx 聚合共享编码器、物理图层、功能图 value、门控、Transformer 和默认预测头；功能图节点嵌入因客户端节点数不同始终本地保留；personalized_head=true 时额外把 head.* 保留在客户端。"
+  },
+  "federated_parameter_groups_csv": "E:\\pa_stfed_project\\results\\federated_parameter_groups.csv",
+  "legacy_bridge_endpoint_types": {
+    "active_active": 0,
+    "active_zero": 0,
+    "zero_zero": 0
+  },
+  "topology_origin_interpretation": {
+    "raw_graph_is_forest": true,
+    "zero_only_raw_components": 0,
+    "raw_components_with_active_load": 1,
+    "statement": "57个断连分量存在于273节点原始邻接图；删除181个零负荷节点后，有效节点诱导子图退化为92个孤立点。投影零负荷中继后保留56个含负荷分量，因此MST应增加55条有效节点候选桥接边，而非历史方案的56条全节点桥接边。"
+  },
+  "unique_nonzero_curves": 61,
+  "largest_duplicate_group": 6,
+  "split_bounds": {
+    "train_end": 28032,
+    "val_end": 31536,
+    "total": 35040
+  },
+  "split_protocol": "strict chronological holdout without random shuffling",
+  "split_ratios": {
+    "train": 0.8,
+    "validation": 0.1,
+    "test": 0.09999999999999995
+  },
+  "split_load_statistics": {
+    "train": {
+      "time_steps": 28032,
+      "days": 292.0,
+      "mean": 1.548491358757019,
+      "median": 1.1456212997436523,
+      "std": 1.4861036539077759,
+      "p01": 0.048926014453172684,
+      "p99": 7.009035110473633
+    },
+    "validation": {
+      "time_steps": 3504,
+      "days": 36.5,
+      "mean": 1.17164945602417,
+      "median": 0.7471628785133362,
+      "std": 1.2097221612930298,
+      "p01": 0.043946944177150726,
+      "p99": 5.933431625366211
+    },
+    "test": {
+      "time_steps": 3504,
+      "days": 36.5,
+      "mean": 1.330751657485962,
+      "median": 0.8858875036239624,
+      "std": 1.3427683115005493,
+      "p01": 0.0417543463408947,
+      "p99": 6.2115678787231445
+    }
+  },
+  "client_node_counts": [
+    15,
+    12,
+    9,
+    10,
+    11,
+    12,
+    11,
+    12
+  ],
+  "client_partition_protocol": "spatially ordered contiguous segments with duplicate load-curve groups treated as indivisible units; dynamic-programming load balancing",
+  "duplicate_curve_groups_crossing_clients": [
+    {
+      "nodes": [
+        139,
+        154
+      ],
+      "clients": [
+        1,
+        6
+      ]
+    },
+    {
+      "nodes": [
+        147,
+        187,
+        215
+      ],
+      "clients": [
+        1,
+        4,
+        7
+      ]
+    },
+    {
+      "nodes": [
+        150,
+        213
+      ],
+      "clients": [
+        3,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        152,
+        170
+      ],
+      "clients": [
+        1,
+        2
+      ]
+    },
+    {
+      "nodes": [
+        153,
+        176,
+        194,
+        204
+      ],
+      "clients": [
+        0,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        155,
+        177,
+        218
+      ],
+      "clients": [
+        0,
+        1,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        156,
+        210
+      ],
+      "clients": [
+        1,
+        6
+      ]
+    },
+    {
+      "nodes": [
+        157,
+        160,
+        169,
+        191
+      ],
+      "clients": [
+        2,
+        3,
+        7
+      ]
+    },
+    {
+      "nodes": [
+        161,
+        171
+      ],
+      "clients": [
+        4,
+        6
+      ]
+    },
+    {
+      "nodes": [
+        164,
+        212
+      ],
+      "clients": [
+        4,
+        6
+      ]
+    },
+    {
+      "nodes": [
+        165,
+        183,
+        216,
+        226
+      ],
+      "clients": [
+        0,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "nodes": [
+        166,
+        206
+      ],
+      "clients": [
+        3,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        172,
+        182
+      ],
+      "clients": [
+        0,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        173,
+        180,
+        203
+      ],
+      "clients": [
+        4,
+        7
+      ]
+    },
+    {
+      "nodes": [
+        174,
+        185,
+        198,
+        202,
+        205,
+        225
+      ],
+      "clients": [
+        1,
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "nodes": [
+        189,
+        196
+      ],
+      "clients": [
+        3,
+        7
+      ]
+    }
+  ],
+  "duplicate_curve_group_split_count": 16,
+  "client_load_profiles": [
+    {
+      "client": 0,
+      "node_count": 15,
+      "mean_total_load": 27.999340057373047,
+      "std_total_load": 13.560418128967285,
+      "peak_total_load": 85.31645202636719,
+      "peak_to_mean": 3.0470879077911377
+    },
+    {
+      "client": 1,
+      "node_count": 12,
+      "mean_total_load": 20.231225967407227,
+      "std_total_load": 9.312341690063477,
+      "peak_total_load": 64.7999267578125,
+      "peak_to_mean": 3.2029659748077393
+    },
+    {
+      "client": 2,
+      "node_count": 9,
+      "mean_total_load": 12.784817695617676,
+      "std_total_load": 6.935164928436279,
+      "peak_total_load": 51.254722595214844,
+      "peak_to_mean": 4.009030342102051
+    },
+    {
+      "client": 3,
+      "node_count": 10,
+      "mean_total_load": 11.96209716796875,
+      "std_total_load": 5.395561695098877,
+      "peak_total_load": 41.48694610595703,
+      "peak_to_mean": 3.4681999683380127
+    },
+    {
+      "client": 4,
+      "node_count": 11,
+      "mean_total_load": 15.398756980895996,
+      "std_total_load": 4.183104515075684,
+      "peak_total_load": 37.99925231933594,
+      "peak_to_mean": 2.4676830768585205
+    },
+    {
+      "client": 5,
+      "node_count": 12,
+      "mean_total_load": 17.670623779296875,
+      "std_total_load": 9.292671203613281,
+      "peak_total_load": 60.89598083496094,
+      "peak_to_mean": 3.4461703300476074
+    },
+    {
+      "client": 6,
+      "node_count": 11,
+      "mean_total_load": 20.01931381225586,
+      "std_total_load": 7.886759281158447,
+      "peak_total_load": 65.24606323242188,
+      "peak_to_mean": 3.259155750274658
+    },
+    {
+      "client": 7,
+      "node_count": 12,
+      "mean_total_load": 10.92487907409668,
+      "std_total_load": 5.374441623687744,
+      "peak_total_load": 35.99432373046875,
+      "peak_to_mean": 3.2947113513946533
+    }
+  ],
+  "client_mean_load_cv": 0.30866023863263237,
+  "client_non_iid_training_only": {
+    "pair_count": 28,
+    "wasserstein_approx_mean": 0.47122746489571826,
+    "wasserstein_approx_max": 1.0275670493891098,
+    "jensen_shannon_nats_mean": 0.07156353277009864,
+    "jensen_shannon_nats_max": 0.18335248622007272,
+    "pairwise": [
+      {
+        "clients": [
+          0,
+          1
+        ],
+        "quantile_wasserstein_approx": 0.23418049806685245,
+        "jensen_shannon_nats": 0.027528213091105196
+      },
+      {
+        "clients": [
+          0,
+          2
+        ],
+        "quantile_wasserstein_approx": 0.44734372557691254,
+        "jensen_shannon_nats": 0.04964928913708608
+      },
+      {
+        "clients": [
+          0,
+          3
+        ],
+        "quantile_wasserstein_approx": 0.7111004584456218,
+        "jensen_shannon_nats": 0.062036806432009275
+      },
+      {
+        "clients": [
+          0,
+          4
+        ],
+        "quantile_wasserstein_approx": 0.5627936194074414,
+        "jensen_shannon_nats": 0.1563354129554534
+      },
+      {
+        "clients": [
+          0,
+          5
+        ],
+        "quantile_wasserstein_approx": 0.4179242672874313,
+        "jensen_shannon_nats": 0.027965425184243248
+      },
+      {
+        "clients": [
+          0,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.1348410509186996,
+        "jensen_shannon_nats": 0.012408620268182392
+      },
+      {
+        "clients": [
+          0,
+          7
+        ],
+        "quantile_wasserstein_approx": 1.0275670493891098,
+        "jensen_shannon_nats": 0.12278808489929358
+      },
+      {
+        "clients": [
+          1,
+          2
+        ],
+        "quantile_wasserstein_approx": 0.23778784284890214,
+        "jensen_shannon_nats": 0.012813783454249546
+      },
+      {
+        "clients": [
+          1,
+          3
+        ],
+        "quantile_wasserstein_approx": 0.526172725350996,
+        "jensen_shannon_nats": 0.06174465400603446
+      },
+      {
+        "clients": [
+          1,
+          4
+        ],
+        "quantile_wasserstein_approx": 0.40370845141206146,
+        "jensen_shannon_nats": 0.08019552568601687
+      },
+      {
+        "clients": [
+          1,
+          5
+        ],
+        "quantile_wasserstein_approx": 0.22677757945775773,
+        "jensen_shannon_nats": 0.02177784423875212
+      },
+      {
+        "clients": [
+          1,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.3059050028867714,
+        "jensen_shannon_nats": 0.05427368826834425
+      },
+      {
+        "clients": [
+          1,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.8109320758937397,
+        "jensen_shannon_nats": 0.06841829817961692
+      },
+      {
+        "clients": [
+          2,
+          3
+        ],
+        "quantile_wasserstein_approx": 0.30738752973182143,
+        "jensen_shannon_nats": 0.034280536545703
+      },
+      {
+        "clients": [
+          2,
+          4
+        ],
+        "quantile_wasserstein_approx": 0.3612200625277947,
+        "jensen_shannon_nats": 0.08042682354319713
+      },
+      {
+        "clients": [
+          2,
+          5
+        ],
+        "quantile_wasserstein_approx": 0.11970780775300227,
+        "jensen_shannon_nats": 0.012128725097196775
+      },
+      {
+        "clients": [
+          2,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.4389311519385984,
+        "jensen_shannon_nats": 0.07734651568783449
+      },
+      {
+        "clients": [
+          2,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.5802233238121973,
+        "jensen_shannon_nats": 0.036111532085142575
+      },
+      {
+        "clients": [
+          3,
+          4
+        ],
+        "quantile_wasserstein_approx": 0.4822060956055949,
+        "jensen_shannon_nats": 0.18335248622007272
+      },
+      {
+        "clients": [
+          3,
+          5
+        ],
+        "quantile_wasserstein_approx": 0.3023612487246735,
+        "jensen_shannon_nats": 0.01641552051604486
+      },
+      {
+        "clients": [
+          3,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.6712512503870027,
+        "jensen_shannon_nats": 0.07694634976825993
+      },
+      {
+        "clients": [
+          3,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.31646659094348806,
+        "jensen_shannon_nats": 0.03760324087645586
+      },
+      {
+        "clients": [
+          4,
+          5
+        ],
+        "quantile_wasserstein_approx": 0.4254882291070564,
+        "jensen_shannon_nats": 0.13054057602714542
+      },
+      {
+        "clients": [
+          4,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.4830705073510581,
+        "jensen_shannon_nats": 0.1777839862085101
+      },
+      {
+        "clients": [
+          4,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.6511982363587108,
+        "jensen_shannon_nats": 0.1388804805271282
+      },
+      {
+        "clients": [
+          5,
+          6
+        ],
+        "quantile_wasserstein_approx": 0.4104620124646444,
+        "jensen_shannon_nats": 0.04852312835249875
+      },
+      {
+        "clients": [
+          5,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.6096427821016785,
+        "jensen_shannon_nats": 0.04622974231205146
+      },
+      {
+        "clients": [
+          6,
+          7
+        ],
+        "quantile_wasserstein_approx": 0.9877178413304908,
+        "jensen_shannon_nats": 0.14927362799513333
+      }
+    ]
+  },
+  "absolute_timestamp_available": false,
+  "weather_available": false,
+  "topology_rule": "formal: zero-load relay projection followed by component-level deterministic Kruskal MST on active endpoints; legacy all-node MST retained for comparison"
+}

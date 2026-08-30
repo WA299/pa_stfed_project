@@ -1,0 +1,329 @@
+{
+  "baseline": {
+    "task": "baselines",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "raw": [
+      {
+        "centralized": {
+          "persistence": {
+            "mae": 0.4805693030357361,
+            "rmse": 0.9912992119789124,
+            "wape": 40.981754302978516,
+            "smape": 35.6702880859375,
+            "mape": 53.10832977294922,
+            "mape_valid_ratio": 1.0
+          },
+          "daily_naive": {
+            "mae": 0.5635517239570618,
+            "rmse": 1.093593716621399,
+            "wape": 48.05828857421875,
+            "smape": 39.60308837890625,
+            "mape": 59.950958251953125,
+            "mape_valid_ratio": 1.0
+          }
+        },
+        "federated_macro": {
+          "persistence": {
+            "mae": 0.47459032759070396,
+            "rmse": 0.9581205174326897,
+            "wape": 41.11890244483948,
+            "smape": 35.59163761138916,
+            "mape": 53.162109375,
+            "mape_valid_ratio": 1.0
+          },
+          "daily_naive": {
+            "mae": 0.5558183044195175,
+            "rmse": 1.0620280131697655,
+            "wape": 48.16601252555847,
+            "smape": 39.46851563453674,
+            "mape": 59.92104530334473,
+            "mape_valid_ratio": 1.0
+          }
+        }
+      }
+    ]
+  },
+  "centralized": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3444482088088989,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.14823532104492,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.714534342288971,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.94763946533203,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.373685836791992,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "load_lstm_validation": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3560527563095093,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 34.2152099609375,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7417169213294983,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 30.358606338500977,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 30.363292694091797,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "itransformer_validation": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3513806164264679,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.49445724487305,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7299190163612366,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.598709106445312,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.964862823486328,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "agcrn": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3460615277290344,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 34.085880279541016,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7091513872146606,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 30.005163192749023,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.51126480102539,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "gwnet": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.34012991189956665,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 32.04159164428711,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.713005781173706,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.474411010742188,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.005434036254883,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "spatial_physical_only": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3573618531227112,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 34.57747268676758,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7398973703384399,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 30.01479148864746,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 30.47492790222168,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "spatial_functional_only": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.35170066356658936,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.734718322753906,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7322019934654236,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.63343048095703,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.992156982421875,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  }
+}

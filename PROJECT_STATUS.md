@@ -1,24 +1,24 @@
 # Current Stage
 
-Formal experiment stage 1: frozen topology-kNN integration smoke validation.
+Stage 2A formal validation seed-2026 completed.
 
 # Data Status
 
-Stage 0 已冻结 topology-based 8-client partition 与全局 symmetric topology-kNN（k=6）。
+Stage 0 已冻结 topology-based 8-client partition 与全局 symmetric topology-kNN（k=6）。Stage 2A 已完成 seed=2026 的集中式 validation 对照实验。
 
 # Model Status
 
-Centralized PA-STFed 2-epoch 与 FedAvg 2-round smoke 均已通过；未运行测试集，正式论文训练尚未开始。
+PA-STFed、LSTM、iTransformer、AGCRN、Graph WaveNet、Physical-only、Functional-only 的 seed=2026 validation 已完成；未运行 federated 与 test。
 
 # Current Blocker
 
-当前无实现阻塞；smoke 产物已清理，不得作为论文结果。
+当前无实现阻塞。Stage 2A 结果为 validation-only，尚不能替代多种子 test 结果。
 
 # Next Steps
 
-1. 审核正式实验矩阵与计算预算。
-2. 冻结正式运行命令和结果审计字段。
-3. 经确认后再启动正式多随机种子实验。
+1. 审核 seed=2026 validation 结果与基线差异。
+2. 决定是否进入 federated validation（不改变已冻结拓扑）。
+3. 通过审计后再规划多随机种子与 test 阶段。
 
 # Latest Commit
 

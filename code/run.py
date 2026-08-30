@@ -1359,6 +1359,12 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         if evaluate_test and test_set is not None and test_loader is not None
         else None
     )
+    global_target_adjacency, _, _, _ = data.topology_knn_graph(
+        int(cfg["data"].get("target_knn_k", 6))
+    )
+    global_target_graph_edges = int(
+        np.count_nonzero(np.triu(global_target_adjacency > 0, k=1))
+    )
 
     OUTPUTS.mkdir(exist_ok=True)
     torch.save(
@@ -1381,6 +1387,8 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         },
         "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
         "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
+        "target_knn_k": int(cfg["data"].get("target_knn_k", 6)),
+        "global_target_graph_edges": global_target_graph_edges,
         "graph_effective_nodes": int(len(graph.node_indices)),
         "graph_effective_undirected_edges": int(np.count_nonzero(np.triu(graph.adjacency > 0, k=1))),
         "graph_inferred_bridge_metadata": int(len(graph.bridge_edges)),
@@ -1836,6 +1844,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
             else 0.0
         ),
     }
+    global_target_adjacency, _, _, _ = data.topology_knn_graph(
+        int(cfg["data"].get("target_knn_k", 6))
+    )
+    global_target_graph_edges = int(
+        np.count_nonzero(np.triu(global_target_adjacency > 0, k=1))
+    )
 
     OUTPUTS.mkdir(exist_ok=True)
     torch.save(
@@ -1863,6 +1877,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "total": int(bounds.total),
         },
         "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
+        "target_knn_k": int(cfg["data"].get("target_knn_k", 6)),
+        "global_target_graph_edges": global_target_graph_edges,
         "graph_client_effective_undirected_edges": [
             int(np.count_nonzero(np.triu(graph.adjacency > 0, k=1))) for graph in graphs
         ],
