@@ -296,6 +296,38 @@ experiments:
       training: {<<: *formal_centralized_training}
       privacy: {enabled: false}
 
+  # Calendar screening：验证已冻结的 cyclic calendar 输入，不纳入默认矩阵。
+  calendar_pa_screen:
+    task: centralized
+    tag: calendar_pa_screen_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      model: {architecture: pa_stfed, input_dim: 8}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  calendar_gwnet_screen:
+    task: centralized
+    tag: calendar_gwnet_screen_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      model: {architecture: gwnet, hidden_dim: 64, input_dim: 8}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
+  calendar_lstm_screen:
+    task: centralized
+    tag: calendar_lstm_screen_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      model: {architecture: lstm, hidden_dim: 64, input_dim: 8}
+      baselines: {lstm_layers: 2}
+      training: {<<: *formal_centralized_training}
+      privacy: {enabled: false}
+
   # 每轮 8/8 客户端全参与，故 q=1；记录 C=1、sigma=3.2、delta=1e-5 和 epsilon。
   dp_fedavg:
     task: federated

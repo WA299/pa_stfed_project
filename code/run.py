@@ -2150,6 +2150,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         "federated": federated_config,
         "model": {
             "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
+            "input_dim": int(cfg["model"].get("input_dim", 8)),
             "hidden_dim": int(cfg["model"]["hidden_dim"]),
             "functional_dim": int(cfg["model"]["functional_dim"]),
             "spatial_heads": int(cfg["model"]["spatial_heads"]),
