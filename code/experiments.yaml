@@ -136,6 +136,72 @@ experiments:
       federated: {algorithm: LocalOnly, mu: 0.0, personalized_head: false}
       privacy: {enabled: false}
 
+  # Stage 3B 收敛审计：只将对应 Stage 3 配置的联邦轮数延长到 40。
+  # 不用于默认 all 矩阵，避免误启动长训练；结果标签带 r40 防止覆盖原结果。
+  local_only_r40:
+    task: federated
+    tag: local_only_r40_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training: {<<: *formal_federated_training}
+      federated:
+        algorithm: LocalOnly
+        rounds: 40
+        local_epochs: 1
+        mu: 0.0
+        personalized_head: false
+      privacy: {enabled: false}
+
+  fedavg_r40:
+    task: federated
+    tag: fedavg_r40_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training: {<<: *formal_federated_training}
+      federated:
+        algorithm: FedAvg
+        rounds: 40
+        local_epochs: 1
+        mu: 0.0
+        personalized_head: false
+      privacy: {enabled: false}
+
+  fedprox_005_r40:
+    task: federated
+    tag: fedprox005_r40_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training: {<<: *formal_federated_training}
+      federated:
+        algorithm: FedProx
+        rounds: 40
+        local_epochs: 1
+        mu: 0.005
+        personalized_head: false
+      privacy: {enabled: false}
+
+  personalized_head_r40:
+    task: federated
+    tag: personalized_head_r40_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training: {<<: *formal_federated_training}
+      federated:
+        algorithm: FedAvg
+        rounds: 40
+        local_epochs: 1
+        mu: 0.0
+        personalized_head: true
+      privacy: {enabled: false}
+
   # 固定 Stage 0 的全局 topology-kNN(k=6)，仅开关物理图和功能图分支。
   spatial_physical_only:
     task: centralized
