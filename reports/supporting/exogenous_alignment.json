@@ -1,0 +1,643 @@
+{
+  "stage": "Stage A: timestamp + temperature alignment audit",
+  "dataset": "SMART-DS v0.9 / 2018 / Full_Texas / P10R / base_timeseries",
+  "overall_status": "FAIL",
+  "strict_timestamp_to_canonical_alignment": false,
+  "no_interpolation_or_shift": true,
+  "timestamp": {
+    "point_count": 35040,
+    "expected_point_count": 35040,
+    "start": "2018-01-01T00:15:00",
+    "end": "2019-01-01T00:00:00",
+    "interval_minutes": 15,
+    "duplicate_count": 0,
+    "non_15_minute_gap_count": 0,
+    "missing_interval_count": 0,
+    "strictly_continuous": true,
+    "expected_range": true,
+    "timestamp_semantics": "15-minute interval-ending, timezone-naive as stored by SMART-DS",
+    "calendar_hashes": {
+      "hour_of_day": "b5c45cb944d29621e690c84c4ef7650a52224f056de5dc986b466f75c01e91c1",
+      "day_of_week": "8b2bd939690f0dae039839cfc986f9181432ab529209b360f93862747e7d92f9",
+      "weekend": "6134b2af302f729020af6b18c13d58d088b3451f5f0e47b8b395a11bc6271233",
+      "month": "a6b595058586625ecc946b93393a1b41b7fbb7b936ca3c547804e6b6206b80ef"
+    },
+    "pass": true
+  },
+  "profile_alignment": {
+    "profile_count": 61,
+    "all_timestamps_match": true,
+    "all_profile_values_match": false,
+    "value_match_count": 58,
+    "value_mismatch_profiles": [
+      "com_kw_37592-South-Central_pu.csv",
+      "com_kw_37875-South-Central_pu.csv",
+      "com_kw_38868-South-Central_pu.csv"
+    ],
+    "pass": false,
+    "files": [
+      {
+        "profile": "com_kw_37245-South-Central_pu.csv",
+        "parquet": "com_37245-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "6e807b1aba22d2a86dde98c5a2821b03ca5fbef60d9c44738fcd728289e1f0b9",
+        "parquet_sha256": "402e239101d9518bad11e4e8ad60457391848f22e3e2f7c9be1901ff7a6cf917"
+      },
+      {
+        "profile": "com_kw_37592-South-Central_pu.csv",
+        "parquet": "com_37592-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": false,
+        "profile_sha256": "fd3846f87c3c2c0e26deb651dafe5ddd93a1d7e3de9497fe13a338826d12f2fb",
+        "parquet_sha256": "8591193d201f08ef05c00b57e34d0c8c1d7a056e16dff0f06d4cb4fa8b1072b9"
+      },
+      {
+        "profile": "com_kw_37875-South-Central_pu.csv",
+        "parquet": "com_37875-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": false,
+        "profile_sha256": "f173d167f5e488082d455e9c1de1e597df4905c10e9803f4a598e7d35a6392a8",
+        "parquet_sha256": "988c89450394383eef2f04c6f7af80cc2867b35e3ce12712851f5416a9421e93"
+      },
+      {
+        "profile": "com_kw_38868-South-Central_pu.csv",
+        "parquet": "com_38868-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": false,
+        "profile_sha256": "1373941e6c429fb01920d47ed8827915d9732d8f072a0e974cd295e6d01b8745",
+        "parquet_sha256": "78d36c11947506899008f66d513542b32c4b8142704fcd8ac9a99c817c02c63d"
+      },
+      {
+        "profile": "res_kw_10645-South-Central_pu.csv",
+        "parquet": "res_10645-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "9730718a5a25959e176699fac3b7623b17537313b257660fc5cfb627b3cefe9b",
+        "parquet_sha256": "d79aeb81377cc9b1e27980aa1824af13af587828d952edacff3db87eec186166"
+      },
+      {
+        "profile": "res_kw_11241-South-Central_pu.csv",
+        "parquet": "res_11241-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "efbc3d500c108416bbfe9299bb00e9a1b878acb5b2763f4ced1d038229dfb4d2",
+        "parquet_sha256": "2901427370fc983580c15e9bd063a243537f2cd59d20f96cf6c6d7846510c0e0"
+      },
+      {
+        "profile": "res_kw_11396-South-Central_pu.csv",
+        "parquet": "res_11396-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "b960d8f2e2acfeed958c45ea9df258841bc92788063618b91938aaee974d593c",
+        "parquet_sha256": "52f0cdf7e1360222c864c4f44d19cd77d3c5421bef2253713426765a97360f2b"
+      },
+      {
+        "profile": "res_kw_1176-South-Central_pu.csv",
+        "parquet": "res_1176-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "66452a0178f876c427a4a87f986c7552ceaf4ffa05e21b9fad126b8743b47dac",
+        "parquet_sha256": "3d3fb50a27d2aaa04aa331ed94b58604b339301f52264607d54003e652ac4985"
+      },
+      {
+        "profile": "res_kw_11856-South-Central_pu.csv",
+        "parquet": "res_11856-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "babb011eda4b18860960222de7b9420d632c6df270bf45d0f8db1ef7adaff03e",
+        "parquet_sha256": "4bfb0fa145349905671bb1debf9938cd19eb0aeb0f2a132c91383eaa5a4b6c44"
+      },
+      {
+        "profile": "res_kw_12756-South-Central_pu.csv",
+        "parquet": "res_12756-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "e6714f47d8c0dd7ea492500193b3b10b1cd8ab05e5551039adb2863fffdea0d8",
+        "parquet_sha256": "1dd42912de4e3d13dcca241e66079a37ec9020250dfc6aad0eebc2680a2af223"
+      },
+      {
+        "profile": "res_kw_12784-South-Central_pu.csv",
+        "parquet": "res_12784-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "d40e229f469a191ef9c4da65ce2424a9686406719066165ca36a10d9bd7e7b96",
+        "parquet_sha256": "a0d51d3ed9dcfe579d01f828469ffa818e43486adc615cc59b56367c40693378"
+      },
+      {
+        "profile": "res_kw_13043-South-Central_pu.csv",
+        "parquet": "res_13043-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "94407f0a9ec419f104a45524f7ebd8032602dc6ef6eda0a70079270c3b9909b5",
+        "parquet_sha256": "a5ed187c67476f686931aabf03dc317cb72d87ae3854e5c242a7bab19d43c177"
+      },
+      {
+        "profile": "res_kw_14610-South-Central_pu.csv",
+        "parquet": "res_14610-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "de3e54bced338d36177c40e03e05ea33b98a185985a3074a80484ce83c462e09",
+        "parquet_sha256": "5a710311530f6241b749e7f4b8aeb9159dc924131cce5320a5ecf907b94661c2"
+      },
+      {
+        "profile": "res_kw_15647-South-Central_pu.csv",
+        "parquet": "res_15647-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "92aa44353dabeaed04dad44b78ac17f0bce563db44e5048676af14d09d5e3303",
+        "parquet_sha256": "be4eef13c0be5dd328f26974530ad24c4b665dd81ba14edc3f2ba40857bd85d2"
+      },
+      {
+        "profile": "res_kw_1591-South-Central_pu.csv",
+        "parquet": "res_1591-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "83d03b3425cef3f21f2095fe3e97deac2968498fda39efe819ef237d93f720c6",
+        "parquet_sha256": "e01abffc1ba162d568154085bb7a94a4c812951bb60c8cb68c8539b95ddb43ee"
+      },
+      {
+        "profile": "res_kw_16002-South-Central_pu.csv",
+        "parquet": "res_16002-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "055cb33f6939aad6953bb06426e6867a166014d194abd7cf681ef9b5b3e6c977",
+        "parquet_sha256": "d1b120b69bcce74d28852c23ac20eb5a96db342d32745c7a4726197dcdccc4c2"
+      },
+      {
+        "profile": "res_kw_16296-South-Central_pu.csv",
+        "parquet": "res_16296-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "fe996cf8618118bdae663224a35f4f195ca755c900246bd8f7f4e44cbf02003e",
+        "parquet_sha256": "a9b7f0da963d5ee4af183692ac32f30751361015e538cc81d81f9a173d6a2f46"
+      },
+      {
+        "profile": "res_kw_16966-South-Central_pu.csv",
+        "parquet": "res_16966-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "34b3dee1eefa90e830a4dd0f686fac63417f9501bf6f9c303ed2995d4f61e512",
+        "parquet_sha256": "a3044b7fd76651dd20503e24b7b1d6702c07d9003279beb27290c94a299dbe71"
+      },
+      {
+        "profile": "res_kw_17175-South-Central_pu.csv",
+        "parquet": "res_17175-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "8210f52e6b5029854da0a70d24a8cc4f890db6d9ac811f9e60b2ffa1d48c386a",
+        "parquet_sha256": "ebd21df097b250e70bef09fe7ab01d31d93120b8c5f2038acd72a0a51396ea7b"
+      },
+      {
+        "profile": "res_kw_18285-South-Central_pu.csv",
+        "parquet": "res_18285-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "f1403393b9c9eaefb51bd6507391497c6024249d13d528f2e2f03fd521aeda0b",
+        "parquet_sha256": "eca0a6c30073a3790d59e4a7a1878f807cc6c08d8d3ce801d7b1fd9d25f8d025"
+      },
+      {
+        "profile": "res_kw_19358-South-Central_pu.csv",
+        "parquet": "res_19358-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "d12b5562f595ea8e45c2323ce6cf411244b2b9ffb09de19ee4d0a18a568bd0ed",
+        "parquet_sha256": "7353cc3daab6512d07e1110fc7f201217405d7714f35aa8d70bd84e99d79ebca"
+      },
+      {
+        "profile": "res_kw_20395-South-Central_pu.csv",
+        "parquet": "res_20395-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "fafa14270a1d54eead98452b3f81bf1c6256ceb760bd38c87c72227e2018d9d3",
+        "parquet_sha256": "45e26ccf5c3f9ae4e4bbde8e65f03fac3754bcae3d97f7cee863d58724c58c18"
+      },
+      {
+        "profile": "res_kw_21326-South-Central_pu.csv",
+        "parquet": "res_21326-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "caf7dc66f3068b5857997cd0138831e3bfa7e3f88d82464b05383fc4c5876dca",
+        "parquet_sha256": "3afb282fdfd389138351fba608406322e6ea4e494a185ff9cc66153fef29183b"
+      },
+      {
+        "profile": "res_kw_22201-South-Central_pu.csv",
+        "parquet": "res_22201-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "a69b2ca08abf0b773c6af894e0559234695239f87959c0945c8ed5100e357056",
+        "parquet_sha256": "684eec624b66b569a2e0691dd3553f01f3887853c1ac74f65867721e25d4efe9"
+      },
+      {
+        "profile": "res_kw_22490-South-Central_pu.csv",
+        "parquet": "res_22490-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "39074a2cf0849d2daf8744978588becc53295d25ebfa123e79a3e75341b12663",
+        "parquet_sha256": "7a39ed0f91ec491a4ff876f6209d77439868c5d5ef2f1f8a04186cb6673b7ddd"
+      },
+      {
+        "profile": "res_kw_23115-South-Central_pu.csv",
+        "parquet": "res_23115-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "4708f5bccee41fcdd317f7456cf295b50367238f3036a1db391b074df6efad5f",
+        "parquet_sha256": "6b301a23b3cb986fcb7e77d36a48a96b75dfd9ebcf6323acc143dbe8e81b9fc7"
+      },
+      {
+        "profile": "res_kw_23787-South-Central_pu.csv",
+        "parquet": "res_23787-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "23764813df734a7f4f88378de5159ad6f60c4bffcae3b9ba58a46991060e80ec",
+        "parquet_sha256": "473e0705dbc86e1a8ae797c7c2cfd892a0aea9e6c9e9cd22e411a807e7ab53a3"
+      },
+      {
+        "profile": "res_kw_23991-South-Central_pu.csv",
+        "parquet": "res_23991-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "1391ac52ff2b3a3c8ab959666699e1d2e52c2730eab886904222acdb1f1fc731",
+        "parquet_sha256": "1c3cff4afe66a63419833a72bd5907635903152356c63b38c9a13745cee8f92f"
+      },
+      {
+        "profile": "res_kw_25276-South-Central_pu.csv",
+        "parquet": "res_25276-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "d09dced057c90d749da0a00ca45b8193023d3c38a4265b219e9b8e9754e82681",
+        "parquet_sha256": "7e36bc8cee3885f4f4d366053eb2af0205b5a64c788d819686567fb22bf1ac56"
+      },
+      {
+        "profile": "res_kw_25634-South-Central_pu.csv",
+        "parquet": "res_25634-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "7c039168879df63cc298cae8090c700a2fed4a91a23b42159b5bebf25adc36df",
+        "parquet_sha256": "4fb6c8c69254894124987ec59b1be2cf40e91a7d5eec94846c33609f73642a5e"
+      },
+      {
+        "profile": "res_kw_26086-South-Central_pu.csv",
+        "parquet": "res_26086-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "1243e5403b624fbf8d8f5d0fc5e6ae8123fd2b4e04251850600210f4d0ee6dab",
+        "parquet_sha256": "4b0fe7ff3a48b3287587a300f63f5e088ff77ad4b34f36cb5e0ac83e3d94584e"
+      },
+      {
+        "profile": "res_kw_29728-South-Central_pu.csv",
+        "parquet": "res_29728-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "2a41eb17e2bbe0774a9bc0af2b9936d95b95faeb095abf60a1d278b215572138",
+        "parquet_sha256": "fd266fe8099be7b9cffe539474984e7cd9eb22fb49b8fc610d3f58ea6bc5583d"
+      },
+      {
+        "profile": "res_kw_30417-South-Central_pu.csv",
+        "parquet": "res_30417-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "140a595caa6f01fb7d5514853aa11f3cc5ac1472c1736ab0bd1d87691be83516",
+        "parquet_sha256": "63236700dce598878c82ad99939ff8ff148dedfdcb7b6ba0f0d35d7d990af175"
+      },
+      {
+        "profile": "res_kw_31093-South-Central_pu.csv",
+        "parquet": "res_31093-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "c0312dde1ae1fcfffe2b325369cd1cbdcf0a6fb739874d3d4a636c26d507a79b",
+        "parquet_sha256": "da5f0fa86d131ddd28227156e5ef65d05726f900b2901a89b02c6e405e1894a3"
+      },
+      {
+        "profile": "res_kw_31842-South-Central_pu.csv",
+        "parquet": "res_31842-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "a9a278be3b81a0a5b5e6d672e34f8d22a41357973caa01a31387d17c2fe0a1eb",
+        "parquet_sha256": "59f47d4b3d771beac7877a96902e4a34607dfd688090285887d9308c29fe4e15"
+      },
+      {
+        "profile": "res_kw_33754-South-Central_pu.csv",
+        "parquet": "res_33754-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "8070d36dfac5afee5e3d78d33f602d49a9ed0daf5f6852350f841efc911402e4",
+        "parquet_sha256": "285b315a56b04ce1ea48d042848f0bc3331a922ba37034e7df40c45bff434efc"
+      },
+      {
+        "profile": "res_kw_35047-South-Central_pu.csv",
+        "parquet": "res_35047-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "df501a4f465acfb711f3d4247ec1e9388f4d1aa3ef9ed517d8b325d25f0137b7",
+        "parquet_sha256": "ecd1200b2158a4e603707d487e5e83174ae00f95d95d02e49ba261f7c73b7cb9"
+      },
+      {
+        "profile": "res_kw_36432-South-Central_pu.csv",
+        "parquet": "res_36432-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "f51340d75ab27b141e762058fd3f2cee2582307b547f868d1d9b92cc25ff13a6",
+        "parquet_sha256": "452a070de99231a6574a7c5ba02fe2245e44ceeea6ec1113d2c812eb6136e71d"
+      },
+      {
+        "profile": "res_kw_37494-South-Central_pu.csv",
+        "parquet": "res_37494-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "57f78d5f0c2db6b450bb6012d6cae40c89cacb821a6f29f3cd47f16c1e9d21df",
+        "parquet_sha256": "2a9099621908e6b998cace98135d9dc54fa46a676ac468230ff4a22fd2616ae6"
+      },
+      {
+        "profile": "res_kw_38206-South-Central_pu.csv",
+        "parquet": "res_38206-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "fef4db21a225a6ae440dc57895aa2761667aac9219fb104fcc289691ee282147",
+        "parquet_sha256": "6e1e334d938b57a8a41d9a68bc948a21a5c0035de6278aeb73c55409b141332a"
+      },
+      {
+        "profile": "res_kw_38844-South-Central_pu.csv",
+        "parquet": "res_38844-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "a336b1128a5c20099591b8366ad0acee80fa14df76d8516a1ff15536bbc44585",
+        "parquet_sha256": "c554cb72d90304ca221932d4e62a8e406e26dfe13aff45ee29e71b7a230ff10f"
+      },
+      {
+        "profile": "res_kw_38930-South-Central_pu.csv",
+        "parquet": "res_38930-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "e38f6a47ca3a6e9f5cd7f39ee094b6a9f2799eb0b4b494effaaaf311967b8fa7",
+        "parquet_sha256": "31622a6e767ffbaa341f62526a8281a76f3b23792fc88a36fb32ddbb4aa36e3e"
+      },
+      {
+        "profile": "res_kw_39358-South-Central_pu.csv",
+        "parquet": "res_39358-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "312560067518796751f53547d0c6e1f774d6bfb65c9fc4b1ea71a17145be1b96",
+        "parquet_sha256": "b9cb252b69664a7b91be571542f5a6443d20d84e07b3180ddb973d8f443cd43f"
+      },
+      {
+        "profile": "res_kw_39365-South-Central_pu.csv",
+        "parquet": "res_39365-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "96815105aa75f1e025ffd79cb4195ae2e32056e83f4f1e764ba683ff4009f546",
+        "parquet_sha256": "b58418011002c3df45c181c5da9bc64a41a6fa07c78906e45a981290e26dbdc4"
+      },
+      {
+        "profile": "res_kw_4055-South-Central_pu.csv",
+        "parquet": "res_4055-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "79190ddaa5c18a18fe4fdfc8b51f76f7e402855bc8af17af7648634ea2006853",
+        "parquet_sha256": "2c389d1a8b15e41dedfb51923e51ffb7c411b3afbf77d5c5db4c6736de90ebdf"
+      },
+      {
+        "profile": "res_kw_41217-South-Central_pu.csv",
+        "parquet": "res_41217-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "dfe7cdd5724dde8e2f496ee5df40134542ba2571277e80f668c25cd9f5245042",
+        "parquet_sha256": "cdfe839008e31b70ed0f323e3ad987203026cac61c0b3fa9495dfaad43254f47"
+      },
+      {
+        "profile": "res_kw_41516-South-Central_pu.csv",
+        "parquet": "res_41516-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "39bf263903c9cc871ef6e2611a9a71fc3f47bf3529b5fd25a7054984965bb862",
+        "parquet_sha256": "87a32d536151edfc346ad5b208b43d1544d8000318d654c7faa975d52ada21a0"
+      },
+      {
+        "profile": "res_kw_42503-South-Central_pu.csv",
+        "parquet": "res_42503-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "1aaaa5264eecd1cbc9617880edf9e2083e8cf974314bd04f46211d38516623f4",
+        "parquet_sha256": "698d33b6ebce406c3a423f2425682573d95148c8844e296795780a225b5ba9fe"
+      },
+      {
+        "profile": "res_kw_43370-South-Central_pu.csv",
+        "parquet": "res_43370-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "25f2e91928961dccd941aa46311b42dc9edf3de3e0c0c73fa1329c3692af5d9d",
+        "parquet_sha256": "9bf639ee65b00e251bf7d24225b0a852e85fe965c935539f112f82e60386eec5"
+      },
+      {
+        "profile": "res_kw_4528-South-Central_pu.csv",
+        "parquet": "res_4528-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "32711d9a04d97aff823ba04aed70ce28f52e7e9b5a74d3f7f0dffbc25a8d007c",
+        "parquet_sha256": "37def936a7b4c63269aaa6abc3144e720ba0b73514d71fd95fcdb11fffd3fd09"
+      },
+      {
+        "profile": "res_kw_4557-South-Central_pu.csv",
+        "parquet": "res_4557-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "a7b0dd1da5fb03313ebd4b466766b2f5c095769387f3d5f490da046e32379c8e",
+        "parquet_sha256": "c2717e92e5db2a0395aee9bfe3d04990aaa66179b71306f09972a799f18cc9dc"
+      },
+      {
+        "profile": "res_kw_5149-South-Central_pu.csv",
+        "parquet": "res_5149-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "e9a4ad41ee2d1e20a2c022ce1e29f987f26f585baca6df6a5e8aa6b53ccf172a",
+        "parquet_sha256": "037eb632aa0eec6692944257f029f4549e96e493510720c4285ee787a314afc7"
+      },
+      {
+        "profile": "res_kw_5492-South-Central_pu.csv",
+        "parquet": "res_5492-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "9dd9451ad4cc5ed66013a6c9eccbe97a4ca8038ecc120019a9223e3d12063d25",
+        "parquet_sha256": "0b5f5e3821b43e29e05bcd6f92fdc88fc30330687e823cb19100170af4cd787f"
+      },
+      {
+        "profile": "res_kw_6795-South-Central_pu.csv",
+        "parquet": "res_6795-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "1e033cd817f3fa51ee0a37b9bd8e7786d8a3d459cc9c06b69919a4ad4813273a",
+        "parquet_sha256": "21b0b0e23156439fa7c5963bae32971d158c4950f0ddb4d4f60af4f01deaba0e"
+      },
+      {
+        "profile": "res_kw_7138-South-Central_pu.csv",
+        "parquet": "res_7138-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "ee1c65e9675bdc76989e6392e28f5bfc7bb549c869497220c49e4ffa5cbf70fd",
+        "parquet_sha256": "16854a3d1b792b2f5f41ff1381dc92c0833b712d58f898b3066b6dcab1926ed2"
+      },
+      {
+        "profile": "res_kw_7563-South-Central_pu.csv",
+        "parquet": "res_7563-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "ab6ee666b28ba6919827b789204335bd146ca196ac20f714c09573b58e563a2d",
+        "parquet_sha256": "f71a0c29d20123f69339d567f09b07af686847ea4ce83fb69bcf8177eedee032"
+      },
+      {
+        "profile": "res_kw_7607-South-Central_pu.csv",
+        "parquet": "res_7607-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "46558e56ed57436780a889323c17be85e0cd6f16e891612a9c145b39e4a0c87f",
+        "parquet_sha256": "95c2a9823708ee0c79649a6439c3ee80af6571647b51862db4c4dc16fc65d843"
+      },
+      {
+        "profile": "res_kw_7860-South-Central_pu.csv",
+        "parquet": "res_7860-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "0b77214e7e8ca5e1b519c0f1c57ed6d2d95302aa771e6b8ca851600d3b606a08",
+        "parquet_sha256": "d4e27b0507e6341e8698988d021c63339d172143f6d69849710c3bde276ab4f0"
+      },
+      {
+        "profile": "res_kw_8080-South-Central_pu.csv",
+        "parquet": "res_8080-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "c3a6d356c916bc04916ae6ccea8c86b6c531741102eca25a43437e467c1e3cb3",
+        "parquet_sha256": "0e368f0a6928bbb4d634325bfa0a584cb504eca8c89a18d6d345f0aa5cd043ec"
+      },
+      {
+        "profile": "res_kw_8514-South-Central_pu.csv",
+        "parquet": "res_8514-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "c54e181735c3197e990442a324a50bce0e8dc8c5a70374962284d1c176851882",
+        "parquet_sha256": "bb4bfaa3f3f7ab7ceb9e9d4413605d0ca15c63a70e703879aa421390d65864e5"
+      },
+      {
+        "profile": "res_kw_8828-South-Central_pu.csv",
+        "parquet": "res_8828-South-Central.parquet",
+        "points": 35040,
+        "timestamp_matches_reference": true,
+        "profile_matches_parquet_order": true,
+        "profile_sha256": "d0f2d1146469c5a87904d22715b92a3a8ca9994291e04936948d1cfa04b86168",
+        "parquet_sha256": "ddba57f0f6eb09dbbf1bce510440f3702954ae8493a16c9e0df5e10cd97662a1"
+      }
+    ]
+  },
+  "canonical_alignment": {
+    "source": "data/processed/smartds_full_graph_v2.npz",
+    "source_sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
+    "shape": [
+      35040,
+      273
+    ],
+    "exact_float32_match": true,
+    "max_abs_difference": 0.0,
+    "original_fields": [
+      "node_ids",
+      "node_coords",
+      "adj",
+      "target_mask",
+      "load_mask",
+      "load_ts",
+      "edge_index",
+      "edge_type",
+      "edge_source",
+      "edge_attr_json",
+      "edge_intermediates_json",
+      "edge_length",
+      "edge_length_units",
+      "edge_phases",
+      "edge_enabled",
+      "edge_switch"
+    ],
+    "pass": true
+  },
+  "temperature": {
+    "available": false,
+    "source": null,
+    "points": null,
+    "min": null,
+    "mean": null,
+    "max": null,
+    "nan_count": null,
+    "candidate_prefix_object_counts": {
+      "SMART-DS/v0.9/2018/Full_Texas/solar_data/": 0,
+      "SMART-DS/v0.9/2018/Full_Texas/P10R/solar_data/": 0,
+      "SMART-DS/v0.9/2018/Full_Texas/P10R/scenarios/base_timeseries/solar_data/": 0
+    },
+    "p10r_object_count": 3861,
+    "p10r_temperature_or_solar_matches": [],
+    "reason": "SMART-DS v0.9/2018/Full_Texas 的官方 S3 发布中不存在 solar_data；P10R/base_timeseries 也没有 PVSystems、weather、temperature 或 NSRDB 对象，因此无法确定当前 feeder 对应的官方温度序列。"
+  },
+  "extended_canonical_file": null,
+  "calendar_convention": {
+    "hour_of_day": "0..23 from official interval-ending timestamp",
+    "day_of_week": "Monday=0..Sunday=6",
+    "weekend": "day_of_week >= 5",
+    "month": "1..12 from official interval-ending timestamp"
+  }
+}
