@@ -5,7 +5,7 @@
 ## experiments.yaml 依次覆盖为 2026、2027、2028。
 seed: 2026
 # 代码/数据口径版本；正式实验重新开始后用于隔离旧数据阶段的结果。
-code_revision: 20260830_frozen_topology_knn_stage1
+code_revision: 20260901_verified_calendar_v1
 # 正式训练强制使用 CUDA；若 PyTorch 不支持 CUDA，程序会在训练前直接报错。
 device: cuda
 
@@ -19,6 +19,8 @@ runtime:
 data:
   # 由官方 OpenDSS 文件重建的 canonical SmartDS 全图；包含结构节点和负荷序列。
   source: data/processed/smartds_full_graph_v2.npz
+  # 官方公共 timestamp/calendar sidecar；不含 temperature，不改变 load/topology。
+  calendar_source: data/processed/smartds_calendar_v1.npz
   # 原始采样间隔；15 分钟对应每天 96 个时间步。
   sampling_interval_minutes: 15
   # 正式协议锁定为严格时间顺序的 80/10/10：约 292 天训练、36.5 天验证、
@@ -63,7 +65,7 @@ model:
   use_residual_anchor: false
 
 baselines:
-  # LSTM 负荷预测基线使用两层编码器；输入为负荷和相对周期特征。
+  # LSTM 负荷预测基线使用两层编码器；输入为负荷和已验证日历特征。
   lstm_layers: 2
   # iTransformer 在节点×特征变量 token 上使用两层、四头编码器。
   itransformer_layers: 2

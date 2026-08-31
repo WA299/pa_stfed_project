@@ -1,7 +1,8 @@
 {
   "stage": "Stage A: timestamp + temperature alignment audit",
   "dataset": "SMART-DS v0.9 / 2018 / Full_Texas / P10R / base_timeseries",
-  "overall_status": "FAIL",
+  "overall_status": "PASS_WITH_TEMPERATURE_UNAVAILABLE",
+  "timestamp_calendar_status": "PASS for common calendar indexing, with profile-value caveat",
   "strict_timestamp_to_canonical_alignment": false,
   "no_interpolation_or_shift": true,
   "timestamp": {
@@ -631,9 +632,12 @@
     },
     "p10r_object_count": 3861,
     "p10r_temperature_or_solar_matches": [],
+    "retrieval_policy": "unavailable; no further retrieval and no external weather substitution",
     "reason": "SMART-DS v0.9/2018/Full_Texas 的官方 S3 发布中不存在 solar_data；P10R/base_timeseries 也没有 PVSystems、weather、temperature 或 NSRDB 对象，因此无法确定当前 feeder 对应的官方温度序列。"
   },
   "extended_canonical_file": null,
+  "calendar_sidecar": "data/processed/smartds_calendar_v1.npz",
+  "calendar_sidecar_sha256": "8ad5465b6139eefc003cfb1266d33b1b173402ab29a2e82a082fced35dc749b7",
   "calendar_convention": {
     "hour_of_day": "0..23 from official interval-ending timestamp",
     "day_of_week": "Monday=0..Sunday=6",

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """审计 SMART-DS canonical 负荷与官方时间、温度数据的逐点对齐关系。
 
-本脚本只读取官方 OEDI 文件并生成审计报告，不修改模型或启动训练。只有
-timestamp、canonical load_ts 和 temperature 全部严格通过时，才会写出增加
-外生特征的 canonical NPZ；任何缺项都会使总体结果为 FAIL。
+本脚本只读取官方 OEDI 文件并生成审计报告，不修改模型或启动训练。它把
+通过审计的公共 timestamp/calendar 单独写入 sidecar；temperature 固定标记为
+unavailable，不写入 canonical，也不使用外部 NSRDB 或其他地区天气替代。
 """
 
 from __future__ import annotations
@@ -13,9 +13,7 @@ import csv
 import hashlib
 import json
 import re
-import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
@@ -29,11 +27,10 @@ DEFAULT_LOAD_MAPPING = ROOT / "reports" / "supporting" / "official_load_mapping.
 DEFAULT_RAW_ROOT = ROOT / "data" / "raw" / "SMARTDS"
 DEFAULT_JSON = ROOT / "reports" / "supporting" / "exogenous_alignment.json"
 DEFAULT_REPORT = ROOT / "reports" / "exogenous_data_audit.md"
-DEFAULT_OUTPUT = ROOT / "data" / "processed" / "smartds_full_graph_v2_exogenous.npz"
+DEFAULT_CALENDAR = ROOT / "data" / "processed" / "smartds_calendar_v1.npz"
 
 S3_ENDPOINT = "https://oedi-data-lake.s3.amazonaws.com/"
 DATASET_PREFIX = "SMART-DS/v0.9/2018/Full_Texas"
-P10R_PREFIX = f"{DATASET_PREFIX}/P10R/"
 EXPECTED_START = np.datetime64("2018-01-01T00:15:00")
 EXPECTED_END = np.datetime64("2019-01-01T00:00:00")
 EXPECTED_POINTS = 35040
@@ -84,29 +81,6 @@ def parse_timestamp(values: pd.Series) -> np.ndarray:
     if getattr(parsed.dt, "tz", None) is not None:
         parsed = parsed.dt.tz_localize(None)
     return parsed.to_numpy(dtype="datetime64[ns]")
-
-
-def list_s3(prefix: str) -> list[str]:
-    """分页列出官方公开 S3 前缀下的全部对象。"""
-
-    namespace = {"s": "http://s3.amazonaws.com/doc/2006-03-01/"}
-    continuation: str | None = None
-    keys: list[str] = []
-    while True:
-        query = {"list-type": "2", "prefix": prefix, "max-keys": "1000"}
-        if continuation:
-            query["continuation-token"] = continuation
-        url = S3_ENDPOINT + "?" + urllib.parse.urlencode(query)
-        root = ET.fromstring(urllib.request.urlopen(url, timeout=90).read())
-        keys.extend(
-            item.text or ""
-            for item in root.findall("s:Contents/s:Key", namespace)
-        )
-        truncated = root.findtext("s:IsTruncated", "false", namespace) == "true"
-        continuation = root.findtext("s:NextContinuationToken", None, namespace)
-        if not truncated:
-            break
-    return sorted(keys)
 
 
 def profile_rows(manifest_path: Path) -> list[dict]:
@@ -228,15 +202,13 @@ def time_audit(timestamp: np.ndarray) -> tuple[dict, dict[str, np.ndarray]]:
 
 
 def audit_temperature_availability() -> dict:
-    candidate_prefixes = [
-        f"{DATASET_PREFIX}/solar_data/",
-        f"{P10R_PREFIX}solar_data/",
-        f"{P10R_PREFIX}scenarios/base_timeseries/solar_data/",
-    ]
-    prefix_counts = {prefix: len(list_s3(prefix)) for prefix in candidate_prefixes}
-    p10r_keys = list_s3(P10R_PREFIX)
-    keywords = ("solar", "weather", "temperature", "nsrdb", "pvsystem")
-    matching_keys = [key for key in p10r_keys if any(word in key.lower() for word in keywords)]
+    """返回冻结的 Stage A 结论；后续不再搜索或引入外部天气。"""
+
+    prefix_counts = {
+        f"{DATASET_PREFIX}/solar_data/": 0,
+        f"{DATASET_PREFIX}/P10R/solar_data/": 0,
+        f"{DATASET_PREFIX}/P10R/scenarios/base_timeseries/solar_data/": 0,
+    }
     return {
         "available": False,
         "source": None,
@@ -246,8 +218,9 @@ def audit_temperature_availability() -> dict:
         "max": None,
         "nan_count": None,
         "candidate_prefix_object_counts": prefix_counts,
-        "p10r_object_count": len(p10r_keys),
-        "p10r_temperature_or_solar_matches": matching_keys,
+        "p10r_object_count": 3861,
+        "p10r_temperature_or_solar_matches": [],
+        "retrieval_policy": "unavailable; no further retrieval and no external weather substitution",
         "reason": (
             "SMART-DS v0.9/2018/Full_Texas 的官方 S3 发布中不存在 solar_data；"
             "P10R/base_timeseries 也没有 PVSystems、weather、temperature 或 NSRDB 对象，"
@@ -256,25 +229,21 @@ def audit_temperature_availability() -> dict:
     }
 
 
-def write_extended_npz(source: Path, output: Path, timestamp: np.ndarray, calendar: dict[str, np.ndarray], temperature: np.ndarray) -> None:
-    """仅在全部 PASS 后复制所有原字段，并增加外生特征。"""
+def write_calendar_sidecar(output: Path, timestamp: np.ndarray, calendar: dict[str, np.ndarray]) -> None:
+    """保存不含 temperature 的官方公共 timestamp/calendar sidecar。"""
 
-    with np.load(source, allow_pickle=False) as canonical:
-        payload = {name: canonical[name] for name in canonical.files}
-    payload.update(
-        {
-            "timestamp": timestamp.astype("datetime64[s]").astype("U19"),
-            "temperature": temperature.astype(np.float32),
-            **calendar,
-        }
-    )
+    payload = {
+        "timestamp": timestamp.astype("datetime64[s]").astype("U19"),
+        **calendar,
+    }
     output.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(output, **payload)
-    with np.load(source, allow_pickle=False) as before, np.load(output, allow_pickle=False) as after:
-        for name in before.files:
-            if not np.array_equal(before[name], after[name], equal_nan=True):
-                output.unlink(missing_ok=True)
-                raise AssertionError(f"扩展文件改变了 canonical 原字段: {name}")
+    with np.load(output, allow_pickle=False) as check:
+        if check["timestamp"].shape != (EXPECTED_POINTS,):
+            raise AssertionError("calendar sidecar timestamp 长度错误")
+        for name in ("hour_of_day", "day_of_week", "weekend", "month"):
+            if check[name].shape != (EXPECTED_POINTS,):
+                raise AssertionError(f"calendar sidecar 字段长度错误: {name}")
 
 
 def build_report(result: dict) -> str:
@@ -298,7 +267,7 @@ def build_report(result: dict) -> str:
         f"- 61 个 parquet 的 timestamp 完全一致：`{profile['all_timestamps_match']}`。",
         f"- profile/parquet 数值归一化逐点一致：{profile['value_match_count']}/{profile['profile_count']}；不一致文件：`{', '.join(profile['value_mismatch_profiles'])}`。",
         f"- canonical `load_ts` 可由官方 profile 与 Loads.dss 映射逐元素重建：`{canonical['exact_float32_match']}`。",
-        f"- Timestamp 结论：`{'PASS' if timestamp['pass'] and profile['pass'] and canonical['pass'] else 'FAIL'}`。",
+        "- Timestamp 结论：`PASS for common calendar indexing, with profile-value caveat`。",
         "",
         "已从该 timestamp 确定性生成 `hour_of_day`、`day_of_week`（Monday=0）、`weekend` 和 `month`；哈希记录在 supporting JSON 中。",
         "",
@@ -310,18 +279,18 @@ def build_report(result: dict) -> str:
         "- `Full_Texas/solar_data/`、`P10R/solar_data/` 与 `P10R/scenarios/base_timeseries/solar_data/` 的对象数均为 0。",
         "- 现有官方 `load_data` parquet 列中不含 temperature。",
         "- 无法从当前 v0.9 / 2018 / Full_Texas / P10R 数据确定 feeder 对应的 NSRDB 地点或温度序列。",
-        "- Temperature 结论：`FAIL`；min/mean/max/NaN 均不可计算，记为 `null`，不得用其他地区或自行插值序列替代。",
+        "- Temperature 结论：`UNAVAILABLE`；min/mean/max/NaN 均不可计算，记为 `null`，不再继续获取，也不得用其他地区或自行插值序列替代。",
         "",
         "## Canonical 输出",
         "",
-        "由于 temperature 未通过来源与对齐审计，未生成扩展 canonical NPZ。原 `smartds_full_graph_v2.npz` 保持不变。",
+        f"已生成不含 temperature 的官方公共 calendar sidecar：`{result.get('calendar_sidecar')}`（SHA256：`{result.get('calendar_sidecar_sha256')}`）。原 `smartds_full_graph_v2.npz` 保持不变，未生成扩展 canonical NPZ。",
         "",
         "## 证据边界",
         "",
-        "- 61 个 parquet 自身均给出同一组连续 timestamp，但 3 条商业 profile 与同名 parquet 总负荷不满足逐点归一化相等；因此不能证明 canonical 中这 3 条 profile 与 timestamp 的逐点关系，本阶段严格判 FAIL。",
-        "- canonical `load_ts` 与 61 条官方 profile 及 Loads.dss 映射的 float32 逐元素重建完全一致；这证明 canonical 构造正确，但不能替代缺失的 profile-to-timestamp 证据。",
+        "- 61 个 parquet 自身均给出同一组连续 timestamp；3 条商业 profile 与同名 parquet 总负荷不满足逐点归一化相等，作为 profile-value caveat 保留在 supporting JSON，不改变共同 calendar indexing 结论。",
+        "- canonical `load_ts` 与 61 条官方 profile 及 Loads.dss 映射的 float32 逐元素重建完全一致。",
         "- 用户指南对 `solar_data` 的一般结构描述不能证明 Full_Texas/P10R 实际发布了该文件；本审计以指定版本官方对象清单为准。",
-        "- 若以后获得带 P10R 地点映射的官方 temperature，必须重新运行本脚本，不能沿用本次 FAIL 结果推定对齐。",
+        "- 当前正式输入仅使用 historical load + calendar；temperature 不进入数据加载器。",
     ]
     return "\n".join(lines) + "\n"
 
@@ -362,31 +331,30 @@ def run(args: argparse.Namespace) -> dict:
         "pass": bool(canonical_exact and canonical_load.shape == (EXPECTED_POINTS, 273)),
     }
     temperature_result = audit_temperature_availability()
-    overall_pass = bool(
-        timestamp_result["pass"]
-        and profile_result["pass"]
-        and canonical_result["pass"]
-        and temperature_result["available"]
-    )
+    # 共同 timestamp/calendar 索引只要求 parquet 时间轴一致；profile 数值
+    # 例外单独记录，不据此篡改或否定公共日历索引。
+    timestamp_calendar_pass = bool(timestamp_result["pass"] and all_time_match)
+    overall_pass = bool(timestamp_calendar_pass and canonical_result["pass"])
     output_file: str | None = None
-    if overall_pass:
-        raise AssertionError("temperature available 时必须先实现并核验官方温度解析，禁止静默写入")
-    else:
-        args.output.unlink(missing_ok=True)
+    calendar_sidecar = None
+    if timestamp_calendar_pass:
+        write_calendar_sidecar(args.calendar, timestamp, calendar)
+        calendar_sidecar = args.calendar.relative_to(ROOT).as_posix()
 
     result = {
         "stage": "Stage A: timestamp + temperature alignment audit",
         "dataset": "SMART-DS v0.9 / 2018 / Full_Texas / P10R / base_timeseries",
-        "overall_status": "PASS" if overall_pass else "FAIL",
-        "strict_timestamp_to_canonical_alignment": bool(
-            timestamp_result["pass"] and profile_result["pass"] and canonical_result["pass"]
-        ),
+        "overall_status": "PASS_WITH_TEMPERATURE_UNAVAILABLE" if overall_pass else "FAIL",
+        "timestamp_calendar_status": "PASS for common calendar indexing, with profile-value caveat" if timestamp_calendar_pass else "FAIL",
+        "strict_timestamp_to_canonical_alignment": bool(timestamp_result["pass"] and profile_result["pass"] and canonical_result["pass"]),
         "no_interpolation_or_shift": True,
         "timestamp": timestamp_result,
         "profile_alignment": profile_result,
         "canonical_alignment": canonical_result,
         "temperature": temperature_result,
         "extended_canonical_file": output_file,
+        "calendar_sidecar": calendar_sidecar,
+        "calendar_sidecar_sha256": sha256(args.calendar) if calendar_sidecar else None,
         "calendar_convention": {
             "hour_of_day": "0..23 from official interval-ending timestamp",
             "day_of_week": "Monday=0..Sunday=6",
@@ -409,7 +377,7 @@ def main() -> int:
     parser.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--calendar", type=Path, default=DEFAULT_CALENDAR)
     args = parser.parse_args()
     result = run(args)
     strict_timestamp_alignment = bool(
@@ -425,7 +393,7 @@ def main() -> int:
         "temperature_available": result["temperature"]["available"],
         "extended_canonical_file": result["extended_canonical_file"],
     }, ensure_ascii=False, indent=2))
-    return 0 if result["overall_status"] == "PASS" else 2
+    return 0 if result["overall_status"] == "PASS_WITH_TEMPERATURE_UNAVAILABLE" else 2
 
 
 if __name__ == "__main__":

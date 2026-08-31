@@ -1,9 +1,4 @@
-"""SmartDS 数据读取、启发式拓扑填充和时间窗口构造。
-
-本文件只使用数据中实际存在的负荷、坐标和邻接关系。由于数据没有真实
-绝对时间戳，周期特征只能表示序列内部的相对周期，不能解释为具体日期、
-星期或节假日。
-"""
+"""SmartDS 图数据、已验证日历 sidecar 与时间窗口构造。"""
 
 from __future__ import annotations
 
@@ -62,6 +57,9 @@ class SmartDS:
     node_ids: np.ndarray
     target_mask: np.ndarray
     source: Path
+    calendar_source: Path | None = None
+    timestamp: np.ndarray | None = None
+    calendar_values: np.ndarray | None = None
     _raw_components_cache: tuple[np.ndarray, ...] | None = field(
         default=None, init=False, repr=False
     )
@@ -78,7 +76,7 @@ class SmartDS:
         default_factory=dict, init=False, repr=False
     )
     # 缓存按节点子集和训练统计量构造的完整特征序列，避免 __getitem__ 重复做
-    # NumPy 切片、归一化和周期特征拼接。不同节点子集仍保持独立归一化。
+    # NumPy 切片、归一化和日历特征拼接。不同节点子集仍保持独立归一化。
     _feature_cache: dict[tuple[int, tuple[int, ...], int, int], np.ndarray] = field(
         default_factory=dict, init=False, repr=False
     )
@@ -90,7 +88,7 @@ class SmartDS:
     )
 
     @classmethod
-    def load(cls, source: str | Path) -> "SmartDS":
+    def load(cls, source: str | Path, calendar_source: str | Path | None = None) -> "SmartDS":
         path = Path(source).expanduser().resolve()
         if not path.is_file():
             raise FileNotFoundError(f"SmartDS archive not found: {path}")
@@ -116,6 +114,34 @@ class SmartDS:
                 target_mask=np.asarray(archive["target_mask"], dtype=bool),
                 source=path,
             )
+        if calendar_source is not None:
+            calendar_path = Path(calendar_source).expanduser().resolve()
+            if not calendar_path.is_file():
+                raise FileNotFoundError(f"SmartDS calendar sidecar not found: {calendar_path}")
+            with np.load(calendar_path, allow_pickle=False) as calendar:
+                required_calendar = {
+                    "timestamp", "hour_of_day", "day_of_week", "weekend", "month"
+                }
+                missing_calendar = required_calendar.difference(calendar.files)
+                if missing_calendar:
+                    raise ValueError(f"Missing calendar fields: {sorted(missing_calendar)}")
+                timestamp = np.asarray(calendar["timestamp"]).astype("datetime64[s]")
+                calendar_values = np.stack(
+                    [
+                        np.asarray(calendar["hour_of_day"], dtype=np.float32),
+                        np.asarray(calendar["day_of_week"], dtype=np.float32),
+                        np.asarray(calendar["weekend"], dtype=np.float32),
+                        np.asarray(calendar["month"], dtype=np.float32),
+                    ],
+                    axis=-1,
+                )
+                if "canonical_source_sha256" in calendar.files:
+                    expected_sha = str(np.asarray(calendar["canonical_source_sha256"]).item())
+                    if expected_sha != archive_sha256(path):
+                        raise ValueError("calendar sidecar 与 canonical NPZ 的 SHA256 不匹配")
+            data.calendar_source = calendar_path
+            data.timestamp = timestamp
+            data.calendar_values = calendar_values
         data.validate()
         return data
 
@@ -139,6 +165,38 @@ class SmartDS:
             raise ValueError("adjacency must be finite and non-negative")
         if not np.isfinite(self.load_ts).all():
             raise ValueError("load_ts must contain only finite values")
+        if self.calendar_values is not None:
+            if self.timestamp is None or self.timestamp.shape != (self.time_steps,):
+                raise ValueError("timestamp must align one-to-one with load_ts")
+            if self.calendar_values.shape != (self.time_steps, 4):
+                raise ValueError("calendar fields must have shape (T, 4)")
+            if np.isnat(self.timestamp).any() or not np.isfinite(self.calendar_values).all():
+                raise ValueError("timestamp/calendar must not contain NaT, NaN or Inf")
+            hour, day, weekend, month = self.calendar_values.T
+            if np.any((hour < 0) | (hour > 23)):
+                raise ValueError("hour_of_day must be in [0, 23]")
+            if np.any((day < 0) | (day > 6)):
+                raise ValueError("day_of_week must be in [0, 6]")
+            if np.any((weekend != 0) & (weekend != 1)):
+                raise ValueError("weekend must be binary")
+            if np.any((month < 1) | (month > 12)):
+                raise ValueError("month must be in [1, 12]")
+            if self.time_steps > 1:
+                gaps = np.diff(self.timestamp).astype("timedelta64[m]").astype(np.int64)
+                if not np.all(gaps == 15):
+                    raise ValueError("timestamp must be continuous at 15-minute intervals")
+            dates = self.timestamp.astype("datetime64[D]")
+            expected_hour = (self.timestamp - dates).astype("timedelta64[h]").astype(np.int64)
+            expected_day = (dates.astype(np.int64) + 3) % 7  # 1970-01-01 是星期四。
+            expected_month = self.timestamp.astype("datetime64[M]").astype(np.int64) % 12 + 1
+            if not np.array_equal(hour.astype(np.int64), expected_hour):
+                raise ValueError("hour_of_day 与 timestamp 不一致")
+            if not np.array_equal(day.astype(np.int64), expected_day):
+                raise ValueError("day_of_week 与 timestamp 不一致")
+            if not np.array_equal(weekend.astype(bool), expected_day >= 5):
+                raise ValueError("weekend 与 timestamp 不一致")
+            if not np.array_equal(month.astype(np.int64), expected_month):
+                raise ValueError("month 与 timestamp 不一致")
         if self.edge_index.size:
             if np.any(self.edge_index < 0) or np.any(self.edge_index >= n):
                 raise ValueError("edge_index contains an out-of-range node index")
@@ -559,7 +617,7 @@ class SmartDS:
         daily_period: int,
         weekly_period: int,
     ) -> np.ndarray:
-        """构造并缓存 ``[T, N, 5]`` 的归一化输入特征。
+        """构造并缓存 ``[负荷, hour, weekday, weekend, month]`` 特征。
 
         原实现把这部分工作放在 ``__getitem__`` 中，导致每个 epoch 的每个
         样本都重复执行 NumPy 运算。缓存后 Dataset 只做连续时间切片，
@@ -579,18 +637,26 @@ class SmartDS:
 
         median, scale = self.robust_stats(indices, train_end)
         normalized = (self.load_ts[:, indices] - median[None, :]) / scale[None, :]
-        steps = np.arange(self.time_steps, dtype=np.float32)
-        phase_day = 2.0 * np.pi * (steps % daily_period) / daily_period
-        phase_cycle = 2.0 * np.pi * steps / weekly_period
-        periodic = np.stack(
-            [
-                np.sin(phase_day),
-                np.cos(phase_day),
-                np.sin(phase_cycle),
-                np.cos(phase_cycle),
-            ],
-            axis=-1,
-        )
+        if self.calendar_values is not None:
+            # 四个字段来自已验证 sidecar，并缩放到 [0,1] 后作为历史输入。
+            periodic = self.calendar_values.copy()
+            periodic[:, 0] /= 23.0
+            periodic[:, 1] /= 6.0
+            periodic[:, 3] = (periodic[:, 3] - 1.0) / 11.0
+        else:
+            # 仅供未配置 sidecar 的 legacy 工具兼容；正式配置不走此分支。
+            steps = np.arange(self.time_steps, dtype=np.float32)
+            phase_day = 2.0 * np.pi * (steps % daily_period) / daily_period
+            phase_cycle = 2.0 * np.pi * steps / weekly_period
+            periodic = np.stack(
+                [
+                    np.sin(phase_day),
+                    np.cos(phase_day),
+                    np.sin(phase_cycle),
+                    np.cos(phase_cycle),
+                ],
+                axis=-1,
+            )
         periodic = np.broadcast_to(
             periodic[:, None, :], (self.time_steps, len(indices), 4)
         )

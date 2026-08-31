@@ -72,7 +72,21 @@ def load_project_config() -> dict:
     source = Path(cfg["data"]["source"])
     if not source.is_absolute():
         cfg["data"]["source"] = str((ROOT / source).resolve())
+    calendar_source = cfg["data"].get("calendar_source")
+    if calendar_source:
+        calendar_path = Path(calendar_source)
+        if not calendar_path.is_absolute():
+            cfg["data"]["calendar_source"] = str((ROOT / calendar_path).resolve())
     return cfg
+
+
+def load_smartds(cfg: dict) -> SmartDS:
+    """按同一配置同时加载 canonical 图和已验证 calendar sidecar。"""
+
+    return SmartDS.load(
+        cfg["data"]["source"],
+        calendar_source=cfg["data"].get("calendar_source"),
+    )
 
 
 def config_signature(cfg: dict) -> str:
@@ -454,7 +468,7 @@ def _make_train_diagnostic_loader(
 def audit(cfg: dict) -> dict:
     """复核数据形状、零负荷节点影响、两种拓扑方案和客户端节点数。"""
 
-    data = SmartDS.load(cfg["data"]["source"])
+    data = load_smartds(cfg)
     # ``legacy_inf`` 是历史方案：在全部273个节点上补边，可能产生大量
     # 零负荷--零负荷桥接。``forest``/``mst_tag`` 是修正方案：先把零负荷
     # 节点作为拓扑中继投影，再只用有效负荷节点作为 MST 端点。
@@ -765,7 +779,8 @@ def audit(cfg: dict) -> dict:
             ),
             "pairwise": pairwise_non_iid,
         },
-        "absolute_timestamp_available": False,
+        "absolute_timestamp_available": data.timestamp is not None,
+        "calendar_features": ["hour_of_day", "day_of_week", "weekend", "month"],
         "weather_available": False,
         "topology_rule": (
             "formal: zero-load relay projection followed by component-level deterministic "
@@ -1094,7 +1109,7 @@ def baselines(cfg: dict, device: torch.device) -> dict:
     ``evaluate_test=true`` 时才允许访问测试集。
     """
 
-    data = SmartDS.load(cfg["data"]["source"])
+    data = load_smartds(cfg)
     bounds = data.split_bounds(cfg["data"]["train_ratio"], cfg["data"]["val_ratio"])
     _assert_active_nodes_train_stable(data, bounds.train_end)
     partitions = data.client_partitions(int(cfg["federated"]["clients"]))
@@ -1159,7 +1174,7 @@ def baselines(cfg: dict, device: torch.device) -> dict:
 def centralized(cfg: dict, device: torch.device) -> dict:
     """训练集中式对照模型，并按预先声明的验证指标保存最佳参数。"""
 
-    data = SmartDS.load(cfg["data"]["source"])
+    data = load_smartds(cfg)
     source_sha256 = archive_sha256(data.source)
     bounds = data.split_bounds(cfg["data"]["train_ratio"], cfg["data"]["val_ratio"])
     _assert_active_nodes_train_stable(data, bounds.train_end)
@@ -1490,7 +1505,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
 
     if str(cfg["model"].get("architecture", "pa_stfed")).lower() != "pa_stfed":
         raise ValueError("federated training currently supports architecture=pa_stfed only")
-    data = SmartDS.load(cfg["data"]["source"])
+    data = load_smartds(cfg)
     source_sha256 = archive_sha256(data.source)
     bounds = data.split_bounds(cfg["data"]["train_ratio"], cfg["data"]["val_ratio"])
     _assert_active_nodes_train_stable(data, bounds.train_end)

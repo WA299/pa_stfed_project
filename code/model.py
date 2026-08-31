@@ -223,7 +223,7 @@ class LSTMBaseline(nn.Module):
     """逐节点 LSTM 负荷预测基线。
 
     该实现对应短期住宅负荷预测中常见的 LSTM 递归编码器：每个节点独立
-    编码自己的历史负荷和相对周期特征，不使用图拓扑。这样可以把性能差异
+    编码自己的历史负荷和已验证日历特征，不使用图拓扑。这样可以把性能差异
     归因于时空建模，而不是额外输入字段。输入输出接口与 PA-STFed 统一。
     """
 
@@ -533,7 +533,7 @@ class PA_STFed(nn.Module):
             raise ValueError("x must have shape [batch, history, nodes, features]")
         if x.shape[2] != self.node_count:
             raise ValueError(f"Expected {self.node_count} nodes, got {x.shape[2]}")
-        # 1. 将负荷和四维相对周期特征投影到统一隐藏空间。
+        # 1. 将负荷和四维已验证日历特征投影到统一隐藏空间。
         base = self.input_projection(x)
 
         # 2. 分别提取物理拓扑表征与客户端本地功能关系表征。
