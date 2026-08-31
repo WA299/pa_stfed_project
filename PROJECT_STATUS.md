@@ -1,6 +1,6 @@
 # Current Stage
 
-Final plan Stage A completed: verified calendar sidecar integrated; only a 2-epoch smoke run was executed.
+Final plan Stage A completed: verified calendar sidecar integrated with cyclic encoding; only a 2-epoch smoke run was executed.
 
 # Data Status
 
@@ -8,7 +8,7 @@ Final plan Stage A completed: verified calendar sidecar integrated; only a 2-epo
 
 # Model Status
 
-模型主体、topology-kNN、客户端划分和联邦算法均未修改。正式 loader 输入已切换为 historical load + verified calendar，维度仍为 5；compile、loader 检查和 2-epoch centralized smoke 均通过，未访问 test。
+模型主体、topology-kNN、客户端划分和联邦算法均未修改。正式 loader 输入为 1 维 historical load + 2 维 time-of-day sin/cos + 2 维 day-of-week sin/cos + 2 维 month sin/cos + 1 维 weekend，共 8 维；compile、loader 范围检查、五类模型前向检查和 2-epoch centralized smoke 均通过，未访问 test。
 
 # Current Blocker
 
@@ -16,7 +16,7 @@ Final plan Stage A completed: verified calendar sidecar integrated; only a 2-epo
 
 # Next Steps
 
-1. 冻结 historical load + calendar 输入口径。
+1. 冻结 historical load + cyclic calendar 输入口径（input_dim=8）。
 2. 将已完成的 r40 联邦结果作为独立实验提交并分析。
 3. 在明确下一阶段协议后再运行正式长训练。
 

@@ -279,7 +279,7 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
     architecture = str(cfg["model"].get("architecture", "pa_stfed")).lower()
     common = {
         "node_count": node_count,
-        "input_dim": 5,
+        "input_dim": int(cfg["model"]["input_dim"]),
         "hidden_dim": int(cfg["model"]["hidden_dim"]),
         "horizon": int(cfg["data"]["horizon"]),
     }
@@ -327,6 +327,7 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         node_count=node_count,
         history=int(cfg["data"]["history"]),
         horizon=int(cfg["data"]["horizon"]),
+        input_dim=int(cfg["model"]["input_dim"]),
         hidden_dim=int(cfg["model"]["hidden_dim"]),
         functional_dim=int(cfg["model"]["functional_dim"]),
         spatial_heads=int(cfg["model"]["spatial_heads"]),
@@ -780,7 +781,7 @@ def audit(cfg: dict) -> dict:
             "pairwise": pairwise_non_iid,
         },
         "absolute_timestamp_available": data.timestamp is not None,
-        "calendar_features": ["hour_of_day", "day_of_week", "weekend", "month"],
+        "calendar_features": ["time_of_day_sin", "time_of_day_cos", "day_of_week_sin", "day_of_week_cos", "month_sin", "month_cos", "weekend"],
         "weather_available": False,
         "topology_rule": (
             "formal: zero-load relay projection followed by component-level deterministic "

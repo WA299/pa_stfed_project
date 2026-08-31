@@ -5,7 +5,7 @@
 ## experiments.yaml 依次覆盖为 2026、2027、2028。
 seed: 2026
 # 代码/数据口径版本；正式实验重新开始后用于隔离旧数据阶段的结果。
-code_revision: 20260901_verified_calendar_v1
+code_revision: 20260901_verified_calendar_cyclic_v1
 # 正式训练强制使用 CUDA；若 PyTorch 不支持 CUDA，程序会在训练前直接报错。
 device: cuda
 
@@ -42,6 +42,8 @@ data:
 model:
   # 主模型名称；集中式和联邦主实验均使用 PA-STFed。
   architecture: pa_stfed
+  # 统一输入：1维历史负荷 + 日内/星期/月各2维sin-cos + 1维weekend。
+  input_dim: 8
   # 隐藏维度；必须能被 spatial_heads 与 transformer_heads 整除。
   hidden_dim: 64
   # 静态功能图节点嵌入维度，控制客户端个性化关系矩阵容量。

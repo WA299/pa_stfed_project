@@ -482,7 +482,7 @@ class PA_STFed(nn.Module):
         node_count: int,
         history: int,
         horizon: int,
-        input_dim: int = 5,
+        input_dim: int = 8,
         hidden_dim: int = 32,
         functional_dim: int = 16,
         spatial_heads: int = 4,
@@ -533,7 +533,7 @@ class PA_STFed(nn.Module):
             raise ValueError("x must have shape [batch, history, nodes, features]")
         if x.shape[2] != self.node_count:
             raise ValueError(f"Expected {self.node_count} nodes, got {x.shape[2]}")
-        # 1. 将负荷和四维已验证日历特征投影到统一隐藏空间。
+        # 1. 将负荷和 7 维已验证周期日历编码投影到统一隐藏空间。
         base = self.input_projection(x)
 
         # 2. 分别提取物理拓扑表征与客户端本地功能关系表征。

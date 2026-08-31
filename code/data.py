@@ -617,7 +617,7 @@ class SmartDS:
         daily_period: int,
         weekly_period: int,
     ) -> np.ndarray:
-        """构造并缓存 ``[负荷, hour, weekday, weekend, month]`` 特征。
+        """构造并缓存负荷与 7 维周期日历编码，共 8 个输入通道。
 
         原实现把这部分工作放在 ``__getitem__`` 中，导致每个 epoch 的每个
         样本都重复执行 NumPy 运算。缓存后 Dataset 只做连续时间切片，
@@ -637,14 +637,33 @@ class SmartDS:
 
         median, scale = self.robust_stats(indices, train_end)
         normalized = (self.load_ts[:, indices] - median[None, :]) / scale[None, :]
-        if self.calendar_values is not None:
-            # 四个字段来自已验证 sidecar，并缩放到 [0,1] 后作为历史输入。
-            periodic = self.calendar_values.copy()
-            periodic[:, 0] /= 23.0
-            periodic[:, 1] /= 6.0
-            periodic[:, 3] = (periodic[:, 3] - 1.0) / 11.0
+        if self.calendar_values is not None and self.timestamp is not None:
+            # 日内、星期和月份是周期变量，使用 sin/cos 可避免 23:45 与
+            # 00:00、周日与周一、12 月与 1 月在线性数轴上被错误拉远。
+            dates = self.timestamp.astype("datetime64[D]")
+            minute_of_day = (
+                self.timestamp - dates
+            ).astype("timedelta64[m]").astype(np.float64)
+            day_of_week = self.calendar_values[:, 1].astype(np.float64)
+            month_zero_based = self.calendar_values[:, 3].astype(np.float64) - 1.0
+            time_phase = 2.0 * np.pi * minute_of_day / (24.0 * 60.0)
+            week_phase = 2.0 * np.pi * day_of_week / 7.0
+            month_phase = 2.0 * np.pi * month_zero_based / 12.0
+            periodic = np.stack(
+                [
+                    np.sin(time_phase),
+                    np.cos(time_phase),
+                    np.sin(week_phase),
+                    np.cos(week_phase),
+                    np.sin(month_phase),
+                    np.cos(month_phase),
+                    self.calendar_values[:, 2],
+                ],
+                axis=-1,
+            ).astype(np.float32)
         else:
             # 仅供未配置 sidecar 的 legacy 工具兼容；正式配置不走此分支。
+            # 保持同样的 7 维通道契约，month/weekend 无可靠日期时置零。
             steps = np.arange(self.time_steps, dtype=np.float32)
             phase_day = 2.0 * np.pi * (steps % daily_period) / daily_period
             phase_cycle = 2.0 * np.pi * steps / weekly_period
@@ -654,11 +673,14 @@ class SmartDS:
                     np.cos(phase_day),
                     np.sin(phase_cycle),
                     np.cos(phase_cycle),
+                    np.zeros_like(phase_day),
+                    np.zeros_like(phase_day),
+                    np.zeros_like(phase_day),
                 ],
                 axis=-1,
             )
         periodic = np.broadcast_to(
-            periodic[:, None, :], (self.time_steps, len(indices), 4)
+            periodic[:, None, :], (self.time_steps, len(indices), 7)
         )
         features = np.concatenate(
             [normalized[..., None], periodic], axis=-1
