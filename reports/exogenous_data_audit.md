@@ -35,4 +35,5 @@ SMART-DS 用户指南说明通用 `solar_data` 文件可含 NSRDB Temperature，
 - 61 个 parquet 自身均给出同一组连续 timestamp；3 条商业 profile 与同名 parquet 总负荷不满足逐点归一化相等，作为 profile-value caveat 保留在 supporting JSON，不改变共同 calendar indexing 结论。
 - canonical `load_ts` 与 61 条官方 profile 及 Loads.dss 映射的 float32 逐元素重建完全一致。
 - 用户指南对 `solar_data` 的一般结构描述不能证明 Full_Texas/P10R 实际发布了该文件；本审计以指定版本官方对象清单为准。
-- 当前正式输入仅使用 historical load + calendar；temperature 不进入数据加载器。
+- 当前正式输入仅使用 historical load + relative daily phase sin/cos + relative weekly phase sin/cos；
+  verified timestamp/calendar sidecar 仅用于 provenance/audit，temperature 不进入数据加载器。

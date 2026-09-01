@@ -533,7 +533,7 @@ class PA_STFed(nn.Module):
             raise ValueError("x must have shape [batch, history, nodes, features]")
         if x.shape[2] != self.node_count:
             raise ValueError(f"Expected {self.node_count} nodes, got {x.shape[2]}")
-        # 1. 将负荷和 4 维日内/周周期编码投影到统一隐藏空间。
+        # 1. 将 historical load 和 relative daily/weekly phase 编码投影到统一隐藏空间。
         base = self.input_projection(x)
 
         # 2. 分别提取物理拓扑表征与客户端本地功能关系表征。

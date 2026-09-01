@@ -782,10 +782,10 @@ def audit(cfg: dict) -> dict:
         },
         "absolute_timestamp_available": data.timestamp is not None,
         "calendar_features": [
-            "time_of_day_sin",
-            "time_of_day_cos",
-            "day_of_week_sin",
-            "day_of_week_cos",
+            "relative_daily_sin",
+            "relative_daily_cos",
+            "relative_weekly_sin",
+            "relative_weekly_cos",
         ],
         "weather_available": False,
         "topology_rule": (

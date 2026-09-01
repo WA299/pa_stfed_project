@@ -617,7 +617,8 @@ class SmartDS:
         daily_period: int,
         weekly_period: int,
     ) -> np.ndarray:
-        """构造并缓存 5D 正式输入：负荷、日内 sin/cos、周 sin/cos。
+        """构造并缓存 5D 正式输入：historical load、relative daily phase
+        sin/cos、relative weekly phase sin/cos。
 
         原实现把这部分工作放在 ``__getitem__`` 中，导致每个 epoch 的每个
         样本都重复执行 NumPy 运算。缓存后 Dataset 只做连续时间切片，
@@ -637,9 +638,9 @@ class SmartDS:
 
         median, scale = self.robust_stats(indices, train_end)
         normalized = (self.load_ts[:, indices] - median[None, :]) / scale[None, :]
-        # 正式输入冻结为原始 5D：日内和周周期各用一对 sin/cos。
-        # 这里使用序列索引构造周期，相当于官方 15 分钟采样的相对周期，
-        # 不把 month/weekend 等辅助 screening 变量混入主模型。
+        # 正式输入冻结为 5D：historical load 加 relative daily/weekly phase
+        # 的 sin/cos 对。周期由序列索引和 15 分钟采样间隔确定，不把 sidecar
+        # 中的 month/weekend 等 auxiliary screening 变量混入主模型。
         steps = np.arange(self.time_steps, dtype=np.float32)
         phase_day = 2.0 * np.pi * (steps % daily_period) / daily_period
         phase_cycle = 2.0 * np.pi * steps / weekly_period

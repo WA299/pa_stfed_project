@@ -296,7 +296,7 @@ experiments:
       training: {<<: *formal_centralized_training}
       privacy: {enabled: false}
 
-  # Calendar screening：验证已冻结的 cyclic calendar 输入，不纳入默认矩阵。
+  # Auxiliary validation：8D calendar screening，不纳入最终 5D 主模型矩阵。
   calendar_pa_screen:
     task: centralized
     tag: calendar_pa_screen_seed{seed}

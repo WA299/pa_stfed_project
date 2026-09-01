@@ -19,7 +19,8 @@ runtime:
 data:
   # 由官方 OpenDSS 文件重建的 canonical SmartDS 全图；包含结构节点和负荷序列。
   source: data/processed/smartds_full_graph_v2.npz
-  # 官方公共 timestamp/calendar sidecar；不含 temperature，不改变 load/topology。
+  # 官方 timestamp/calendar sidecar 仅供 provenance/audit；不含 temperature，
+  # 不改变 load/topology，也不直接作为最终模型输入。
   calendar_source: data/processed/smartds_calendar_v1.npz
   # 原始采样间隔；15 分钟对应每天 96 个时间步。
   sampling_interval_minutes: 15
@@ -42,7 +43,8 @@ data:
 model:
   # 主模型名称；集中式和联邦主实验均使用 PA-STFed。
   architecture: pa_stfed
-  # 正式输入冻结为 1维历史负荷 + 日内sin/cos + 周期sin/cos，共 5 维。
+  # 正式输入冻结为 historical load + relative daily phase sin/cos +
+  # relative weekly phase sin/cos，共 5 维。
   input_dim: 5
   # 隐藏维度；必须能被 spatial_heads 与 transformer_heads 整除。
   hidden_dim: 64
@@ -67,7 +69,8 @@ model:
   use_residual_anchor: false
 
 baselines:
-  # LSTM 负荷预测基线使用两层编码器；输入为负荷和 4 维相对周期特征。
+  # LSTM 负荷预测基线使用两层编码器；输入同样为 historical load 与 4 维
+  # relative daily/weekly phase sin-cos 特征。
   lstm_layers: 2
   # iTransformer 在节点×特征变量 token 上使用两层、四头编码器。
   itransformer_layers: 2
