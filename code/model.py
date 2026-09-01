@@ -20,6 +20,8 @@ LOCAL_PARAMETER_PREFIXES = ("functional.embedding_1", "functional.embedding_2")
 # ModuleALA（inspired by and adapted from the FedALA mechanism）允许客户端在
 # 这些高层模块参数上学习逐元素混合权重；其余共享参数仍由服务器聚合并覆盖。
 ALA_PARAMETER_PREFIXES = ("spatial_gate.", "temporal_gate.", "head.")
+# vanilla FedALA 仅按层级选择高层参数，刻意不采用 PA-STFed 的模块分组。
+VANILLA_ALA_PARAMETER_PREFIXES = ("temporal.", "head.")
 
 
 def local_parameter_prefixes(personalized_head: bool = False) -> tuple[str, ...]:
@@ -30,6 +32,12 @@ def ala_parameter_prefixes() -> tuple[str, ...]:
     """返回 ModuleALA 的可个性化高层参数前缀。"""
 
     return ALA_PARAMETER_PREFIXES
+
+
+def vanilla_ala_parameter_prefixes() -> tuple[str, ...]:
+    """返回独立 vanilla FedALA skeleton 的层级参数前缀。"""
+
+    return VANILLA_ALA_PARAMETER_PREFIXES
 
 
 class AdaptiveVertexGraphConv(nn.Module):

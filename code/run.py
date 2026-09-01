@@ -56,6 +56,7 @@ from model import (
     load_shared_state,
     local_parameter_prefixes,
     shared_state_dict,
+    vanilla_ala_parameter_prefixes,
 )
 from privacy import gaussian_rdp_epsilon
 
@@ -1519,6 +1520,7 @@ def _load_moduleala_initial_state(
     local_state: dict[str, torch.Tensor],
     global_state: dict[str, torch.Tensor],
     alpha_state: dict[str, torch.Tensor] | None,
+    eligible_prefixes: tuple[str, ...] | None = None,
 ) -> dict[str, float]:
     """构造 ModuleALA 本轮初始化：shared 取 global，ALA 参数逐元素插值。
 
@@ -1526,7 +1528,7 @@ def _load_moduleala_initial_state(
     不声称复现原始 FedALA。
     """
 
-    ala_prefixes = ala_parameter_prefixes()
+    ala_prefixes = eligible_prefixes or ala_parameter_prefixes()
     local_prefixes = local_parameter_prefixes(False)
     current = model.state_dict()
     adapted: dict[str, torch.Tensor] = {}
@@ -1566,6 +1568,50 @@ def _load_moduleala_initial_state(
     return {"alpha_min": 1.0, "alpha_max": 1.0, "alpha_mean": 1.0, "nonzero_initialization": 0.0}
 
 
+def _load_modulelocal_state(
+    model: PA_STFed,
+    local_state: dict[str, torch.Tensor],
+    global_state: dict[str, torch.Tensor],
+    eligible_prefixes: tuple[str, ...],
+) -> None:
+    """ModuleLocal 初始化：functional 与指定高层模块本地，其余参数取 global。"""
+
+    local_prefixes = local_parameter_prefixes(False)
+    current = model.state_dict()
+    adapted: dict[str, torch.Tensor] = {}
+    for name, value in current.items():
+        if name.startswith(local_prefixes) or name.startswith(eligible_prefixes):
+            source = local_state[name]
+        elif name in global_state:
+            source = global_state[name]
+        else:
+            source = local_state[name]
+        adapted[name] = source.to(device=value.device, dtype=value.dtype)
+    model.load_state_dict(adapted, strict=True)
+
+
+def _alpha_module_statistics(
+    alpha_state: dict[str, torch.Tensor], eligible_prefixes: tuple[str, ...]
+) -> dict[str, dict[str, float]]:
+    """将完整 alpha 压缩为按模块统计，数组本身只进入 checkpoint。"""
+
+    groups: dict[str, list[torch.Tensor]] = {}
+    for name, value in alpha_state.items():
+        module = next((prefix[:-1] for prefix in eligible_prefixes if name.startswith(prefix)), "other")
+        groups.setdefault(module, []).append(value.detach().float().reshape(-1))
+    statistics: dict[str, dict[str, float]] = {}
+    for module, values in groups.items():
+        merged = torch.cat(values)
+        statistics[module] = {
+            "mean": float(merged.mean()),
+            "std": float(merged.std(unbiased=False)),
+            "min": float(merged.min()),
+            "max": float(merged.max()),
+            "non_one_ratio": float((merged - 1.0).abs().gt(1e-7).float().mean()),
+        }
+    return statistics
+
+
 def _learn_moduleala_weights(
     model: PA_STFed,
     previous_local_state: dict[str, torch.Tensor],
@@ -1577,14 +1623,16 @@ def _learn_moduleala_weights(
     loader: DataLoader,
     graph_tensors_device: tuple[torch.Tensor, torch.Tensor],
     initial_adaptation: bool = False,
+    eligible_prefixes: tuple[str, ...] | None = None,
 ) -> dict[str, float]:
     """只用 train 窗口学习 ModuleALA alpha，再写回客户端模型。"""
 
     device = next(model.parameters()).device
     training_config = config["training"]
+    ala_prefixes = eligible_prefixes or ala_parameter_prefixes()
     ala_names = tuple(
         name for name in model.state_dict()
-        if _is_prefixed(name, ala_parameter_prefixes())
+        if _is_prefixed(name, ala_prefixes)
     )
     if not ala_names:
         raise RuntimeError("ModuleALA found no eligible spatial_gate/temporal_gate/head parameters")
@@ -1646,7 +1694,9 @@ def _learn_moduleala_weights(
         parameter.requires_grad_(True)
     learned = {name: parameter.detach().cpu().clone().clamp(0.0, 1.0) for name, parameter in alpha_parameters.items()}
     alpha_state.update(learned)
-    stats = _load_moduleala_initial_state(model, previous_local_state, global_state, alpha_state)
+    stats = _load_moduleala_initial_state(
+        model, previous_local_state, global_state, alpha_state, eligible_prefixes=ala_prefixes
+    )
     all_alpha = torch.cat([value.reshape(-1) for value in alpha_state.values()])
     stats.update({
         "loss": float(last_loss.cpu()),
@@ -1671,11 +1721,16 @@ def federated(cfg: dict, device: torch.device) -> dict:
     personalized_head = bool(cfg["federated"].get("personalized_head", False))
     algorithm = str(cfg["federated"].get("algorithm", "FedAvg")).lower()
     local_only = algorithm == "localonly"
-    is_ala = algorithm == "moduleala"
-    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala"}:
-        raise ValueError("federated.algorithm must be LocalOnly, FedAvg, FedProx, or ModuleALA")
-    if is_ala and personalized_head:
-        raise ValueError("ModuleALA owns head.* personalization; personalized_head must be false")
+    is_moduleala = algorithm == "moduleala"
+    is_modulelocal = algorithm == "modulelocal"
+    is_vanilla_ala = algorithm in {"vanillafedala", "fedala"}
+    is_ala = is_moduleala or is_vanilla_ala
+    is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala
+    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala", "modulelocal", "vanillafedala", "fedala"}:
+        raise ValueError("federated.algorithm must be LocalOnly, FedAvg, FedProx, ModuleALA, ModuleLocal, or VanillaFedALA")
+    if (is_moduleala or is_modulelocal) and personalized_head:
+        raise ValueError("ModuleALA/ModuleLocal own head.* personalization; personalized_head must be false")
+    ala_prefixes = vanilla_ala_parameter_prefixes() if is_vanilla_ala else ala_parameter_prefixes()
     global_state = shared_state_dict(models[0], personalized_head=personalized_head)
 
     # 数据集与图在各轮之间不变，提前构造可避免重复拓扑计算。
@@ -1773,31 +1828,32 @@ def federated(cfg: dict, device: torch.device) -> dict:
         {
             name: torch.ones_like(value, dtype=torch.float32)
             for name, value in model.state_dict().items()
-            if _is_prefixed(name, ala_parameter_prefixes())
+            if _is_prefixed(name, ala_prefixes)
         }
         for model in models
-    ] if is_ala else []
+    ] if is_personalized_module else []
     previous_local_states: list[dict[str, torch.Tensor]] = [
         {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
         for model in models
-    ] if is_ala else []
-    ala_sample_loaders: list[DataLoader] = []
+    ] if is_personalized_module else []
     if is_ala:
         ratio = float(cfg["federated"].get("ala_sample_ratio", 0.05))
         if not 0.0 < ratio <= 1.0:
             raise ValueError("federated.ala_sample_ratio must be in (0, 1]")
-        for client_index, dataset in enumerate(train_sets):
-            count = max(1, int(np.ceil(len(dataset) * ratio)))
-            generator = torch.Generator().manual_seed(int(cfg["seed"]) + 1009 * (client_index + 1))
-            indices = torch.randperm(len(dataset), generator=generator)[:count].tolist()
-            subset = Subset(dataset, indices)
-            ala_sample_loaders.append(make_data_loader(subset, train_batch_size, True, cfg["training"]))
 
     for round_index in range(1, int(cfg["federated"]["rounds"]) + 1):
         local_states: list[dict[str, torch.Tensor]] = []
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
         ala_round_stats: list[dict[str, float]] = []
+        ala_sample_loaders: list[DataLoader] = []
+        if is_ala:
+            for client_index, dataset in enumerate(train_sets):
+                count = max(1, int(np.ceil(len(dataset) * ratio)))
+                round_seed = int(cfg["seed"]) + 1009 * (client_index + 1) + 9176 * round_index
+                generator = torch.Generator().manual_seed(round_seed)
+                indices = torch.randperm(len(dataset), generator=generator)[:count].tolist()
+                ala_sample_loaders.append(make_data_loader(Subset(dataset, indices), train_batch_size, True, cfg["training"]))
 
         for client_index, (model, train_set, graph) in enumerate(
             zip(models, train_sets, graphs)
@@ -1819,9 +1875,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
                         ala_sample_loaders[client_index],
                         graph_tensors_device[client_index],
                         initial_adaptation=round_index == 2,
+                        eligible_prefixes=ala_prefixes,
                     )
                     stats["executed"] = 1.0
                     ala_round_stats.append(stats)
+            elif is_modulelocal and round_index > 1:
+                _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes)
             elif not local_only:
                 load_shared_state(model, global_state)
             state, metrics = train_local(
@@ -1835,14 +1894,23 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 optimizer=local_optimizers[client_index],
                 scaler=local_scalers[client_index],
             )
-            local_states.append(state)
-            if is_ala:
+            if is_personalized_module:
+                local_states.append({name: state[name] for name in global_state})
+            else:
+                local_states.append(state)
+            if is_personalized_module:
                 previous_local_states[client_index] = {
                     name: value.detach().cpu().clone() for name, value in model.state_dict().items()
                 }
             train_metrics.append(metrics)
             sample_weights.append(metrics["samples"])
 
+        # ModuleALA/ModuleLocal 的高层模块不进入服务器更新；global_state 中保留
+        # 它们仅作为后续个性化初始化的参考。
+        server_names = tuple(
+            name for name in global_state
+            if not (is_personalized_module and name.startswith(ala_prefixes))
+        )
         if local_only:
             aggregation_audit = {
                 "privacy_enabled": False,
@@ -1850,34 +1918,38 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "aggregation": "none",
             }
         elif privacy_enabled:
-            global_state, aggregation_audit = aggregate_private_updates(
-                local_states,
-                global_state,
+            private_states = [{name: state[name] for name in server_names} for state in local_states]
+            private_global = {name: global_state[name] for name in server_names}
+            aggregated, aggregation_audit = aggregate_private_updates(
+                private_states,
+                private_global,
                 clip_norm=float(privacy_cfg["clip_norm"]),
                 noise_multiplier=float(privacy_cfg["noise_multiplier"]),
             )
         else:
-            global_state = weighted_average(
-                local_states,
+            aggregated = weighted_average(
+                [{name: state[name] for name in server_names} for state in local_states],
                 None if uniform_mean else sample_weights,
             )
             aggregation_audit = {
                 "privacy_enabled": False,
                 "clients": float(len(local_states)),
             }
+        if not local_only:
+            global_state.update(aggregated)
 
         # ModuleALA 评估 global shared + client-local ALA/functional 状态，不能整体回载 global。
         validation_clients: list[dict[str, float]] = []
         for client_index, (model, val_set, graph) in enumerate(
             zip(models, val_sets, graphs)
         ):
-            if not local_only and not is_ala:
+            if not local_only and not is_personalized_module:
                 load_shared_state(model, global_state)
-            elif is_ala:
+            elif is_personalized_module:
                 # 聚合后的 global 只覆盖非 ALA、非 functional 参数，保留个性化状态。
                 current = model.state_dict()
                 for name, value in global_state.items():
-                    if name.startswith(ala_parameter_prefixes()) or name.startswith(local_parameter_prefixes(False)):
+                    if name.startswith(ala_prefixes) or name.startswith(local_parameter_prefixes(False)):
                         continue
                     if name in current:
                         current[name].copy_(value.to(device=current[name].device, dtype=current[name].dtype))
@@ -2183,11 +2255,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "history": history,
         "ala": {
             "enabled": is_ala,
-            "eligible_prefixes": list(ala_parameter_prefixes()) if is_ala else [],
+            "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else None)),
+            "eligible_prefixes": list(ala_prefixes) if is_personalized_module else [],
             "sample_ratio": float(cfg["federated"].get("ala_sample_ratio", 0.0)) if is_ala else None,
             "weight_lr": float(cfg["federated"].get("ala_weight_lr", 0.0)) if is_ala else None,
-            "weights": [
-                {name: value.tolist() for name, value in weights.items()}
+            "statistics": [
+                _alpha_module_statistics(weights, ala_prefixes)
                 for weights in (best_ala_weights if is_ala and best_ala_weights is not None else [])
             ],
         },

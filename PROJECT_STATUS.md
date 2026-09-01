@@ -16,8 +16,8 @@ ModuleALA adaptive local aggregation minimal implementation added, inspired by/a
 
 # Next Steps
 
-1. 完成 `stage_ala_smoke` 并检查 alpha/个性化状态审计。
-2. 将 8D calendar screening 与 ALA smoke 结果排除出正式主表。
+1. 保持 ModuleALA、ModuleLocal 与 vanilla FedALA smoke 结果仅作流程审计。
+2. 将 8D calendar screening 与所有 personalization smoke 结果排除出正式主表。
 3. 在明确下一阶段协议后再运行正式长训练。
 
 # Latest Commit
