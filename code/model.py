@@ -20,8 +20,6 @@ LOCAL_PARAMETER_PREFIXES = ("functional.embedding_1", "functional.embedding_2")
 # ModuleALA（inspired by and adapted from the FedALA mechanism）允许客户端在
 # 这些高层模块参数上学习逐元素混合权重；其余共享参数仍由服务器聚合并覆盖。
 ALA_PARAMETER_PREFIXES = ("spatial_gate.", "temporal_gate.", "head.")
-# vanilla FedALA 仅按层级选择高层参数，刻意不采用 PA-STFed 的模块分组。
-VANILLA_ALA_PARAMETER_PREFIXES = ("temporal.", "head.")
 
 
 def local_parameter_prefixes(personalized_head: bool = False) -> tuple[str, ...]:
@@ -34,10 +32,22 @@ def ala_parameter_prefixes() -> tuple[str, ...]:
     return ALA_PARAMETER_PREFIXES
 
 
-def vanilla_ala_parameter_prefixes() -> tuple[str, ...]:
-    """返回独立 vanilla FedALA skeleton 的层级参数前缀。"""
+def vanilla_ala_parameter_names(model: nn.Module, layer_idx: int = 2) -> tuple[str, ...]:
+    """按 named_parameters 顺序返回 vanilla FedALA 的最后 layer_idx 个张量。
 
-    return VANILLA_ALA_PARAMETER_PREFIXES
+    functional embeddings 被永久排除；该选择是通用高层选择规则，
+    不使用 PA-STFed 的模块语义。
+    """
+
+    if layer_idx < 1:
+        raise ValueError("vanilla FedALA layer_idx must be positive")
+    candidates = [
+        name for name, _ in model.named_parameters()
+        if not name.startswith(LOCAL_PARAMETER_PREFIXES)
+    ]
+    if layer_idx > len(candidates):
+        raise ValueError("vanilla FedALA layer_idx exceeds shape-compatible parameter count")
+    return tuple(candidates[-layer_idx:])
 
 
 class AdaptiveVertexGraphConv(nn.Module):

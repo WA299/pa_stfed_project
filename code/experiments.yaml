@@ -354,6 +354,7 @@ experiments:
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1
+        vanilla_ala_layer_idx: 2
         personalized_head: false
       privacy: {enabled: false}
 
@@ -403,6 +404,7 @@ experiments:
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1
+        vanilla_ala_layer_idx: 2
         personalized_head: false
       privacy: {enabled: false}
 

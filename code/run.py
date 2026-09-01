@@ -56,7 +56,7 @@ from model import (
     load_shared_state,
     local_parameter_prefixes,
     shared_state_dict,
-    vanilla_ala_parameter_prefixes,
+    vanilla_ala_parameter_names,
 )
 from privacy import gaussian_rdp_epsilon
 
@@ -1521,6 +1521,7 @@ def _load_moduleala_initial_state(
     global_state: dict[str, torch.Tensor],
     alpha_state: dict[str, torch.Tensor] | None,
     eligible_prefixes: tuple[str, ...] | None = None,
+    eligible_names: tuple[str, ...] | None = None,
 ) -> dict[str, float]:
     """构造 ModuleALA 本轮初始化：shared 取 global，ALA 参数逐元素插值。
 
@@ -1529,6 +1530,7 @@ def _load_moduleala_initial_state(
     """
 
     ala_prefixes = eligible_prefixes or ala_parameter_prefixes()
+    ala_name_set = set(eligible_names or ())
     local_prefixes = local_parameter_prefixes(False)
     current = model.state_dict()
     adapted: dict[str, torch.Tensor] = {}
@@ -1537,7 +1539,11 @@ def _load_moduleala_initial_state(
     for name, value in current.items():
         if _is_prefixed(name, local_prefixes):
             source = local_state[name]
-        elif _is_prefixed(name, ala_prefixes):
+        elif (
+            name in ala_name_set
+            if eligible_names is not None
+            else _is_prefixed(name, ala_prefixes)
+        ):
             local_value = local_state[name].to(device=value.device, dtype=value.dtype)
             global_value = global_state[name].to(device=value.device, dtype=value.dtype)
             alpha = (
@@ -1573,14 +1579,16 @@ def _load_modulelocal_state(
     local_state: dict[str, torch.Tensor],
     global_state: dict[str, torch.Tensor],
     eligible_prefixes: tuple[str, ...],
+    eligible_names: tuple[str, ...] | None = None,
 ) -> None:
     """ModuleLocal 初始化：functional 与指定高层模块本地，其余参数取 global。"""
 
     local_prefixes = local_parameter_prefixes(False)
     current = model.state_dict()
     adapted: dict[str, torch.Tensor] = {}
+    ala_name_set = set(eligible_names or ())
     for name, value in current.items():
-        if name.startswith(local_prefixes) or name.startswith(eligible_prefixes):
+        if name.startswith(local_prefixes) or name in ala_name_set or name.startswith(eligible_prefixes):
             source = local_state[name]
         elif name in global_state:
             source = global_state[name]
@@ -1591,13 +1599,16 @@ def _load_modulelocal_state(
 
 
 def _alpha_module_statistics(
-    alpha_state: dict[str, torch.Tensor], eligible_prefixes: tuple[str, ...]
+    alpha_state: dict[str, torch.Tensor], eligible_prefixes: tuple[str, ...], eligible_names: tuple[str, ...] | None = None
 ) -> dict[str, dict[str, float]]:
     """将完整 alpha 压缩为按模块统计，数组本身只进入 checkpoint。"""
 
     groups: dict[str, list[torch.Tensor]] = {}
     for name, value in alpha_state.items():
-        module = next((prefix[:-1] for prefix in eligible_prefixes if name.startswith(prefix)), "other")
+        if eligible_names is not None:
+            module = name.split(".", 1)[0]
+        else:
+            module = next((prefix[:-1] for prefix in eligible_prefixes if name.startswith(prefix)), "other")
         groups.setdefault(module, []).append(value.detach().float().reshape(-1))
     statistics: dict[str, dict[str, float]] = {}
     for module, values in groups.items():
@@ -1624,15 +1635,17 @@ def _learn_moduleala_weights(
     graph_tensors_device: tuple[torch.Tensor, torch.Tensor],
     initial_adaptation: bool = False,
     eligible_prefixes: tuple[str, ...] | None = None,
+    eligible_names: tuple[str, ...] | None = None,
 ) -> dict[str, float]:
     """只用 train 窗口学习 ModuleALA alpha，再写回客户端模型。"""
 
     device = next(model.parameters()).device
     training_config = config["training"]
     ala_prefixes = eligible_prefixes or ala_parameter_prefixes()
+    ala_name_set = set(eligible_names or ())
     ala_names = tuple(
         name for name in model.state_dict()
-        if _is_prefixed(name, ala_prefixes)
+        if (name in ala_name_set if eligible_names is not None else _is_prefixed(name, ala_prefixes))
     )
     if not ala_names:
         raise RuntimeError("ModuleALA found no eligible spatial_gate/temporal_gate/head parameters")
@@ -1695,7 +1708,8 @@ def _learn_moduleala_weights(
     learned = {name: parameter.detach().cpu().clone().clamp(0.0, 1.0) for name, parameter in alpha_parameters.items()}
     alpha_state.update(learned)
     stats = _load_moduleala_initial_state(
-        model, previous_local_state, global_state, alpha_state, eligible_prefixes=ala_prefixes
+        model, previous_local_state, global_state, alpha_state,
+        eligible_prefixes=ala_prefixes, eligible_names=eligible_names,
     )
     all_alpha = torch.cat([value.reshape(-1) for value in alpha_state.values()])
     stats.update({
@@ -1730,7 +1744,13 @@ def federated(cfg: dict, device: torch.device) -> dict:
         raise ValueError("federated.algorithm must be LocalOnly, FedAvg, FedProx, ModuleALA, ModuleLocal, or VanillaFedALA")
     if (is_moduleala or is_modulelocal) and personalized_head:
         raise ValueError("ModuleALA/ModuleLocal own head.* personalization; personalized_head must be false")
-    ala_prefixes = vanilla_ala_parameter_prefixes() if is_vanilla_ala else ala_parameter_prefixes()
+    ala_prefixes = ala_parameter_prefixes()
+    vanilla_eligible_names: tuple[str, ...] = ()
+    if is_vanilla_ala:
+        layer_idx = int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
+        vanilla_eligible_names = vanilla_ala_parameter_names(models[0], layer_idx)
+        print(f"[VanillaFedALA] layer_idx={layer_idx}; eligible={list(vanilla_eligible_names)}")
+    ala_eligible_names = vanilla_eligible_names if is_vanilla_ala else None
     global_state = shared_state_dict(models[0], personalized_head=personalized_head)
 
     # 数据集与图在各轮之间不变，提前构造可避免重复拓扑计算。
@@ -1826,9 +1846,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
     # ModuleALA 的客户端完整状态和逐元素 alpha 跨轮持久化；服务器只看 shared state。
     ala_weights: list[dict[str, torch.Tensor]] = [
         {
-            name: torch.ones_like(value, dtype=torch.float32)
+            name: torch.ones_like(value, dtype=torch.float32, device="cpu")
             for name, value in model.state_dict().items()
-            if _is_prefixed(name, ala_prefixes)
+            if name in set(ala_eligible_names or ()) or _is_prefixed(name, ala_prefixes)
         }
         for model in models
     ] if is_personalized_module else []
@@ -1846,6 +1866,11 @@ def federated(cfg: dict, device: torch.device) -> dict:
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
         ala_round_stats: list[dict[str, float]] = []
+        global_ala_before = {
+            name: value.detach().clone()
+            for name, value in global_state.items()
+            if (name in set(ala_eligible_names) if is_vanilla_ala else name.startswith(ala_prefixes))
+        }
         ala_sample_loaders: list[DataLoader] = []
         if is_ala:
             for client_index, dataset in enumerate(train_sets):
@@ -1876,11 +1901,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
                         graph_tensors_device[client_index],
                         initial_adaptation=round_index == 2,
                         eligible_prefixes=ala_prefixes,
+                        eligible_names=ala_eligible_names,
                     )
                     stats["executed"] = 1.0
                     ala_round_stats.append(stats)
             elif is_modulelocal and round_index > 1:
-                _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes)
+                _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names)
             elif not local_only:
                 load_shared_state(model, global_state)
             state, metrics = train_local(
@@ -1905,12 +1931,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
             train_metrics.append(metrics)
             sample_weights.append(metrics["samples"])
 
-        # ModuleALA/ModuleLocal 的高层模块不进入服务器更新；global_state 中保留
-        # 它们仅作为后续个性化初始化的参考。
-        server_names = tuple(
-            name for name in global_state
-            if not (is_personalized_module and name.startswith(ala_prefixes))
-        )
+        # 只有 functional embeddings 永久不在 global_state；ModuleALA/VanillaFedALA
+        # 的 ALA 参数和 ModuleLocal 的 gate/head 均参与 shape-compatible 聚合。
+        server_names = tuple(global_state)
         if local_only:
             aggregation_audit = {
                 "privacy_enabled": False,
@@ -1937,6 +1960,13 @@ def federated(cfg: dict, device: torch.device) -> dict:
             }
         if not local_only:
             global_state.update(aggregated)
+        global_ala_delta = float(max(
+            [
+                (global_state[name].float() - value.float()).abs().max().item()
+                for name, value in global_ala_before.items()
+                if name in global_state
+            ] or [0.0]
+        ))
 
         # ModuleALA 评估 global shared + client-local ALA/functional 状态，不能整体回载 global。
         validation_clients: list[dict[str, float]] = []
@@ -1949,7 +1979,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 # 聚合后的 global 只覆盖非 ALA、非 functional 参数，保留个性化状态。
                 current = model.state_dict()
                 for name, value in global_state.items():
-                    if name.startswith(ala_prefixes) or name.startswith(local_parameter_prefixes(False)):
+                    if (name in set(ala_eligible_names or ()) or (not is_vanilla_ala and name.startswith(ala_prefixes))
+                            or name.startswith(local_parameter_prefixes(False))):
                         continue
                     if name in current:
                         current[name].copy_(value.to(device=current[name].device, dtype=current[name].dtype))
@@ -1986,6 +2017,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "alpha_max": float(max((item.get("alpha_max", 1.0) for item in ala_round_stats), default=1.0)),
                 "nonzero_initialization_total": float(sum(item.get("nonzero_initialization", 0.0) for item in ala_round_stats)),
                 "alpha_non_one_total": float(sum(item.get("alpha_non_one", 0.0) for item in ala_round_stats)),
+                "global_ala_max_abs_delta": global_ala_delta,
             } if is_ala else None,
         }
         history.append(record)
@@ -2256,11 +2288,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "ala": {
             "enabled": is_ala,
             "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else None)),
-            "eligible_prefixes": list(ala_prefixes) if is_personalized_module else [],
+            "eligible_prefixes": list(ala_prefixes) if is_moduleala else [],
+            "eligible_names": list(ala_eligible_names) if is_vanilla_ala else [],
             "sample_ratio": float(cfg["federated"].get("ala_sample_ratio", 0.0)) if is_ala else None,
             "weight_lr": float(cfg["federated"].get("ala_weight_lr", 0.0)) if is_ala else None,
             "statistics": [
-                _alpha_module_statistics(weights, ala_prefixes)
+                _alpha_module_statistics(weights, ala_prefixes, ala_eligible_names)
                 for weights in (best_ala_weights if is_ala and best_ala_weights is not None else [])
             ],
         },
@@ -2369,6 +2402,12 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
     """打印训练前的最终配置，避免实验名、联邦算法和 DP 参数串用。"""
 
     federated_used = task == "federated"
+    vanilla_names: list[str] = []
+    if federated_used and str(cfg["federated"].get("algorithm", "")).lower() == "vanillafedala":
+        preview_model = make_model(cfg, 12, torch.device("cpu"))
+        vanilla_names = list(vanilla_ala_parameter_names(
+            preview_model, int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
+        ))
     federated_config = (
         {
             "clients": int(cfg["federated"]["clients"]),
@@ -2380,6 +2419,8 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "ala_weight_lr": cfg["federated"].get("ala_weight_lr"),
             "ala_initial_epochs": cfg["federated"].get("ala_initial_epochs"),
             "ala_adapt_epochs": cfg["federated"].get("ala_adapt_epochs"),
+            "vanilla_ala_layer_idx": cfg["federated"].get("vanilla_ala_layer_idx"),
+            "vanilla_ala_eligible_names": vanilla_names,
         }
         if federated_used
         else {"used": False}
