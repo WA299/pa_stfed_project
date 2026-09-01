@@ -17,10 +17,19 @@ from torch.nn import functional as F
 # 功能图节点嵌入因客户端节点数不同而始终本地保留；预测头是否本地化
 # 由 federated.personalized_head 控制，主 FedAvg/FedProx 实验默认参与聚合。
 LOCAL_PARAMETER_PREFIXES = ("functional.embedding_1", "functional.embedding_2")
+# ModuleALA（inspired by and adapted from the FedALA mechanism）允许客户端在
+# 这些高层模块参数上学习逐元素混合权重；其余共享参数仍由服务器聚合并覆盖。
+ALA_PARAMETER_PREFIXES = ("spatial_gate.", "temporal_gate.", "head.")
 
 
 def local_parameter_prefixes(personalized_head: bool = False) -> tuple[str, ...]:
     return (*LOCAL_PARAMETER_PREFIXES, "head.") if personalized_head else LOCAL_PARAMETER_PREFIXES
+
+
+def ala_parameter_prefixes() -> tuple[str, ...]:
+    """返回 ModuleALA 的可个性化高层参数前缀。"""
+
+    return ALA_PARAMETER_PREFIXES
 
 
 class AdaptiveVertexGraphConv(nn.Module):

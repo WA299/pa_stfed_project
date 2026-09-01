@@ -1,6 +1,6 @@
 # Current Stage
 
-Final periodic-input freeze completed; only the required 2-epoch centralized smoke was run.
+ModuleALA adaptive local aggregation minimal implementation added, inspired by/adapted from the FedALA mechanism; only its 2-round smoke is permitted, not a formal long run.
 
 # Data Status
 
@@ -8,7 +8,7 @@ Final periodic-input freeze completed; only the required 2-epoch centralized smo
 
 # Model Status
 
-模型主体、topology-kNN、客户端划分和联邦算法均未修改。正式 loader 输入冻结为 historical load + relative daily phase sin/cos + relative weekly phase sin/cos，共 5 维（`input_dim=5`）。verified timestamp/calendar sidecar 不直接进入最终主模型；8D calendar screening 仅作为 auxiliary validation。compile、loader 范围检查、拓扑契约和 2-epoch centralized smoke 均通过，未访问 test。
+模型主体、topology-kNN、客户端划分和既有 FedAvg/FedProx 算法未修改。正式 loader 输入冻结为 historical load + relative daily phase sin/cos + relative weekly phase sin/cos，共 5 维（`input_dim=5`）。新增独立 `ModuleALA`（inspired by/adapted from FedALA ALA mechanism）：functional embeddings 始终本地，spatial/temporal gate 与 head 使用逐元素 alpha 个性化，第一轮关闭 ALA；不声称提出或复现原始 FedALA。`stage_ala_smoke` 仅用于流程验证，8D calendar screening 仍为 auxiliary validation。compile、loader 范围检查、拓扑契约和既有 smoke 均通过；ModuleALA smoke 已通过，未访问 test。
 
 # Current Blocker
 
@@ -16,8 +16,8 @@ Final periodic-input freeze completed; only the required 2-epoch centralized smo
 
 # Next Steps
 
-1. 在正式实验协议确认后运行 5D 主线。
-2. 将 8D calendar screening 结果保留为 auxiliary validation，不纳入主表。
+1. 完成 `stage_ala_smoke` 并检查 alpha/个性化状态审计。
+2. 将 8D calendar screening 与 ALA smoke 结果排除出正式主表。
 3. 在明确下一阶段协议后再运行正式长训练。
 
 # Latest Commit
