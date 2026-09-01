@@ -411,6 +411,75 @@ experiments:
         personalized_head: false
       privacy: {enabled: false}
 
+  # Development screening only; no formal result aggregation or test evaluation.
+  modulelocal_dev:
+    task: federated
+    tag: modulelocal_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training:
+        <<: *formal_federated_training
+        evaluate_test: false
+      federated:
+        algorithm: ModuleLocal
+        mu: 0.0
+        rounds: 20
+        local_epochs: 1
+        patience: 5
+        personalized_head: false
+      privacy: {enabled: false}
+
+  # FedALA-style generic last-k layer ALA baseline; this is not an item-by-item
+  # reproduction of original FedALA and does not use ModuleALA module semantics.
+  layerala_dev:
+    task: federated
+    tag: layerala_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training:
+        <<: *formal_federated_training
+        evaluate_test: false
+      federated:
+        algorithm: VanillaFedALA
+        mu: 0.0
+        vanilla_ala_layer_idx: 10
+        rounds: 20
+        local_epochs: 1
+        patience: 5
+        ala_sample_ratio: 0.05
+        ala_weight_lr: 1.0
+        ala_initial_epochs: 1
+        ala_adapt_epochs: 1
+        personalized_head: false
+      privacy: {enabled: false}
+
+  moduleala_dev:
+    task: federated
+    tag: moduleala_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      training:
+        <<: *formal_federated_training
+        evaluate_test: false
+      federated:
+        algorithm: ModuleALA
+        mu: 0.0
+        rounds: 20
+        local_epochs: 1
+        patience: 5
+        ala_sample_ratio: 0.05
+        ala_weight_lr: 1.0
+        ala_initial_epochs: 1
+        ala_adapt_epochs: 1
+        personalized_head: false
+      privacy: {enabled: false}
+
   # 每轮 8/8 客户端全参与，故 q=1；记录 C=1、sigma=3.2、delta=1e-5 和 epsilon。
   dp_fedavg:
     task: federated
