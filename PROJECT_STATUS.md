@@ -1,6 +1,6 @@
 # Current Stage
 
-Final plan Stage A completed: verified calendar sidecar integrated with cyclic encoding; only a 2-epoch smoke run was executed.
+Final periodic-input freeze completed; only the required 2-epoch centralized smoke was run.
 
 # Data Status
 
@@ -8,16 +8,16 @@ Final plan Stage A completed: verified calendar sidecar integrated with cyclic e
 
 # Model Status
 
-模型主体、topology-kNN、客户端划分和联邦算法均未修改。正式 loader 输入为 1 维 historical load + 2 维 time-of-day sin/cos + 2 维 day-of-week sin/cos + 2 维 month sin/cos + 1 维 weekend，共 8 维；compile、loader 范围检查、五类模型前向检查和 2-epoch centralized smoke 均通过，未访问 test。
+模型主体、topology-kNN、客户端划分和联邦算法均未修改。正式 loader 输入冻结为 1 维 historical load + 日内 sin/cos + 周 sin/cos，共 5 维（`input_dim=5`）。compile、loader 范围检查、拓扑契约和 2-epoch centralized smoke 均通过，未访问 test。
 
 # Current Blocker
 
-无实现阻塞。Temperature 不可用且不再获取；不得用外部 NSRDB 或其他地区天气替代。3 条 commercial profile/parquet 数值例外必须在论文数据说明中保留。
+无实现阻塞。Temperature 不可用且不再获取；不得用外部 NSRDB 或其他地区天气替代。verified timestamp/calendar sidecar 与审计报告继续保留，但 month/weekend 等额外日历变量不进入正式主模型。3 条 commercial profile/parquet 数值例外必须在论文数据说明中保留。
 
 # Next Steps
 
-1. 冻结 historical load + cyclic calendar 输入口径（input_dim=8）。
-2. 将已完成的 r40 联邦结果作为独立实验提交并分析。
+1. 在正式实验协议确认后运行 5D 主线。
+2. 将 8D calendar screening 结果保留为 auxiliary validation，不纳入主表。
 3. 在明确下一阶段协议后再运行正式长训练。
 
 # Latest Commit

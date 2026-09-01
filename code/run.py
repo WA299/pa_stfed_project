@@ -754,8 +754,8 @@ def audit(cfg: dict) -> dict:
         "split_load_statistics": split_load_statistics,
         "client_node_counts": [int(len(nodes)) for nodes in partitions],
         "client_partition_protocol": (
-            "spatially ordered contiguous segments with duplicate load-curve groups "
-            "treated as indivisible units; dynamic-programming load balancing"
+            "official-tree topology partition; duplicate load-curve groups are "
+            "recorded for audit but not constrained to one client"
         ),
         "duplicate_curve_groups_crossing_clients": duplicate_cross_client_groups,
         "duplicate_curve_group_split_count": len(duplicate_cross_client_groups),
@@ -781,11 +781,16 @@ def audit(cfg: dict) -> dict:
             "pairwise": pairwise_non_iid,
         },
         "absolute_timestamp_available": data.timestamp is not None,
-        "calendar_features": ["time_of_day_sin", "time_of_day_cos", "day_of_week_sin", "day_of_week_cos", "month_sin", "month_cos", "weekend"],
+        "calendar_features": [
+            "time_of_day_sin",
+            "time_of_day_cos",
+            "day_of_week_sin",
+            "day_of_week_cos",
+        ],
         "weather_available": False,
         "topology_rule": (
-            "formal: zero-load relay projection followed by component-level deterministic "
-            "Kruskal MST on active endpoints; legacy all-node MST retained for comparison"
+            "formal: official Line+Transformer target topology-kNN with global k=6; "
+            "legacy MST modes are retained only for historical comparison"
         ),
     }
     output_path(cfg, "audit_report.json").write_text(
@@ -2150,7 +2155,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         "federated": federated_config,
         "model": {
             "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
-            "input_dim": int(cfg["model"].get("input_dim", 8)),
+            "input_dim": int(cfg["model"].get("input_dim", 5)),
             "hidden_dim": int(cfg["model"]["hidden_dim"]),
             "functional_dim": int(cfg["model"]["functional_dim"]),
             "spatial_heads": int(cfg["model"]["spatial_heads"]),
