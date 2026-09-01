@@ -1744,6 +1744,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
         raise ValueError("federated.algorithm must be LocalOnly, FedAvg, FedProx, ModuleALA, ModuleLocal, or VanillaFedALA")
     if (is_moduleala or is_modulelocal) and personalized_head:
         raise ValueError("ModuleALA/ModuleLocal own head.* personalization; personalized_head must be false")
+    mu = float(cfg["federated"].get("mu", 0.0))
+    if algorithm != "fedprox" and abs(mu) > 0.0:
+        raise ValueError(f"proximal mu must be 0 for algorithm={cfg['federated'].get('algorithm')}; got {mu}")
     ala_prefixes = ala_parameter_prefixes()
     vanilla_eligible_names: tuple[str, ...] = ()
     if is_vanilla_ala:
@@ -1843,15 +1846,19 @@ def federated(cfg: dict, device: torch.device) -> dict:
         if local_only
         else [None] * len(models)
     )
-    # ModuleALA 的客户端完整状态和逐元素 alpha 跨轮持久化；服务器只看 shared state。
+    # 仅 ModuleALA/VanillaFedALA 持久化逐元素 alpha；ModuleLocal 不创建该状态。
     ala_weights: list[dict[str, torch.Tensor]] = [
         {
             name: torch.ones_like(value, dtype=torch.float32, device="cpu")
             for name, value in model.state_dict().items()
-            if name in set(ala_eligible_names or ()) or _is_prefixed(name, ala_prefixes)
+            if (
+                name in set(ala_eligible_names or ())
+                if is_vanilla_ala
+                else _is_prefixed(name, ala_prefixes)
+            )
         }
         for model in models
-    ] if is_personalized_module else []
+    ] if is_ala else []
     previous_local_states: list[dict[str, torch.Tensor]] = [
         {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
         for model in models
@@ -2244,6 +2251,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
         },
         "federated_algorithm": str(cfg["federated"].get("algorithm", "FedAvg")),
         "fedprox_mu": float(cfg["federated"].get("mu", 0.0)),
+        "effective_mu": float(mu if algorithm == "fedprox" else 0.0),
+        "proximal_enabled": bool(algorithm == "fedprox" and mu > 0.0),
         "client_node_counts": [len(nodes) for nodes in partitions],
         "evaluation_metadata": {
             "source_sha256": source_sha256,
@@ -2413,6 +2422,8 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "clients": int(cfg["federated"]["clients"]),
             "algorithm": cfg["federated"]["algorithm"],
             "mu": float(cfg["federated"]["mu"]),
+            "effective_mu": float(cfg["federated"]["mu"] if str(cfg["federated"]["algorithm"]).lower() == "fedprox" else 0.0),
+            "proximal_enabled": bool(str(cfg["federated"]["algorithm"]).lower() == "fedprox" and float(cfg["federated"]["mu"]) > 0),
             "uniform_mean": bool(cfg["federated"].get("uniform_mean", True)),
             "personalized_head": bool(cfg["federated"].get("personalized_head", False)),
             "ala_sample_ratio": cfg["federated"].get("ala_sample_ratio"),

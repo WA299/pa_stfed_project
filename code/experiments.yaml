@@ -347,6 +347,7 @@ experiments:
         evaluate_test: false
       federated:
         algorithm: ModuleALA
+        mu: 0.0
         rounds: 2
         local_epochs: 1
         patience: 5
@@ -374,6 +375,7 @@ experiments:
         evaluate_test: false
       federated:
         algorithm: ModuleLocal
+        mu: 0.0
         rounds: 2
         local_epochs: 1
         patience: 5
@@ -397,6 +399,7 @@ experiments:
         evaluate_test: false
       federated:
         algorithm: VanillaFedALA
+        mu: 0.0
         rounds: 2
         local_epochs: 1
         patience: 5

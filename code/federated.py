@@ -113,11 +113,16 @@ def train_local(
         edge_features = torch.from_numpy(graph.edge_features).to(device)
     else:
         adjacency, edge_features = graph_tensors_device
-    mu = float(config["federated"]["mu"])
+    algorithm = str(config["federated"].get("algorithm", "FedAvg")).lower()
+    mu = float(config["federated"].get("mu", 0.0))
+    if algorithm != "fedprox" and abs(mu) > 0.0:
+        raise ValueError(
+            f"proximal mu must be 0 for algorithm={config['federated'].get('algorithm')}; got {mu}"
+        )
     personalized_head = bool(config["federated"].get("personalized_head", False))
     proximal_state = (
         {name: value.to(device=device) for name, value in global_state.items()}
-        if global_state is not None and mu > 0
+        if algorithm == "fedprox" and global_state is not None and mu > 0
         else None
     )
     model.train()
