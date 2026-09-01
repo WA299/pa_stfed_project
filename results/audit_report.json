@@ -1,7 +1,7 @@
 {
-  "code_revision": "20260830_frozen_topology_knn_stage1",
-  "config_signature": "7881931a4fe7190bc4789887deed5cfebd3d7426db746d1c77af01ce973f9d7a",
-  "audit_timestamp_utc": "2026-08-30T17:02:56.835806+00:00",
+  "code_revision": "20260901_verified_calendar_cyclic_v1",
+  "config_signature": "fdf5432d5ed468492770f2f86ae800df679ab000b808f5a5960b4bfdfdef9aa9",
+  "audit_timestamp_utc": "2026-08-31T23:21:40.390923+00:00",
   "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
   "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
   "fields": {
@@ -938,7 +938,16 @@
       }
     ]
   },
-  "absolute_timestamp_available": false,
+  "absolute_timestamp_available": true,
+  "calendar_features": [
+    "time_of_day_sin",
+    "time_of_day_cos",
+    "day_of_week_sin",
+    "day_of_week_cos",
+    "month_sin",
+    "month_cos",
+    "weekend"
+  ],
   "weather_available": false,
   "topology_rule": "formal: zero-load relay projection followed by component-level deterministic Kruskal MST on active endpoints; legacy all-node MST retained for comparison"
 }

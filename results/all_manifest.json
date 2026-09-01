@@ -9,28 +9,42 @@
   "experiments": [
     "agcrn",
     "baseline",
+    "calendar_gwnet_screen",
+    "calendar_lstm_screen",
+    "calendar_pa_screen",
     "centralized",
     "fedavg",
+    "fedavg_r40",
     "fedprox_005",
+    "fedprox_005_r40",
     "gwnet",
     "itransformer_validation",
     "load_lstm_validation",
     "local_only",
+    "local_only_r40",
     "personalized_head",
+    "personalized_head_r40",
     "spatial_functional_only",
     "spatial_physical_only"
   ],
   "seed_count_by_experiment": {
     "agcrn": 3,
     "baseline": 1,
+    "calendar_gwnet_screen": 1,
+    "calendar_lstm_screen": 1,
+    "calendar_pa_screen": 1,
     "centralized": 3,
     "fedavg": 1,
+    "fedavg_r40": 1,
     "fedprox_005": 1,
+    "fedprox_005_r40": 1,
     "gwnet": 3,
     "itransformer_validation": 3,
     "load_lstm_validation": 3,
     "local_only": 1,
+    "local_only_r40": 1,
     "personalized_head": 1,
+    "personalized_head_r40": 1,
     "spatial_functional_only": 3,
     "spatial_physical_only": 3
   },
@@ -256,6 +270,150 @@
         "test": null,
         "best_epoch": 10,
         "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "fedavg",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "fedavg_grouped_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\fedavg_grouped_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3608265444636345,
+          "rmse": 0.7228342518210411,
+          "wape": 31.222620487213135,
+          "smape": 31.112314224243164,
+          "mape": 36.09201002120972,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 20,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 18
+      }
+    },
+    {
+      "experiment": "fedavg_r40",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "fedavg_r40_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\fedavg_r40_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3552852775901556,
+          "rmse": 0.716913104057312,
+          "wape": 30.745030403137207,
+          "smape": 30.2421772480011,
+          "mape": 34.578962564468384,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 34,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 29
+      }
+    },
+    {
+      "experiment": "fedprox_005",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "fedprox005_grouped_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\fedprox005_grouped_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3742933366447687,
+          "rmse": 0.7363996841013432,
+          "wape": 32.37872385978699,
+          "smape": 32.609490633010864,
+          "mape": 39.3507764339447,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 20,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 19
+      }
+    },
+    {
+      "experiment": "fedprox_005_r40",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "fedprox005_r40_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\fedprox005_r40_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.36841387301683426,
+          "rmse": 0.730003647506237,
+          "wape": 31.840043425559998,
+          "smape": 31.82086753845215,
+          "mape": 38.009047985076904,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 36,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 31
       }
     },
     {
@@ -520,6 +678,150 @@
       }
     },
     {
+      "experiment": "local_only",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "local_only_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\local_only_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3508074879646301,
+          "rmse": 0.7046115212142467,
+          "wape": 30.312903881072998,
+          "smape": 29.940272569656372,
+          "mape": 34.40214967727661,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 20,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 17
+      }
+    },
+    {
+      "experiment": "local_only_r40",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "local_only_r40_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\local_only_r40_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3508074879646301,
+          "rmse": 0.7046115212142467,
+          "wape": 30.312903881072998,
+          "smape": 29.940272569656372,
+          "mape": 34.40214967727661,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 22,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 17
+      }
+    },
+    {
+      "experiment": "personalized_head",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "personalized_head_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\personalized_head_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3630633931607008,
+          "rmse": 0.720031701028347,
+          "wape": 31.554043650627136,
+          "smape": 31.42831563949585,
+          "mape": 37.18243384361267,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 20,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 20
+      }
+    },
+    {
+      "experiment": "personalized_head_r40",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "personalized_head_r40_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\personalized_head_r40_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.35688127391040325,
+          "rmse": 0.715416669845581,
+          "wape": 30.93177890777588,
+          "smape": 30.62311553955078,
+          "mape": 35.77611303329468,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 30,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 25
+      }
+    },
+    {
       "experiment": "spatial_functional_only",
       "seed": 2026,
       "task": "centralized",
@@ -694,147 +996,90 @@
       }
     },
     {
-      "experiment": "local_only",
+      "experiment": "calendar_pa_screen",
       "seed": 2026,
-      "task": "federated",
-      "tag": "local_only_seed2026",
-      "result_path": "E:\\pa_stfed_project\\results\\local_only_seed2026_federated_result.json",
+      "task": "centralized",
+      "tag": "calendar_pa_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\calendar_pa_screen_seed2026_centralized_result.json",
       "status": "completed",
       "result": {
         "validation": {
-          "mae": 0.3508074879646301,
-          "rmse": 0.7046115212142467,
-          "wape": 30.312903881072998,
-          "smape": 29.940272569656372,
-          "mape": 34.40214967727661,
+          "mae": 0.3429487347602844,
+          "rmse": 0.7194271087646484,
+          "wape": 29.245813369750977,
+          "smape": 28.83496856689453,
+          "mape": 31.989938735961914,
           "mape_valid_ratio": 1.0
         },
-        "test_macro": null,
-        "test_rmse_p90": null,
-        "privacy": {
-          "enabled": false,
-          "C": 1.0,
-          "sigma": 3.2,
-          "q": 1.0,
-          "R": 20,
-          "delta": 1e-05,
-          "epsilon": null,
-          "planned_epsilon": null,
-          "max_epsilon": 10.0,
-          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
-          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
-          "adjacency_definition": "client add/remove with fixed denominator K",
-          "mean_noise_variance": 0.0
+        "train": {
+          "mae": 0.3255353271961212,
+          "rmse": 0.7235164046287537,
+          "wape": 21.09986686706543,
+          "smape": 21.92452049255371,
+          "mape": 23.07359504699707,
+          "mape_valid_ratio": 1.0
         },
-        "best_round": 17
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
       }
     },
     {
-      "experiment": "fedavg",
+      "experiment": "calendar_gwnet_screen",
       "seed": 2026,
-      "task": "federated",
-      "tag": "fedavg_grouped_seed2026",
-      "result_path": "E:\\pa_stfed_project\\results\\fedavg_grouped_seed2026_federated_result.json",
+      "task": "centralized",
+      "tag": "calendar_gwnet_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\calendar_gwnet_screen_seed2026_centralized_result.json",
       "status": "completed",
       "result": {
         "validation": {
-          "mae": 0.3608265444636345,
-          "rmse": 0.7228342518210411,
-          "wape": 31.222620487213135,
-          "smape": 31.112314224243164,
-          "mape": 36.09201002120972,
+          "mae": 0.3427678942680359,
+          "rmse": 0.7227327823638916,
+          "wape": 29.230392456054688,
+          "smape": 28.98804473876953,
+          "mape": 32.402523040771484,
           "mape_valid_ratio": 1.0
         },
-        "test_macro": null,
-        "test_rmse_p90": null,
-        "privacy": {
-          "enabled": false,
-          "C": 1.0,
-          "sigma": 3.2,
-          "q": 1.0,
-          "R": 20,
-          "delta": 1e-05,
-          "epsilon": null,
-          "planned_epsilon": null,
-          "max_epsilon": 10.0,
-          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
-          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
-          "adjacency_definition": "client add/remove with fixed denominator K",
-          "mean_noise_variance": 0.0
+        "train": {
+          "mae": 0.32173702120780945,
+          "rmse": 0.7132620215415955,
+          "wape": 20.853675842285156,
+          "smape": 21.80457878112793,
+          "mape": 22.684965133666992,
+          "mape_valid_ratio": 1.0
         },
-        "best_round": 18
+        "test": null,
+        "best_epoch": 12,
+        "selection_metric": "wape"
       }
     },
     {
-      "experiment": "fedprox_005",
+      "experiment": "calendar_lstm_screen",
       "seed": 2026,
-      "task": "federated",
-      "tag": "fedprox005_grouped_seed2026",
-      "result_path": "E:\\pa_stfed_project\\results\\fedprox005_grouped_seed2026_federated_result.json",
+      "task": "centralized",
+      "tag": "calendar_lstm_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\calendar_lstm_screen_seed2026_centralized_result.json",
       "status": "completed",
       "result": {
         "validation": {
-          "mae": 0.3742933366447687,
-          "rmse": 0.7363996841013432,
-          "wape": 32.37872385978699,
-          "smape": 32.609490633010864,
-          "mape": 39.3507764339447,
+          "mae": 0.3599225878715515,
+          "rmse": 0.7472135424613953,
+          "wape": 30.693300247192383,
+          "smape": 30.39284896850586,
+          "mape": 34.01365280151367,
           "mape_valid_ratio": 1.0
         },
-        "test_macro": null,
-        "test_rmse_p90": null,
-        "privacy": {
-          "enabled": false,
-          "C": 1.0,
-          "sigma": 3.2,
-          "q": 1.0,
-          "R": 20,
-          "delta": 1e-05,
-          "epsilon": null,
-          "planned_epsilon": null,
-          "max_epsilon": 10.0,
-          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
-          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
-          "adjacency_definition": "client add/remove with fixed denominator K",
-          "mean_noise_variance": 0.0
-        },
-        "best_round": 19
-      }
-    },
-    {
-      "experiment": "personalized_head",
-      "seed": 2026,
-      "task": "federated",
-      "tag": "personalized_head_seed2026",
-      "result_path": "E:\\pa_stfed_project\\results\\personalized_head_seed2026_federated_result.json",
-      "status": "completed",
-      "result": {
-        "validation": {
-          "mae": 0.3630633931607008,
-          "rmse": 0.720031701028347,
-          "wape": 31.554043650627136,
-          "smape": 31.42831563949585,
-          "mape": 37.18243384361267,
+        "train": {
+          "mae": 0.3433113098144531,
+          "rmse": 0.7473843097686768,
+          "wape": 22.25203514099121,
+          "smape": 23.621219635009766,
+          "mape": 24.896936416625977,
           "mape_valid_ratio": 1.0
         },
-        "test_macro": null,
-        "test_rmse_p90": null,
-        "privacy": {
-          "enabled": false,
-          "C": 1.0,
-          "sigma": 3.2,
-          "q": 1.0,
-          "R": 20,
-          "delta": 1e-05,
-          "epsilon": null,
-          "planned_epsilon": null,
-          "max_epsilon": 10.0,
-          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
-          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
-          "adjacency_definition": "client add/remove with fixed denominator K",
-          "mean_noise_variance": 0.0
-        },
-        "best_round": 20
+        "test": null,
+        "best_epoch": 7,
+        "selection_metric": "wape"
       }
     }
   ],
