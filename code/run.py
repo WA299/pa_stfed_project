@@ -2412,11 +2412,18 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
 
     federated_used = task == "federated"
     vanilla_names: list[str] = []
-    if federated_used and str(cfg["federated"].get("algorithm", "")).lower() == "vanillafedala":
+    module_names: list[str] = []
+    preview_model = None
+    algorithm_name = str(cfg["federated"].get("algorithm", "")).lower() if federated_used else ""
+    if federated_used and algorithm_name in {"vanillafedala", "moduleala", "modulelocal"}:
         preview_model = make_model(cfg, 12, torch.device("cpu"))
-        vanilla_names = list(vanilla_ala_parameter_names(
-            preview_model, int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
-        ))
+        if algorithm_name == "vanillafedala":
+            vanilla_names = list(vanilla_ala_parameter_names(
+                preview_model, int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
+            ))
+        else:
+            module_names = [name for name, _ in preview_model.named_parameters() if name.startswith(ala_parameter_prefixes())]
+    eligible_names = vanilla_names if algorithm_name == "vanillafedala" else module_names
     federated_config = (
         {
             "clients": int(cfg["federated"]["clients"]),
@@ -2432,6 +2439,10 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "ala_adapt_epochs": cfg["federated"].get("ala_adapt_epochs"),
             "vanilla_ala_layer_idx": cfg["federated"].get("vanilla_ala_layer_idx"),
             "vanilla_ala_eligible_names": vanilla_names,
+            "eligible_tensor_count": len(eligible_names),
+            "eligible_numel": int(sum(preview_model.state_dict()[name].numel() for name in eligible_names)) if eligible_names and preview_model is not None else 0,
+            "eligible_names": eligible_names,
+            "eligible_prefixes": list(ala_parameter_prefixes()) if algorithm_name in {"moduleala", "modulelocal"} else [],
         }
         if federated_used
         else {"used": False}
@@ -2807,6 +2818,12 @@ def run_all(
         names = [name for name in names if not name.startswith("dp_")]
     if not names:
         raise ValueError("No experiments selected")
+    scopes = {str(jobs[name].get("result_scope", "formal")).lower() for name in names}
+    if len(scopes) != 1:
+        raise ValueError("Cannot mix formal and development experiments in one run_all invocation")
+    result_scope = scopes.pop()
+    if result_scope not in {"formal", "development"}:
+        raise ValueError(f"Unsupported result_scope: {result_scope}")
 
     if not dry_run and str(base_cfg.get("device", "auto")).lower() == "cuda":
         # 在第一个任务开始前就终止，避免服务器使用 CPU 版 PyTorch 时
@@ -2826,10 +2843,22 @@ def run_all(
         return seeds[: min(count, len(seeds))]
 
     OUTPUTS.mkdir(exist_ok=True)
-    # include_in_all 只控制默认是否加入矩阵，不再代表“调参模式”。
-    # 显式指定的任意实验都统一写入正式 manifest，避免旧调参逻辑串入结果汇总。
-    manifest_path = OUTPUTS / "all_manifest.json"
-    existing_items = collect_existing_formal_items()
+    # development screening 使用独立账本，绝不能污染 formal all_manifest/all_summary。
+    manifest_stem = "development" if result_scope == "development" else "all"
+    manifest_path = OUTPUTS / f"{manifest_stem}_manifest.json"
+    if result_scope == "formal":
+        existing_items = collect_existing_formal_items()
+    else:
+        existing_items = []
+        if manifest_path.exists():
+            try:
+                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+                existing_items = [
+                    item for item in payload.get("items", [])
+                    if item.get("status") in {"completed", "skipped_existing"}
+                ]
+            except (OSError, json.JSONDecodeError):
+                existing_items = []
     existing_experiments = {str(item["experiment"]) for item in existing_items}
     existing_seeds = {int(item["seed"]) for item in existing_items}
     all_experiment_names = sorted(existing_experiments | set(names))
@@ -2844,7 +2873,7 @@ def run_all(
             merged_seeds.update(selected_job_seeds(experiment_name))
         merged_seed_counts[experiment_name] = len(merged_seeds)
     manifest = {
-        "run_kind": "formal",
+        "run_kind": result_scope,
         "status": "dry_run" if dry_run else "running",
         # manifest 是增量账本：保留旧实验，并将本次请求的配置并入元数据。
         "seeds": sorted(existing_seeds | {int(seed) for seed in seeds}),
@@ -2887,7 +2916,7 @@ def run_all(
                     "result_path": str(expected_result_path(cfg, task)),
                 })
         save_manifest()
-        summary_path = OUTPUTS / "all_summary.json"
+        summary_path = OUTPUTS / f"{manifest_stem}_summary.json"
         summary_path.write_text(
             json.dumps(summarize_all_items(manifest["items"]), ensure_ascii=False, indent=2),
             encoding="utf-8",

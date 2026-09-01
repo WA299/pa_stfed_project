@@ -417,6 +417,7 @@ experiments:
     tag: modulelocal_dev_seed{seed}
     seed_count: 1
     include_in_all: false
+    result_scope: development
     overrides:
       data: {graph: topology_knn, target_knn_k: 6}
       training:
@@ -438,6 +439,7 @@ experiments:
     tag: layerala_dev_seed{seed}
     seed_count: 1
     include_in_all: false
+    result_scope: development
     overrides:
       data: {graph: topology_knn, target_knn_k: 6}
       training:
@@ -450,7 +452,7 @@ experiments:
         rounds: 20
         local_epochs: 1
         patience: 5
-        ala_sample_ratio: 0.05
+        ala_sample_ratio: 0.80
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1
@@ -462,6 +464,7 @@ experiments:
     tag: moduleala_dev_seed{seed}
     seed_count: 1
     include_in_all: false
+    result_scope: development
     overrides:
       data: {graph: topology_knn, target_knn_k: 6}
       training:
@@ -473,7 +476,7 @@ experiments:
         rounds: 20
         local_epochs: 1
         patience: 5
-        ala_sample_ratio: 0.05
+        ala_sample_ratio: 0.80
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1

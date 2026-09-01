@@ -1,0 +1,48 @@
+{
+  "run_kind": "development",
+  "status": "dry_run",
+  "seeds": [
+    2026
+  ],
+  "experiments": [
+    "layerala_dev",
+    "moduleala_dev",
+    "modulelocal_dev"
+  ],
+  "seed_count_by_experiment": {
+    "layerala_dev": 1,
+    "moduleala_dev": 1,
+    "modulelocal_dev": 1
+  },
+  "resume": false,
+  "skip_dp": false,
+  "dry_run": true,
+  "items": [
+    {
+      "experiment": "modulelocal_dev",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "modulelocal_dev_seed2026",
+      "status": "dry_run",
+      "result_path": "E:\\pa_stfed_project\\results\\modulelocal_dev_seed2026_federated_result.json"
+    },
+    {
+      "experiment": "layerala_dev",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "layerala_dev_seed2026",
+      "status": "dry_run",
+      "result_path": "E:\\pa_stfed_project\\results\\layerala_dev_seed2026_federated_result.json"
+    },
+    {
+      "experiment": "moduleala_dev",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "moduleala_dev_seed2026",
+      "status": "dry_run",
+      "result_path": "E:\\pa_stfed_project\\results\\moduleala_dev_seed2026_federated_result.json"
+    }
+  ],
+  "summary_path": "E:\\pa_stfed_project\\results\\development_summary.json",
+  "failed_count": 0
+}
