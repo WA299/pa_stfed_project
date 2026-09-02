@@ -1,7 +1,7 @@
 {
-  "code_revision": "20260901_verified_calendar_cyclic_v1",
-  "config_signature": "fdf5432d5ed468492770f2f86ae800df679ab000b808f5a5960b4bfdfdef9aa9",
-  "audit_timestamp_utc": "2026-08-31T23:21:40.390923+00:00",
+  "code_revision": "20260902_ala_window_cache_v1",
+  "config_signature": "11f7984f9d87ce1f16669564292f592ebab33c36538a22490eab99d5eaf234fd",
+  "audit_timestamp_utc": "2026-09-02T08:53:48.327769+00:00",
   "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
   "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
   "fields": {
@@ -454,7 +454,7 @@
     11,
     12
   ],
-  "client_partition_protocol": "spatially ordered contiguous segments with duplicate load-curve groups treated as indivisible units; dynamic-programming load balancing",
+  "client_partition_protocol": "official-tree topology partition; duplicate load-curve groups are recorded for audit but not constrained to one client",
   "duplicate_curve_groups_crossing_clients": [
     {
       "nodes": [
@@ -940,14 +940,11 @@
   },
   "absolute_timestamp_available": true,
   "calendar_features": [
-    "time_of_day_sin",
-    "time_of_day_cos",
-    "day_of_week_sin",
-    "day_of_week_cos",
-    "month_sin",
-    "month_cos",
-    "weekend"
+    "relative_daily_sin",
+    "relative_daily_cos",
+    "relative_weekly_sin",
+    "relative_weekly_cos"
   ],
   "weather_available": false,
-  "topology_rule": "formal: zero-load relay projection followed by component-level deterministic Kruskal MST on active endpoints; legacy all-node MST retained for comparison"
+  "topology_rule": "formal: official Line+Transformer target topology-kNN with global k=6; legacy MST modes are retained only for historical comparison"
 }
