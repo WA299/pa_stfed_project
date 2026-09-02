@@ -543,6 +543,44 @@ experiments:
         evaluate_test: false
       privacy: {enabled: false}
 
+  pa_residual_multilevel_l002_dev:
+    task: centralized
+    tag: pa_residual_multilevel_l002_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      model:
+        architecture: pa_stfed
+        use_residual_anchor: true
+      training:
+        <<: *formal_centralized_training
+        loss_mode: multilevel
+        scale_source: train_iqr
+        feeder_loss_weight: 0.02
+        evaluate_test: false
+      privacy: {enabled: false}
+
+  pa_residual_multilevel_l005_dev:
+    task: centralized
+    tag: pa_residual_multilevel_l005_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      model:
+        architecture: pa_stfed
+        use_residual_anchor: true
+      training:
+        <<: *formal_centralized_training
+        loss_mode: multilevel
+        scale_source: train_iqr
+        feeder_loss_weight: 0.05
+        evaluate_test: false
+      privacy: {enabled: false}
+
   # 每轮 8/8 客户端全参与，故 q=1；记录 C=1、sigma=3.2、delta=1e-5 和 epsilon。
   dp_fedavg:
     task: federated
