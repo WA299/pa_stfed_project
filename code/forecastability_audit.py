@@ -192,11 +192,25 @@ def main() -> None:
         base_cfg,
         device,
     )
+    residual_scale = _load_and_predict(
+        "pa_residual_scale_loss_dev",
+        "pa_residual_scale_loss_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
+    residual_multilevel = _load_and_predict(
+        "pa_residual_multilevel_loss_dev",
+        "pa_residual_multilevel_loss_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
     data = pa["dataset"]
     target = pa["target"]
     methods = {
         "PA-STFed": pa["predictions"],
         "PA-STFed residual-anchor": residual["predictions"],
+        "PA-STFed residual-scale-loss": residual_scale["predictions"],
+        "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
         "GWN": gwn["predictions"],
         "Persistence": pa["persistence"],
         "Daily-lag naive": pa["daily_naive"],
@@ -249,6 +263,56 @@ def main() -> None:
             for key in comparison_methods
         },
     }
+    loss_deltas = {
+        "scale_minus_residual": {
+            key: {
+                metric: float(
+                    horizons["PA-STFed residual-scale-loss"][key][metric]
+                    - horizons["PA-STFed residual-anchor"][key][metric]
+                )
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {
+                "feeder_aggregate_wape": float(
+                    aggregation["PA-STFed residual-scale-loss"][key]["feeder_aggregate_wape"]
+                    - aggregation["PA-STFed residual-anchor"][key]["feeder_aggregate_wape"]
+                )
+            }
+            for key in comparison_methods
+        },
+        "multilevel_minus_scale": {
+            key: {
+                metric: float(
+                    horizons["PA-STFed residual-multilevel-loss"][key][metric]
+                    - horizons["PA-STFed residual-scale-loss"][key][metric]
+                )
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {
+                "feeder_aggregate_wape": float(
+                    aggregation["PA-STFed residual-multilevel-loss"][key]["feeder_aggregate_wape"]
+                    - aggregation["PA-STFed residual-scale-loss"][key]["feeder_aggregate_wape"]
+                )
+            }
+            for key in comparison_methods
+        },
+        "multilevel_minus_gwn": {
+            key: {
+                metric: float(
+                    horizons["PA-STFed residual-multilevel-loss"][key][metric]
+                    - horizons["GWN"][key][metric]
+                )
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {
+                "feeder_aggregate_wape": float(
+                    aggregation["PA-STFed residual-multilevel-loss"][key]["feeder_aggregate_wape"]
+                    - aggregation["GWN"][key]["feeder_aggregate_wape"]
+                )
+            }
+            for key in comparison_methods
+        },
+    }
     node_ids = [str(x) for x in data.node_ids[data.active_indices]]
     node_difficulty = {}
     for name, prediction in methods.items():
@@ -260,6 +324,38 @@ def main() -> None:
             "best10": [{"node_id": node_ids[i], "wape": float(values[i])} for i in order[:10]],
             "worst10": [{"node_id": node_ids[i], "wape": float(values[i])} for i in order[-10:][::-1]],
             "wape_by_node": {node_ids[i]: float(values[i]) for i in range(len(values))},
+        }
+    node_wape_deltas = {}
+    for key, left_name, right_name in (
+        ("scale_minus_residual", "PA-STFed residual-scale-loss", "PA-STFed residual-anchor"),
+        ("multilevel_minus_scale", "PA-STFed residual-multilevel-loss", "PA-STFed residual-scale-loss"),
+        ("multilevel_minus_gwn", "PA-STFed residual-multilevel-loss", "GWN"),
+    ):
+        by_node = {
+            node: float(
+                node_difficulty[left_name]["wape_by_node"][node]
+                - node_difficulty[right_name]["wape_by_node"][node]
+            )
+            for node in node_ids
+        }
+        values = np.asarray(list(by_node.values()), dtype=np.float64)
+        node_wape_deltas[key] = {
+            "left_method": left_name,
+            "right_method": right_name,
+            "by_node": by_node,
+            "quantiles": {
+                label: float(np.quantile(values, quantile))
+                for label, quantile in (
+                    ("min", 0.0),
+                    ("p10", 0.1),
+                    ("median", 0.5),
+                    ("p90", 0.9),
+                    ("max", 1.0),
+                )
+            },
+            "left_better_count": int((values < 0.0).sum()),
+            "right_better_count": int((values > 0.0).sum()),
+            "tie_count": int((values == 0.0).sum()),
         }
     weekly_values = _node_wape(weekly_lag, target)
     pa_values = _node_wape(pa["predictions"], target)
@@ -302,10 +398,24 @@ def main() -> None:
         "code_revision": base_cfg.get("code_revision"),
         "test_evaluated": False,
         "test_loader_created": False,
-        "metric_sanity": {name: {key: details[key] for key in ("recomputed_metrics", "existing_metrics", "metric_diffs")} for name, details in (("PA-STFed", pa), ("GWN", gwn), ("PA-STFed residual-anchor", residual))},
+        "metric_sanity": {
+            name: {
+                key: details[key]
+                for key in ("recomputed_metrics", "existing_metrics", "metric_diffs")
+            }
+            for name, details in (
+                ("PA-STFed", pa),
+                ("GWN", gwn),
+                ("PA-STFed residual-anchor", residual),
+                ("PA-STFed residual-scale-loss", residual_scale),
+                ("PA-STFed residual-multilevel-loss", residual_multilevel),
+            )
+        },
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
         "aggregation_effect": aggregation,
         "model_deltas": model_deltas,
+        "loss_deltas": loss_deltas,
+        "node_wape_deltas": node_wape_deltas,
         "node_difficulty": node_difficulty,
         "weekly_naive_node_wape_distribution": {
             "quantiles": {key: float(np.quantile(weekly_values, q)) for key, q in (("min", 0), ("p10", .1), ("p25", .25), ("median", .5), ("p75", .75), ("p90", .9), ("max", 1))},
@@ -334,6 +444,25 @@ def main() -> None:
     for comparison, values in (("Original PA-STFed", model_deltas["residual_minus_pa"]), ("GWN", model_deltas["residual_minus_gwn"])):
         for horizon, metrics in values.items():
             lines.append(f"| residual-anchor - {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Scale-aware and Multilevel Loss Differences", "", "Negative values favor the first method named in each comparison; node WAPE and feeder-aggregate WAPE are shown together.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
+    for comparison, values in (
+        ("scale-aware - residual", loss_deltas["scale_minus_residual"]),
+        ("multilevel - scale-aware", loss_deltas["multilevel_minus_scale"]),
+        ("multilevel - GWN", loss_deltas["multilevel_minus_gwn"]),
+    ):
+        for horizon, metrics in values.items():
+            lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Loss Ablation Node WAPE Differences", "", "Node deltas are left method minus right method in percentage points; negative values favor the left method."]
+    for comparison, details in node_wape_deltas.items():
+        lines.append(
+            f"- {comparison}: left better={details['left_better_count']}, "
+            f"right better={details['right_better_count']}, ties={details['tie_count']}; "
+            f"quantiles={details['quantiles']}"
+        )
+    lines += ["", "| Comparison | Node | dWAPE (pp) |", "|---|---|---:|"]
+    for comparison, details in node_wape_deltas.items():
+        for node, delta in details["by_node"].items():
+            lines.append(f"| {comparison} | {node} | {delta:.6f} |")
     lines += ["", "## Node Difficulty", ""]
     for method, details in node_difficulty.items():
         lines.append(f"- {method}: {details['quantiles']}; counts={details['counts']}")

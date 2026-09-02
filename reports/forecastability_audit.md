@@ -7,6 +7,8 @@ Validation-only; no training, no test loader, and no existing result JSON was mo
 - PA-STFed: recomputed WAPE/MAE/RMSE = {'wape': 29.373682022094727, 'mae': 0.34444817900657654, 'rmse': 0.714534342288971}; max difference = 0.00000381 (PASS)
 - GWN: recomputed WAPE/MAE/RMSE = {'wape': 29.005434036254883, 'mae': 0.34012991189956665, 'rmse': 0.713005781173706}; max difference = 0.00000000 (PASS)
 - PA-STFed residual-anchor: recomputed WAPE/MAE/RMSE = {'wape': 28.996524810791016, 'mae': 0.34002548456192017, 'rmse': 0.720468282699585}; max difference = 0.00000381 (PASS)
+- PA-STFed residual-scale-loss: recomputed WAPE/MAE/RMSE = {'wape': 28.94508171081543, 'mae': 0.33942222595214844, 'rmse': 0.7123457193374634}; max difference = 0.00000000 (PASS)
+- PA-STFed residual-multilevel-loss: recomputed WAPE/MAE/RMSE = {'wape': 29.182409286499023, 'mae': 0.3422051966190338, 'rmse': 0.7109360694885254}; max difference = 0.00000191 (PASS)
 
 ## Horizon-wise Metrics
 
@@ -32,6 +34,24 @@ prefix_h* are cumulative prefix metrics; step* are exact forecast steps.
 | PA-STFed residual-anchor | step6 | 29.9599 | 0.351301 | 0.745138 |
 | PA-STFed residual-anchor | step12 | 32.8840 | 0.385935 | 0.775833 |
 | PA-STFed residual-anchor | overall_12step | 28.9965 | 0.340025 | 0.720468 |
+| PA-STFed residual-scale-loss | prefix_h1 | 17.7820 | 0.208347 | 0.463068 |
+| PA-STFed residual-scale-loss | prefix_h3 | 23.3636 | 0.273786 | 0.600243 |
+| PA-STFed residual-scale-loss | prefix_h6 | 26.3053 | 0.308330 | 0.667148 |
+| PA-STFed residual-scale-loss | prefix_h12 | 28.9451 | 0.339422 | 0.712346 |
+| PA-STFed residual-scale-loss | step1 | 17.7820 | 0.208347 | 0.463068 |
+| PA-STFed residual-scale-loss | step3 | 27.3262 | 0.320265 | 0.689506 |
+| PA-STFed residual-scale-loss | step6 | 29.8486 | 0.349996 | 0.736674 |
+| PA-STFed residual-scale-loss | step12 | 32.6839 | 0.383587 | 0.767869 |
+| PA-STFed residual-scale-loss | overall_12step | 28.9451 | 0.339422 | 0.712346 |
+| PA-STFed residual-multilevel-loss | prefix_h1 | 17.8854 | 0.209560 | 0.463564 |
+| PA-STFed residual-multilevel-loss | prefix_h3 | 23.5162 | 0.275574 | 0.600269 |
+| PA-STFed residual-multilevel-loss | prefix_h6 | 26.5371 | 0.311047 | 0.666213 |
+| PA-STFed residual-multilevel-loss | prefix_h12 | 29.1824 | 0.342205 | 0.710936 |
+| PA-STFed residual-multilevel-loss | step1 | 17.8854 | 0.209560 | 0.463564 |
+| PA-STFed residual-multilevel-loss | step3 | 27.4578 | 0.321808 | 0.688634 |
+| PA-STFed residual-multilevel-loss | step6 | 30.2030 | 0.354151 | 0.734610 |
+| PA-STFed residual-multilevel-loss | step12 | 32.9239 | 0.386403 | 0.766036 |
+| PA-STFed residual-multilevel-loss | overall_12step | 29.1824 | 0.342205 | 0.710936 |
 | GWN | prefix_h1 | 17.3894 | 0.203748 | 0.457321 |
 | GWN | prefix_h3 | 23.1853 | 0.271697 | 0.600164 |
 | GWN | prefix_h6 | 26.2692 | 0.307907 | 0.668225 |
@@ -138,6 +158,24 @@ Prefix and exact-step feeder aggregate WAPE are both reported.
 | PA-STFed residual-anchor | step6 | 29.9599 | 11.2655 |
 | PA-STFed residual-anchor | step12 | 32.8840 | 12.2408 |
 | PA-STFed residual-anchor | overall_12step | 28.9965 | 10.6623 |
+| PA-STFed residual-scale-loss | prefix_h1 | 17.7820 | 4.9895 |
+| PA-STFed residual-scale-loss | prefix_h3 | 23.3636 | 7.0119 |
+| PA-STFed residual-scale-loss | prefix_h6 | 26.3053 | 8.1205 |
+| PA-STFed residual-scale-loss | prefix_h12 | 28.9451 | 9.0346 |
+| PA-STFed residual-scale-loss | step1 | 17.7820 | 4.9895 |
+| PA-STFed residual-scale-loss | step3 | 27.3262 | 8.6301 |
+| PA-STFed residual-scale-loss | step6 | 29.8486 | 9.4696 |
+| PA-STFed residual-scale-loss | step12 | 32.6839 | 10.5541 |
+| PA-STFed residual-scale-loss | overall_12step | 28.9451 | 9.0346 |
+| PA-STFed residual-multilevel-loss | prefix_h1 | 17.8854 | 4.8553 |
+| PA-STFed residual-multilevel-loss | prefix_h3 | 23.5162 | 6.7189 |
+| PA-STFed residual-multilevel-loss | prefix_h6 | 26.5371 | 7.6390 |
+| PA-STFed residual-multilevel-loss | prefix_h12 | 29.1824 | 8.4795 |
+| PA-STFed residual-multilevel-loss | step1 | 17.8854 | 4.8553 |
+| PA-STFed residual-multilevel-loss | step3 | 27.4578 | 8.2269 |
+| PA-STFed residual-multilevel-loss | step6 | 30.2030 | 8.7262 |
+| PA-STFed residual-multilevel-loss | step12 | 32.9239 | 9.9349 |
+| PA-STFed residual-multilevel-loss | overall_12step | 29.1824 | 8.4795 |
 | GWN | prefix_h1 | 17.3894 | 5.0082 |
 | GWN | prefix_h3 | 23.1853 | 6.9185 |
 | GWN | prefix_h6 | 26.2692 | 8.0402 |
@@ -245,10 +283,332 @@ Differences are defined as residual-anchor minus the comparison method; negative
 | residual-anchor - GWN | step12 | -0.0146 | -0.000171 | 0.010761 | 2.5256 |
 | residual-anchor - GWN | overall_12step | -0.0089 | -0.000104 | 0.007463 | 1.8947 |
 
+## Scale-aware and Multilevel Loss Differences
+
+Negative values favor the first method named in each comparison; node WAPE and feeder-aggregate WAPE are shown together.
+
+| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |
+|---|---:|---:|---:|---:|---:|
+| scale-aware - residual | prefix_h1 | 0.1245 | 0.001459 | -0.001600 | 0.0017 |
+| scale-aware - residual | prefix_h3 | 0.1117 | 0.001309 | -0.006067 | -0.9088 |
+| scale-aware - residual | prefix_h6 | 0.0281 | 0.000329 | -0.007177 | -1.3375 |
+| scale-aware - residual | prefix_h12 | -0.0514 | -0.000603 | -0.008123 | -1.6277 |
+| scale-aware - residual | step1 | 0.1245 | 0.001459 | -0.001600 | 0.0017 |
+| scale-aware - residual | step3 | 0.1020 | 0.001195 | -0.008016 | -1.7168 |
+| scale-aware - residual | step6 | -0.1113 | -0.001305 | -0.008463 | -1.7959 |
+| scale-aware - residual | step12 | -0.2001 | -0.002349 | -0.007965 | -1.6867 |
+| scale-aware - residual | overall_12step | -0.0514 | -0.000603 | -0.008123 | -1.6277 |
+| multilevel - scale-aware | prefix_h1 | 0.1035 | 0.001212 | 0.000496 | -0.1342 |
+| multilevel - scale-aware | prefix_h3 | 0.1526 | 0.001788 | 0.000027 | -0.2930 |
+| multilevel - scale-aware | prefix_h6 | 0.2318 | 0.002717 | -0.000935 | -0.4814 |
+| multilevel - scale-aware | prefix_h12 | 0.2373 | 0.002783 | -0.001410 | -0.5551 |
+| multilevel - scale-aware | step1 | 0.1035 | 0.001212 | 0.000496 | -0.1342 |
+| multilevel - scale-aware | step3 | 0.1316 | 0.001542 | -0.000871 | -0.4031 |
+| multilevel - scale-aware | step6 | 0.3544 | 0.004155 | -0.002065 | -0.7435 |
+| multilevel - scale-aware | step12 | 0.2400 | 0.002816 | -0.001833 | -0.6192 |
+| multilevel - scale-aware | overall_12step | 0.2373 | 0.002783 | -0.001410 | -0.5551 |
+| multilevel - GWN | prefix_h1 | 0.4960 | 0.005812 | 0.006243 | -0.1530 |
+| multilevel - GWN | prefix_h3 | 0.3309 | 0.003877 | 0.000106 | -0.1996 |
+| multilevel - GWN | prefix_h6 | 0.2679 | 0.003140 | -0.002012 | -0.4012 |
+| multilevel - GWN | prefix_h12 | 0.1770 | 0.002075 | -0.002070 | -0.2882 |
+| multilevel - GWN | step1 | 0.4960 | 0.005812 | 0.006243 | -0.1530 |
+| multilevel - GWN | step3 | 0.1022 | 0.001197 | -0.003508 | -0.0885 |
+| multilevel - GWN | step6 | 0.1385 | 0.001624 | -0.005642 | -0.6403 |
+| multilevel - GWN | step12 | 0.0252 | 0.000296 | 0.000964 | 0.2197 |
+| multilevel - GWN | overall_12step | 0.1770 | 0.002075 | -0.002070 | -0.2882 |
+
+## Loss Ablation Node WAPE Differences
+
+Node deltas are left method minus right method in percentage points; negative values favor the left method.
+- scale_minus_residual: left better=32, right better=60, ties=0; quantiles={'min': -2.055980682373047, 'p10': -0.6800617218017578, 'median': 0.13433837890625, 'p90': 1.3193685531616228, 'max': 4.956027984619141}
+- multilevel_minus_scale: left better=34, right better=58, ties=0; quantiles={'min': -2.764209747314453, 'p10': -0.3735698699951172, 'median': 0.12675905227661133, 'p90': 0.9894680023193362, 'max': 1.9545669555664062}
+- multilevel_minus_gwn: left better=26, right better=66, ties=0; quantiles={'min': -1.9338302612304688, 'p10': -0.8182716369628906, 'median': 0.39148902893066406, 'p90': 3.8209986686706547, 'max': 7.118358612060547}
+
+| Comparison | Node | dWAPE (pp) |
+|---|---|---:|
+| scale_minus_residual | p10rlv92 | 0.461422 |
+| scale_minus_residual | p10rlv679 | 0.399654 |
+| scale_minus_residual | p10rlv696 | 0.641895 |
+| scale_minus_residual | p10rlv943 | 0.680426 |
+| scale_minus_residual | p10rlv1542 | 0.389896 |
+| scale_minus_residual | p10rlv1819 | 0.447393 |
+| scale_minus_residual | p10rlv2169 | 0.579613 |
+| scale_minus_residual | p10rlv2790 | -0.447861 |
+| scale_minus_residual | p10rlv3062 | 4.714306 |
+| scale_minus_residual | p10rlv3393 | 0.920979 |
+| scale_minus_residual | p10rlv3394 | 0.730228 |
+| scale_minus_residual | p10rlv3936 | 1.047989 |
+| scale_minus_residual | p10rlv4224 | 0.097784 |
+| scale_minus_residual | p10rlv4862 | -0.147980 |
+| scale_minus_residual | p10rlv5170 | 0.237862 |
+| scale_minus_residual | p10rlv5780 | 0.734550 |
+| scale_minus_residual | p10rlv5781 | -0.103130 |
+| scale_minus_residual | p10rlv6371 | 0.265854 |
+| scale_minus_residual | p10rlv6373 | 0.090622 |
+| scale_minus_residual | p10rlv6659 | -0.530704 |
+| scale_minus_residual | p10rlv7262 | 0.370317 |
+| scale_minus_residual | p10rlv7286 | 0.215782 |
+| scale_minus_residual | p10rlv7583 | -0.141769 |
+| scale_minus_residual | p10rlv7584 | -0.093414 |
+| scale_minus_residual | p10rlv7860 | -1.384163 |
+| scale_minus_residual | p10rlv7861 | 0.329884 |
+| scale_minus_residual | p10rlv8456 | 0.129990 |
+| scale_minus_residual | p10rlv9050 | 0.292049 |
+| scale_minus_residual | p10rlv9051 | 0.406456 |
+| scale_minus_residual | p10rlv9646 | -0.966719 |
+| scale_minus_residual | p10rlv9907 | 0.000122 |
+| scale_minus_residual | p10rlv9923 | -0.067820 |
+| scale_minus_residual | p10rlv10217 | -0.092543 |
+| scale_minus_residual | p10rlv11104 | 0.130173 |
+| scale_minus_residual | p10rlv11105 | 4.514129 |
+| scale_minus_residual | p10rlv11392 | 1.832096 |
+| scale_minus_residual | p10rlv12002 | -0.166260 |
+| scale_minus_residual | p10rlv12029 | 0.302563 |
+| scale_minus_residual | p10rlv12030 | -0.059792 |
+| scale_minus_residual | p10rlv12345 | 0.268938 |
+| scale_minus_residual | p10rlv13496 | 1.050102 |
+| scale_minus_residual | p10rlv13829 | 4.594760 |
+| scale_minus_residual | p10rlv15288 | 0.174240 |
+| scale_minus_residual | p10rlv15908 | 0.485081 |
+| scale_minus_residual | p10rlv16523 | 0.082668 |
+| scale_minus_residual | p10rlv17088 | -1.068325 |
+| scale_minus_residual | p10rlv17370 | 0.300428 |
+| scale_minus_residual | p10rlv17685 | 0.132008 |
+| scale_minus_residual | p10rlv18002 | 4.956028 |
+| scale_minus_residual | p10rlv18296 | 0.945160 |
+| scale_minus_residual | p10rlv18297 | 0.040838 |
+| scale_minus_residual | p10rlv18611 | 0.407667 |
+| scale_minus_residual | p10rlv18908 | 0.044548 |
+| scale_minus_residual | p10rlv19213 | -0.014622 |
+| scale_minus_residual | p10rlv19495 | -0.662807 |
+| scale_minus_residual | p10rlv19496 | 0.246454 |
+| scale_minus_residual | p10rlv19818 | -1.071997 |
+| scale_minus_residual | p10rlv20089 | 0.002290 |
+| scale_minus_residual | p10rlv20103 | -1.033758 |
+| scale_minus_residual | p10rlv20105 | 0.686644 |
+| scale_minus_residual | p10rlv20976 | -0.230642 |
+| scale_minus_residual | p10rlv21568 | -1.564898 |
+| scale_minus_residual | p10rlv21569 | -0.472950 |
+| scale_minus_residual | p10rlv21869 | 0.237801 |
+| scale_minus_residual | p10rlv22134 | 3.970173 |
+| scale_minus_residual | p10rlv22442 | 0.362103 |
+| scale_minus_residual | p10rlv23067 | 2.480146 |
+| scale_minus_residual | p10rlv23375 | 0.296192 |
+| scale_minus_residual | p10rlv24009 | 0.679714 |
+| scale_minus_residual | p10rlv24610 | 0.056515 |
+| scale_minus_residual | p10rlv24611 | -0.488495 |
+| scale_minus_residual | p10rlv24936 | -0.195450 |
+| scale_minus_residual | p10rlv25536 | -0.882328 |
+| scale_minus_residual | p10rlv26432 | 0.287472 |
+| scale_minus_residual | p10rlv26433 | 1.043381 |
+| scale_minus_residual | p10rlv27290 | -0.300007 |
+| scale_minus_residual | p10rlv27605 | 4.877911 |
+| scale_minus_residual | p10rlv27606 | 0.058399 |
+| scale_minus_residual | p10rlv28435 | 1.349287 |
+| scale_minus_residual | p10rlv28744 | 0.239342 |
+| scale_minus_residual | p10rlv28745 | 0.038299 |
+| scale_minus_residual | p10rlv29054 | -0.939249 |
+| scale_minus_residual | p10rlv29354 | -0.665560 |
+| scale_minus_residual | p10rlv29657 | 0.136669 |
+| scale_minus_residual | p10rlv29902 | -2.055981 |
+| scale_minus_residual | p10rlv29910 | -0.160099 |
+| scale_minus_residual | p10rlv29912 | 1.524275 |
+| scale_minus_residual | p10rlv29913 | 0.045418 |
+| scale_minus_residual | p10rlv29914 | -0.207062 |
+| scale_minus_residual | p10rlv30210 | -0.439686 |
+| scale_minus_residual | p10rlv30211 | -0.681673 |
+| scale_minus_residual | p10rlv30788 | -0.196280 |
+| multilevel_minus_scale | p10rlv92 | 0.191048 |
+| multilevel_minus_scale | p10rlv679 | 0.529039 |
+| multilevel_minus_scale | p10rlv696 | -0.054325 |
+| multilevel_minus_scale | p10rlv943 | 0.081934 |
+| multilevel_minus_scale | p10rlv1542 | 1.032047 |
+| multilevel_minus_scale | p10rlv1819 | -0.181314 |
+| multilevel_minus_scale | p10rlv2169 | 0.475231 |
+| multilevel_minus_scale | p10rlv2790 | 1.313408 |
+| multilevel_minus_scale | p10rlv3062 | -0.214958 |
+| multilevel_minus_scale | p10rlv3393 | 0.369869 |
+| multilevel_minus_scale | p10rlv3394 | 0.021652 |
+| multilevel_minus_scale | p10rlv3936 | -0.055824 |
+| multilevel_minus_scale | p10rlv4224 | 0.524311 |
+| multilevel_minus_scale | p10rlv4862 | 0.500101 |
+| multilevel_minus_scale | p10rlv5170 | 0.091162 |
+| multilevel_minus_scale | p10rlv5780 | 0.098549 |
+| multilevel_minus_scale | p10rlv5781 | 0.214417 |
+| multilevel_minus_scale | p10rlv6371 | 0.390759 |
+| multilevel_minus_scale | p10rlv6373 | -0.105175 |
+| multilevel_minus_scale | p10rlv6659 | 0.018223 |
+| multilevel_minus_scale | p10rlv7262 | 0.689404 |
+| multilevel_minus_scale | p10rlv7286 | -0.294746 |
+| multilevel_minus_scale | p10rlv7583 | -0.043071 |
+| multilevel_minus_scale | p10rlv7584 | 0.994587 |
+| multilevel_minus_scale | p10rlv7860 | 0.299393 |
+| multilevel_minus_scale | p10rlv7861 | 1.182335 |
+| multilevel_minus_scale | p10rlv8456 | 0.704052 |
+| multilevel_minus_scale | p10rlv9050 | -0.382328 |
+| multilevel_minus_scale | p10rlv9051 | 0.247335 |
+| multilevel_minus_scale | p10rlv9646 | -0.023224 |
+| multilevel_minus_scale | p10rlv9907 | 0.052994 |
+| multilevel_minus_scale | p10rlv9923 | 0.437328 |
+| multilevel_minus_scale | p10rlv10217 | -0.105353 |
+| multilevel_minus_scale | p10rlv11104 | 0.303019 |
+| multilevel_minus_scale | p10rlv11105 | -0.193711 |
+| multilevel_minus_scale | p10rlv11392 | -2.655338 |
+| multilevel_minus_scale | p10rlv12002 | 0.135372 |
+| multilevel_minus_scale | p10rlv12029 | 0.217604 |
+| multilevel_minus_scale | p10rlv12030 | -0.133942 |
+| multilevel_minus_scale | p10rlv12345 | 0.596056 |
+| multilevel_minus_scale | p10rlv13496 | -0.680363 |
+| multilevel_minus_scale | p10rlv13829 | -0.169044 |
+| multilevel_minus_scale | p10rlv15288 | 0.600323 |
+| multilevel_minus_scale | p10rlv15908 | -0.009905 |
+| multilevel_minus_scale | p10rlv16523 | 0.751827 |
+| multilevel_minus_scale | p10rlv17088 | 1.333210 |
+| multilevel_minus_scale | p10rlv17370 | -1.702183 |
+| multilevel_minus_scale | p10rlv17685 | -0.142269 |
+| multilevel_minus_scale | p10rlv18002 | -0.124741 |
+| multilevel_minus_scale | p10rlv18296 | 0.516403 |
+| multilevel_minus_scale | p10rlv18297 | 0.198961 |
+| multilevel_minus_scale | p10rlv18611 | 0.353537 |
+| multilevel_minus_scale | p10rlv18908 | -0.096951 |
+| multilevel_minus_scale | p10rlv19213 | 1.063988 |
+| multilevel_minus_scale | p10rlv19495 | 0.027639 |
+| multilevel_minus_scale | p10rlv19496 | 0.197073 |
+| multilevel_minus_scale | p10rlv19818 | 1.954567 |
+| multilevel_minus_scale | p10rlv20089 | -0.264002 |
+| multilevel_minus_scale | p10rlv20103 | -0.234871 |
+| multilevel_minus_scale | p10rlv20105 | -2.173010 |
+| multilevel_minus_scale | p10rlv20976 | -0.040482 |
+| multilevel_minus_scale | p10rlv21568 | 1.753342 |
+| multilevel_minus_scale | p10rlv21569 | 0.424541 |
+| multilevel_minus_scale | p10rlv21869 | -1.598185 |
+| multilevel_minus_scale | p10rlv22134 | 0.235808 |
+| multilevel_minus_scale | p10rlv22442 | 0.105934 |
+| multilevel_minus_scale | p10rlv23067 | -2.764210 |
+| multilevel_minus_scale | p10rlv23375 | -0.182877 |
+| multilevel_minus_scale | p10rlv24009 | 0.943398 |
+| multilevel_minus_scale | p10rlv24610 | 1.145695 |
+| multilevel_minus_scale | p10rlv24611 | 0.081341 |
+| multilevel_minus_scale | p10rlv24936 | 0.767467 |
+| multilevel_minus_scale | p10rlv25536 | -0.933609 |
+| multilevel_minus_scale | p10rlv26432 | 1.342709 |
+| multilevel_minus_scale | p10rlv26433 | -0.042419 |
+| multilevel_minus_scale | p10rlv27290 | 0.078651 |
+| multilevel_minus_scale | p10rlv27605 | -0.105114 |
+| multilevel_minus_scale | p10rlv27606 | 0.901501 |
+| multilevel_minus_scale | p10rlv28435 | -0.383528 |
+| multilevel_minus_scale | p10rlv28744 | 0.133091 |
+| multilevel_minus_scale | p10rlv28745 | -0.124899 |
+| multilevel_minus_scale | p10rlv29054 | 0.142452 |
+| multilevel_minus_scale | p10rlv29354 | 0.028391 |
+| multilevel_minus_scale | p10rlv29657 | 0.443447 |
+| multilevel_minus_scale | p10rlv29902 | 0.555168 |
+| multilevel_minus_scale | p10rlv29910 | 0.774618 |
+| multilevel_minus_scale | p10rlv29912 | -2.418961 |
+| multilevel_minus_scale | p10rlv29913 | 0.705727 |
+| multilevel_minus_scale | p10rlv29914 | 0.458691 |
+| multilevel_minus_scale | p10rlv30210 | -0.218605 |
+| multilevel_minus_scale | p10rlv30211 | 0.188076 |
+| multilevel_minus_scale | p10rlv30788 | 0.120427 |
+| multilevel_minus_gwn | p10rlv92 | 0.208996 |
+| multilevel_minus_gwn | p10rlv679 | 1.783897 |
+| multilevel_minus_gwn | p10rlv696 | 0.472904 |
+| multilevel_minus_gwn | p10rlv943 | 0.431725 |
+| multilevel_minus_gwn | p10rlv1542 | 0.754827 |
+| multilevel_minus_gwn | p10rlv1819 | 0.382095 |
+| multilevel_minus_gwn | p10rlv2169 | 0.147629 |
+| multilevel_minus_gwn | p10rlv2790 | 2.130283 |
+| multilevel_minus_gwn | p10rlv3062 | 7.054760 |
+| multilevel_minus_gwn | p10rlv3393 | 0.910507 |
+| multilevel_minus_gwn | p10rlv3394 | 0.337811 |
+| multilevel_minus_gwn | p10rlv3936 | 0.047443 |
+| multilevel_minus_gwn | p10rlv4224 | 1.293333 |
+| multilevel_minus_gwn | p10rlv4862 | -0.203342 |
+| multilevel_minus_gwn | p10rlv5170 | 0.085047 |
+| multilevel_minus_gwn | p10rlv5780 | 0.386604 |
+| multilevel_minus_gwn | p10rlv5781 | 0.396374 |
+| multilevel_minus_gwn | p10rlv6371 | 0.189739 |
+| multilevel_minus_gwn | p10rlv6373 | -0.636452 |
+| multilevel_minus_gwn | p10rlv6659 | 0.102543 |
+| multilevel_minus_gwn | p10rlv7262 | 0.649309 |
+| multilevel_minus_gwn | p10rlv7286 | -0.822636 |
+| multilevel_minus_gwn | p10rlv7583 | -1.189265 |
+| multilevel_minus_gwn | p10rlv7584 | -0.276295 |
+| multilevel_minus_gwn | p10rlv7860 | -0.664207 |
+| multilevel_minus_gwn | p10rlv7861 | 1.671288 |
+| multilevel_minus_gwn | p10rlv8456 | 0.525105 |
+| multilevel_minus_gwn | p10rlv9050 | 0.273415 |
+| multilevel_minus_gwn | p10rlv9051 | 0.563765 |
+| multilevel_minus_gwn | p10rlv9646 | -1.933830 |
+| multilevel_minus_gwn | p10rlv9907 | -0.775192 |
+| multilevel_minus_gwn | p10rlv9923 | -0.011209 |
+| multilevel_minus_gwn | p10rlv10217 | -1.131623 |
+| multilevel_minus_gwn | p10rlv11104 | 0.481043 |
+| multilevel_minus_gwn | p10rlv11105 | 3.825757 |
+| multilevel_minus_gwn | p10rlv11392 | 3.778173 |
+| multilevel_minus_gwn | p10rlv12002 | 0.288490 |
+| multilevel_minus_gwn | p10rlv12029 | 0.554148 |
+| multilevel_minus_gwn | p10rlv12030 | -0.241196 |
+| multilevel_minus_gwn | p10rlv12345 | 1.327787 |
+| multilevel_minus_gwn | p10rlv13496 | -1.387413 |
+| multilevel_minus_gwn | p10rlv13829 | 3.896427 |
+| multilevel_minus_gwn | p10rlv15288 | -0.219948 |
+| multilevel_minus_gwn | p10rlv15908 | 0.626801 |
+| multilevel_minus_gwn | p10rlv16523 | 0.781982 |
+| multilevel_minus_gwn | p10rlv17088 | 1.457386 |
+| multilevel_minus_gwn | p10rlv17370 | 4.946363 |
+| multilevel_minus_gwn | p10rlv17685 | 0.001831 |
+| multilevel_minus_gwn | p10rlv18002 | 7.118359 |
+| multilevel_minus_gwn | p10rlv18296 | 0.041138 |
+| multilevel_minus_gwn | p10rlv18297 | -1.064841 |
+| multilevel_minus_gwn | p10rlv18611 | 1.478081 |
+| multilevel_minus_gwn | p10rlv18908 | -0.728497 |
+| multilevel_minus_gwn | p10rlv19213 | 1.482109 |
+| multilevel_minus_gwn | p10rlv19495 | 0.129368 |
+| multilevel_minus_gwn | p10rlv19496 | 0.511936 |
+| multilevel_minus_gwn | p10rlv19818 | 1.415422 |
+| multilevel_minus_gwn | p10rlv20089 | -1.885691 |
+| multilevel_minus_gwn | p10rlv20103 | -0.626190 |
+| multilevel_minus_gwn | p10rlv20105 | 4.869461 |
+| multilevel_minus_gwn | p10rlv20976 | 0.403128 |
+| multilevel_minus_gwn | p10rlv21568 | -0.369701 |
+| multilevel_minus_gwn | p10rlv21569 | 0.514099 |
+| multilevel_minus_gwn | p10rlv21869 | 4.267412 |
+| multilevel_minus_gwn | p10rlv22134 | 3.699916 |
+| multilevel_minus_gwn | p10rlv22442 | 0.246706 |
+| multilevel_minus_gwn | p10rlv23067 | 5.097631 |
+| multilevel_minus_gwn | p10rlv23375 | 1.013531 |
+| multilevel_minus_gwn | p10rlv24009 | 1.735558 |
+| multilevel_minus_gwn | p10rlv24610 | 1.349247 |
+| multilevel_minus_gwn | p10rlv24611 | 0.603451 |
+| multilevel_minus_gwn | p10rlv24936 | 0.203636 |
+| multilevel_minus_gwn | p10rlv25536 | -0.778996 |
+| multilevel_minus_gwn | p10rlv26432 | 1.531216 |
+| multilevel_minus_gwn | p10rlv26433 | 0.332886 |
+| multilevel_minus_gwn | p10rlv27290 | -0.054161 |
+| multilevel_minus_gwn | p10rlv27605 | 7.051208 |
+| multilevel_minus_gwn | p10rlv27606 | 0.746239 |
+| multilevel_minus_gwn | p10rlv28435 | 1.842827 |
+| multilevel_minus_gwn | p10rlv28744 | -0.042019 |
+| multilevel_minus_gwn | p10rlv28745 | -0.371659 |
+| multilevel_minus_gwn | p10rlv29054 | -0.009274 |
+| multilevel_minus_gwn | p10rlv29354 | 0.138756 |
+| multilevel_minus_gwn | p10rlv29657 | 0.464630 |
+| multilevel_minus_gwn | p10rlv29902 | -1.104954 |
+| multilevel_minus_gwn | p10rlv29910 | 0.023998 |
+| multilevel_minus_gwn | p10rlv29912 | 4.408396 |
+| multilevel_minus_gwn | p10rlv29913 | 0.491661 |
+| multilevel_minus_gwn | p10rlv29914 | 0.588671 |
+| multilevel_minus_gwn | p10rlv30210 | -1.110312 |
+| multilevel_minus_gwn | p10rlv30211 | -0.959465 |
+| multilevel_minus_gwn | p10rlv30788 | 0.284543 |
+
 ## Node Difficulty
 
 - PA-STFed: {'min': 2.762939929962158, 'p10': 12.90864372253418, 'p25': 25.412681579589844, 'median': 29.858762741088867, 'p75': 40.6666374206543, 'p90': 46.49767303466797, 'max': 49.01484680175781}; counts={'lt10': 8, 'lt20': 11, 'lt30': 47, 'ge40': 29}
 - PA-STFed residual-anchor: {'min': 3.107927083969116, 'p10': 12.687405586242676, 'p25': 24.962587356567383, 'median': 29.210411071777344, 'p75': 40.534996032714844, 'p90': 46.20293045043945, 'max': 51.57440948486328}; counts={'lt10': 8, 'lt20': 12, 'lt30': 49, 'ge40': 27}
+- PA-STFed residual-scale-loss: {'min': 2.966158390045166, 'p10': 12.760388374328613, 'p25': 25.166942596435547, 'median': 30.08745574951172, 'p75': 40.65315628051758, 'p90': 47.164737701416016, 'max': 56.314857482910156}; counts={'lt10': 5, 'lt20': 12, 'lt30': 44, 'ge40': 27}
+- PA-STFed residual-multilevel-loss: {'min': 2.9211020469665527, 'p10': 12.846092224121094, 'p25': 25.29302215576172, 'median': 29.420238494873047, 'p75': 41.36602020263672, 'p90': 47.111663818359375, 'max': 56.19011688232422}; counts={'lt10': 5, 'lt20': 12, 'lt30': 49, 'ge40': 29}
 - GWN: {'min': 3.839329719543457, 'p10': 14.086502075195312, 'p25': 23.372276306152344, 'median': 28.794334411621094, 'p75': 40.738258361816406, 'p90': 47.29705810546875, 'max': 49.12572479248047}; counts={'lt10': 8, 'lt20': 12, 'lt30': 49, 'ge40': 27}
 - Persistence: {'min': 4.913691997528076, 'p10': 19.870603561401367, 'p25': 35.058555603027344, 'median': 44.3123779296875, 'p75': 54.34208679199219, 'p90': 66.28288269042969, 'max': 92.21017456054688}; counts={'lt10': 5, 'lt20': 10, 'lt30': 11, 'ge40': 56}
 - Daily-lag naive: {'min': 7.026316165924072, 'p10': 19.96192169189453, 'p25': 39.092445373535156, 'median': 51.287315368652344, 'p75': 60.653995513916016, 'p90': 73.21785736083984, 'max': 95.0457534790039}; counts={'lt10': 3, 'lt20': 10, 'lt30': 13, 'ge40': 67}
@@ -270,6 +630,8 @@ Differences are defined as residual-anchor minus the comparison method; negative
 
 - PA-STFed: {'train_cv': 0.4158354257798238, 'lag96_autocorr': -0.6539908795744196, 'lag672_autocorr': -0.6765005554040376, 'mean_shift': -0.33968796761373926}
 - PA-STFed residual-anchor: {'train_cv': 0.461432936920985, 'lag96_autocorr': -0.6224387894474926, 'lag672_autocorr': -0.6433604539000897, 'mean_shift': -0.3186044185062032}
+- PA-STFed residual-scale-loss: {'train_cv': 0.46554943243229185, 'lag96_autocorr': -0.622654635654078, 'lag672_autocorr': -0.6425279042461175, 'mean_shift': -0.3155209012692692}
+- PA-STFed residual-multilevel-loss: {'train_cv': 0.4367339638531439, 'lag96_autocorr': -0.6449330476909261, 'lag672_autocorr': -0.6593793259459616, 'mean_shift': -0.3144725054087117}
 - GWN: {'train_cv': 0.37324434394467326, 'lag96_autocorr': -0.6908466193488729, 'lag672_autocorr': -0.7098102503560169, 'mean_shift': -0.35916808775806963}
 - Persistence: {'train_cv': 0.5171424605561467, 'lag96_autocorr': -0.5772605993306497, 'lag672_autocorr': -0.5890282083314053, 'mean_shift': -0.3037523712580391}
 - Daily-lag naive: {'train_cv': 0.4725705208285136, 'lag96_autocorr': -0.6697049615200726, 'lag672_autocorr': -0.7266614229090516, 'mean_shift': -0.506809173491263}
