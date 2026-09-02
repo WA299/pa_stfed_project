@@ -22,10 +22,57 @@ from privacy import aggregate_mean_updates
 def charbonnier_loss(prediction: torch.Tensor, target: torch.Tensor, kappa: float) -> torch.Tensor:
     """平滑稳健损失：小残差近似二次，大残差区近似线性。"""
 
+    return charbonnier_elementwise(prediction, target, kappa).mean()
+
+
+def charbonnier_elementwise(
+    prediction: torch.Tensor, target: torch.Tensor, kappa: float
+) -> torch.Tensor:
+    """返回逐元素 Charbonnier 值，供节点/馈线层级加权损失复用。"""
+
     if kappa <= 0:
         raise ValueError("kappa must be positive")
     error = prediction - target
-    return (kappa**2 * torch.sqrt(1.0 + (error / kappa) ** 2) - kappa**2).mean()
+    return kappa**2 * torch.sqrt(1.0 + (error / kappa) ** 2) - kappa**2
+
+
+def scale_aware_charbonnier_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    kappa: float,
+    scale: torch.Tensor,
+    feeder_loss_weight: float = 0.0,
+) -> torch.Tensor:
+    """按训练集节点 IQR 加权的节点损失，可选加入馈线聚合损失。
+
+    ``prediction``/``target`` 的形状为 ``[batch, horizon, nodes]``。节点项
+    先对节点按训练集 IQR 加权，再对 batch 和 horizon 求平均；馈线项使用
+    同一组尺度加权的归一化残差，不引入额外未来标签。
+    """
+
+    if prediction.shape != target.shape or prediction.ndim < 1:
+        raise ValueError("prediction and target must have identical non-empty shapes")
+    scale = torch.as_tensor(scale, dtype=prediction.dtype, device=prediction.device)
+    if scale.ndim != 1 or scale.numel() != prediction.shape[-1]:
+        raise ValueError(
+            f"scale must have one value per node; got shape={tuple(scale.shape)}, "
+            f"nodes={prediction.shape[-1]}"
+        )
+    if not torch.isfinite(scale).all() or (scale <= 0).any():
+        raise ValueError("training IQR scale must be finite and strictly positive")
+    denominator = scale.sum().clamp_min(torch.finfo(scale.dtype).eps)
+    node_weights = scale.reshape(*([1] * (prediction.ndim - 1)), -1)
+    elementwise = charbonnier_elementwise(prediction, target, kappa)
+    node_loss = (elementwise * node_weights).sum(dim=-1) / denominator
+    total = node_loss.mean()
+    if feeder_loss_weight:
+        residual = prediction - target
+        feeder_residual = (residual * node_weights).sum(dim=-1) / denominator
+        feeder_loss = charbonnier_elementwise(
+            feeder_residual, torch.zeros_like(feeder_residual), kappa
+        ).mean()
+        total = total + float(feeder_loss_weight) * feeder_loss
+    return total
 
 
 def metric_summary(
