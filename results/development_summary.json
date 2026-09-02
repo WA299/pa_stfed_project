@@ -115,5 +115,45 @@
         "n": 1
       }
     }
+  },
+  "pa_residual_anchor_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3400254249572754,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 31.308862686157227,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.720468282699585,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.597759246826172,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 28.99652099609375,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }

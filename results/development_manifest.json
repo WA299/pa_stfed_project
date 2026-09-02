@@ -7,12 +7,14 @@
   "experiments": [
     "layerala_dev",
     "moduleala_dev",
-    "modulelocal_dev"
+    "modulelocal_dev",
+    "pa_residual_anchor_dev"
   ],
   "seed_count_by_experiment": {
     "layerala_dev": 1,
     "moduleala_dev": 1,
-    "modulelocal_dev": 1
+    "modulelocal_dev": 1,
+    "pa_residual_anchor_dev": 1
   },
   "resume": false,
   "skip_dp": false,
@@ -124,6 +126,35 @@
           "mean_noise_variance": 0.0
         },
         "best_round": 20
+      }
+    },
+    {
+      "experiment": "pa_residual_anchor_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_residual_anchor_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_residual_anchor_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3400254249572754,
+          "rmse": 0.720468282699585,
+          "wape": 28.99652099609375,
+          "smape": 28.597759246826172,
+          "mape": 31.308862686157227,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32689306139945984,
+          "rmse": 0.7249773740768433,
+          "wape": 21.1878719329834,
+          "smape": 22.217529296875,
+          "mape": 23.118820190429688,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
       }
     }
   ],
