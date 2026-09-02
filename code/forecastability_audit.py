@@ -186,9 +186,21 @@ def main() -> None:
     device = resolve_device(base_cfg.get("device", "auto"))
     pa = _load_and_predict("centralized", "centralized_seed2026_centralized_model.pt", base_cfg, device)
     gwn = _load_and_predict("gwnet", "gwnet_seed2026_centralized_model.pt", base_cfg, device)
+    residual = _load_and_predict(
+        "pa_residual_anchor_dev",
+        "pa_residual_anchor_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
     data = pa["dataset"]
     target = pa["target"]
-    methods = {"PA-STFed": pa["predictions"], "GWN": gwn["predictions"], "Persistence": pa["persistence"], "Daily-lag naive": pa["daily_naive"]}
+    methods = {
+        "PA-STFed": pa["predictions"],
+        "PA-STFed residual-anchor": residual["predictions"],
+        "GWN": gwn["predictions"],
+        "Persistence": pa["persistence"],
+        "Daily-lag naive": pa["daily_naive"],
+    }
     # 严格按未来目标步构造 seasonal naive；source 只来自 validation origin 之前
     # 的 raw load_ts，不依赖模型、不访问 test，也不进行插值或平移。
     raw_load = data.load_ts[:, data.active_indices].astype(np.float32, copy=False)
@@ -217,6 +229,25 @@ def main() -> None:
             for start, end in [_horizon_slices()[key]]
         }
         for name, pred in methods.items()
+    }
+    comparison_methods = ("prefix_h1", "prefix_h3", "prefix_h6", "prefix_h12", "step1", "step3", "step6", "step12", "overall_12step")
+    model_deltas = {
+        "residual_minus_pa": {
+            key: {
+                metric: float(horizons["PA-STFed residual-anchor"][key][metric] - horizons["PA-STFed"][key][metric])
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {"feeder_aggregate_wape": float(aggregation["PA-STFed residual-anchor"][key]["feeder_aggregate_wape"] - aggregation["PA-STFed"][key]["feeder_aggregate_wape"])}
+            for key in comparison_methods
+        },
+        "residual_minus_gwn": {
+            key: {
+                metric: float(horizons["PA-STFed residual-anchor"][key][metric] - horizons["GWN"][key][metric])
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {"feeder_aggregate_wape": float(aggregation["PA-STFed residual-anchor"][key]["feeder_aggregate_wape"] - aggregation["GWN"][key]["feeder_aggregate_wape"])}
+            for key in comparison_methods
+        },
     }
     node_ids = [str(x) for x in data.node_ids[data.active_indices]]
     node_difficulty = {}
@@ -271,9 +302,10 @@ def main() -> None:
         "code_revision": base_cfg.get("code_revision"),
         "test_evaluated": False,
         "test_loader_created": False,
-        "metric_sanity": {name: {key: details[key] for key in ("recomputed_metrics", "existing_metrics", "metric_diffs")} for name, details in (("PA-STFed", pa), ("GWN", gwn))},
+        "metric_sanity": {name: {key: details[key] for key in ("recomputed_metrics", "existing_metrics", "metric_diffs")} for name, details in (("PA-STFed", pa), ("GWN", gwn), ("PA-STFed residual-anchor", residual))},
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
         "aggregation_effect": aggregation,
+        "model_deltas": model_deltas,
         "node_difficulty": node_difficulty,
         "weekly_naive_node_wape_distribution": {
             "quantiles": {key: float(np.quantile(weekly_values, q)) for key, q in (("min", 0), ("p10", .1), ("p25", .25), ("median", .5), ("p75", .75), ("p90", .9), ("max", 1))},
@@ -298,6 +330,10 @@ def main() -> None:
     for method, values in aggregation.items():
         for horizon, metrics in values.items():
             lines.append(f"| {method} | {horizon} | {metrics['node_micro_wape']:.4f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Residual-anchor Differences", "", "Differences are defined as residual-anchor minus the comparison method; negative values favor residual-anchor.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
+    for comparison, values in (("Original PA-STFed", model_deltas["residual_minus_pa"]), ("GWN", model_deltas["residual_minus_gwn"])):
+        for horizon, metrics in values.items():
+            lines.append(f"| residual-anchor - {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
     lines += ["", "## Node Difficulty", ""]
     for method, details in node_difficulty.items():
         lines.append(f"- {method}: {details['quantiles']}; counts={details['counts']}")
