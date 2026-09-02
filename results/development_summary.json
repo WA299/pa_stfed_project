@@ -155,5 +155,85 @@
         "n": 1
       }
     }
+  },
+  "pa_residual_scale_loss_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.33942222595214844,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 32.68796920776367,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7123457193374634,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.842655181884766,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 28.94508171081543,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "pa_residual_multilevel_loss_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3422052562236786,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.47134780883789,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7109361290931702,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.167293548583984,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.182411193847656,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }

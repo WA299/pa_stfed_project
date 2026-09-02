@@ -8,13 +8,17 @@
     "layerala_dev",
     "moduleala_dev",
     "modulelocal_dev",
-    "pa_residual_anchor_dev"
+    "pa_residual_anchor_dev",
+    "pa_residual_multilevel_loss_dev",
+    "pa_residual_scale_loss_dev"
   ],
   "seed_count_by_experiment": {
     "layerala_dev": 1,
     "moduleala_dev": 1,
     "modulelocal_dev": 1,
-    "pa_residual_anchor_dev": 1
+    "pa_residual_anchor_dev": 1,
+    "pa_residual_multilevel_loss_dev": 1,
+    "pa_residual_scale_loss_dev": 1
   },
   "resume": false,
   "skip_dp": false,
@@ -150,6 +154,64 @@
           "wape": 21.1878719329834,
           "smape": 22.217529296875,
           "mape": 23.118820190429688,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_residual_scale_loss_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_residual_scale_loss_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_residual_scale_loss_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.33942222595214844,
+          "rmse": 0.7123457193374634,
+          "wape": 28.94508171081543,
+          "smape": 28.842655181884766,
+          "mape": 32.68796920776367,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32026806473731995,
+          "rmse": 0.7089663147926331,
+          "wape": 20.758464813232422,
+          "smape": 22.06223487854004,
+          "mape": 23.465272903442383,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_residual_multilevel_loss_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_residual_multilevel_loss_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_residual_multilevel_loss_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3422052562236786,
+          "rmse": 0.7109361290931702,
+          "wape": 29.182411193847656,
+          "smape": 29.167293548583984,
+          "mape": 33.47134780883789,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32233524322509766,
+          "rmse": 0.7061834931373596,
+          "wape": 20.892452239990234,
+          "smape": 22.27728843688965,
+          "mape": 24.06386375427246,
           "mape_valid_ratio": 1.0
         },
         "test": null,
