@@ -53,13 +53,28 @@ def _basic_metrics(prediction: torch.Tensor, target: torch.Tensor) -> dict[str, 
     }
 
 
+def _horizon_slices() -> dict[str, tuple[int, int]]:
+    """返回 prefix 与 exact-step 的明确切片定义。"""
+
+    return {
+        "prefix_h1": (0, 1),
+        "prefix_h3": (0, 3),
+        "prefix_h6": (0, 6),
+        "prefix_h12": (0, 12),
+        "step1": (0, 1),
+        "step3": (2, 3),
+        "step6": (5, 6),
+        "step12": (11, 12),
+        "overall_12step": (0, 12),
+    }
+
+
 def _horizon_metrics(prediction: np.ndarray, target: np.ndarray) -> dict[str, dict[str, float]]:
     result: dict[str, dict[str, float]] = {}
-    for horizon in (1, 3, 6, 12):
-        end = horizon if horizon < 12 else 12
-        p = torch.from_numpy(prediction[:, :end].astype(np.float32, copy=False))
-        t = torch.from_numpy(target[:, :end].astype(np.float32, copy=False))
-        result[f"h{horizon}"] = _basic_metrics(p, t)
+    for name, (start, end) in _horizon_slices().items():
+        p = torch.from_numpy(prediction[:, start:end].astype(np.float32, copy=False))
+        t = torch.from_numpy(target[:, start:end].astype(np.float32, copy=False))
+        result[name] = _basic_metrics(p, t)
     return result
 
 
@@ -175,7 +190,16 @@ def main() -> None:
     methods = {"PA-STFed": pa["predictions"], "GWN": gwn["predictions"], "Persistence": pa["persistence"], "Daily-lag naive": pa["daily_naive"]}
     horizons = {name: _horizon_metrics(pred, target) for name, pred in methods.items()}
     aggregation = {
-        name: {key: {"node_micro_wape": values["wape"], "feeder_aggregate_wape": _feeder_wape(pred[:, : (1 if key == "h1" else 3 if key == "h3" else 6 if key == "h6" else 12)], target[:, : (1 if key == "h1" else 3 if key == "h3" else 6 if key == "h6" else 12)])} for key, values in horizons[name].items()}
+        name: {
+            key: {
+                "node_micro_wape": values["wape"],
+                "feeder_aggregate_wape": _feeder_wape(
+                    pred[:, start:end], target[:, start:end]
+                ),
+            }
+            for key, values in horizons[name].items()
+            for start, end in [_horizon_slices()[key]]
+        }
         for name, pred in methods.items()
     }
     node_ids = [str(x) for x in data.node_ids[data.active_indices]]
@@ -240,11 +264,11 @@ def main() -> None:
     lines = ["# Forecastability Audit", "", "Validation-only; no training, no test loader, and no existing result JSON was modified.", "", "## Metric Sanity", ""]
     for name, details in payload["metric_sanity"].items():
         lines.append(f"- {name}: recomputed WAPE/MAE/RMSE = {details['recomputed_metrics']}; max difference = {max(details['metric_diffs'].values()):.8f} (PASS)")
-    lines += ["", "## Horizon-wise Metrics", "", "| Method | Horizon | Node-micro WAPE | MAE | RMSE |", "|---|---:|---:|---:|---:|"]
+    lines += ["", "## Horizon-wise Metrics", "", "prefix_h* are cumulative prefix metrics; step* are exact forecast steps.", "", "| Method | Horizon | Node-micro WAPE | MAE | RMSE |", "|---|---:|---:|---:|---:|"]
     for method, values in payload["horizon_metrics"].items():
         for horizon, metrics in values.items():
             lines.append(f"| {method} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} |")
-    lines += ["", "## Aggregation Effect", "", "| Method | Horizon | Node WAPE | Feeder aggregate WAPE |", "|---|---:|---:|---:|"]
+    lines += ["", "## Aggregation Effect", "", "Prefix and exact-step feeder aggregate WAPE are both reported.", "", "| Method | Horizon | Node WAPE | Feeder aggregate WAPE |", "|---|---:|---:|---:|"]
     for method, values in aggregation.items():
         for horizon, metrics in values.items():
             lines.append(f"| {method} | {horizon} | {metrics['node_micro_wape']:.4f} | {metrics['feeder_aggregate_wape']:.4f} |")
@@ -255,8 +279,8 @@ def main() -> None:
     for method in methods:
         lines.append(f"- {method}: {forecastability[method]}")
     pa_h, gwn_h = horizons["PA-STFed"], horizons["GWN"]
-    h12_growth = pa_h["h12"]["wape"] - pa_h["h1"]["wape"]
-    lines += ["", "## Conclusions", "", f"1. PA-STFed node-micro WAPE is {pa_h['h12']['wape']:.2f}% and feeder-aggregate WAPE is {aggregation['PA-STFed']['h12']['feeder_aggregate_wape']:.2f}%; this quantifies the aggregation-level effect.", f"2. PA-STFed h12 minus h1 WAPE is {h12_growth:.2f} percentage points, so horizon degradation is {'present' if h12_growth > 0 else 'not evident'}.", f"3. The reported Spearman correlations quantify whether high error tracks CV, autocorrelation, or mean shift; no causal claim is made.", f"4. PA-STFed versus GWN h12 WAPE gap is {pa_h['h12']['wape'] - gwn_h['h12']['wape']:.2f} percentage points; horizon-wise and node-level tables above show where it concentrates."]
+    h12_growth = pa_h["prefix_h12"]["wape"] - pa_h["step1"]["wape"]
+    lines += ["", "## Conclusions", "", f"1. PA-STFed node-micro WAPE is {pa_h['overall_12step']['wape']:.2f}% and feeder-aggregate WAPE is {aggregation['PA-STFed']['overall_12step']['feeder_aggregate_wape']:.2f}%; this quantifies the aggregation-level effect.", f"2. PA-STFed overall prefix WAPE minus exact step1 WAPE is {h12_growth:.2f} percentage points, so horizon degradation is {'present' if h12_growth > 0 else 'not evident'}.", f"3. The reported Spearman correlations quantify whether high error tracks CV, autocorrelation, or mean shift; no causal claim is made.", f"4. PA-STFed versus GWN overall-12-step WAPE gap is {pa_h['overall_12step']['wape'] - gwn_h['overall_12step']['wape']:.2f} percentage points; horizon-wise and node-level tables above show where it concentrates."]
     (REPORTS / "forecastability_audit.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("forecastability audit PASS")
 

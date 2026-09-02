@@ -9,45 +9,89 @@ Validation-only; no training, no test loader, and no existing result JSON was mo
 
 ## Horizon-wise Metrics
 
+prefix_h* are cumulative prefix metrics; step* are exact forecast steps.
+
 | Method | Horizon | Node-micro WAPE | MAE | RMSE |
 |---|---:|---:|---:|---:|
-| PA-STFed | h1 | 18.3582 | 0.215099 | 0.457934 |
-| PA-STFed | h3 | 23.7940 | 0.278829 | 0.600959 |
-| PA-STFed | h6 | 26.6515 | 0.312388 | 0.669092 |
-| PA-STFed | h12 | 29.3737 | 0.344448 | 0.714534 |
-| GWN | h1 | 17.3894 | 0.203748 | 0.457321 |
-| GWN | h3 | 23.1853 | 0.271697 | 0.600164 |
-| GWN | h6 | 26.2692 | 0.307907 | 0.668225 |
-| GWN | h12 | 29.0054 | 0.340130 | 0.713006 |
-| Persistence | h1 | 18.0189 | 0.211123 | 0.516695 |
-| Persistence | h3 | 26.7421 | 0.313377 | 0.724909 |
-| Persistence | h6 | 33.3026 | 0.390347 | 0.862369 |
-| Persistence | h12 | 40.9818 | 0.480569 | 0.991299 |
-| Daily-lag naive | h1 | 48.0422 | 0.562900 | 1.092739 |
-| Daily-lag naive | h3 | 48.0465 | 0.563032 | 1.092940 |
-| Daily-lag naive | h6 | 48.0525 | 0.563233 | 1.093192 |
-| Daily-lag naive | h12 | 48.0583 | 0.563552 | 1.093594 |
+| PA-STFed | prefix_h1 | 18.3582 | 0.215099 | 0.457934 |
+| PA-STFed | prefix_h3 | 23.7940 | 0.278829 | 0.600959 |
+| PA-STFed | prefix_h6 | 26.6515 | 0.312388 | 0.669092 |
+| PA-STFed | prefix_h12 | 29.3737 | 0.344448 | 0.714534 |
+| PA-STFed | step1 | 18.3582 | 0.215099 | 0.457934 |
+| PA-STFed | step3 | 27.5897 | 0.323354 | 0.692661 |
+| PA-STFed | step6 | 30.1749 | 0.353822 | 0.740059 |
+| PA-STFed | step12 | 33.3626 | 0.391552 | 0.769210 |
+| PA-STFed | overall_12step | 29.3737 | 0.344448 | 0.714534 |
+| GWN | prefix_h1 | 17.3894 | 0.203748 | 0.457321 |
+| GWN | prefix_h3 | 23.1853 | 0.271697 | 0.600164 |
+| GWN | prefix_h6 | 26.2692 | 0.307907 | 0.668225 |
+| GWN | prefix_h12 | 29.0054 | 0.340130 | 0.713006 |
+| GWN | step1 | 17.3894 | 0.203748 | 0.457321 |
+| GWN | step3 | 27.3556 | 0.320610 | 0.692143 |
+| GWN | step6 | 30.0644 | 0.352527 | 0.740252 |
+| GWN | step12 | 32.8986 | 0.386107 | 0.765072 |
+| GWN | overall_12step | 29.0054 | 0.340130 | 0.713006 |
+| Persistence | prefix_h1 | 18.0189 | 0.211123 | 0.516695 |
+| Persistence | prefix_h3 | 26.7421 | 0.313377 | 0.724909 |
+| Persistence | prefix_h6 | 33.3026 | 0.390347 | 0.862369 |
+| Persistence | prefix_h12 | 40.9818 | 0.480569 | 0.991299 |
+| Persistence | step1 | 18.0189 | 0.211123 | 0.516695 |
+| Persistence | step3 | 33.6876 | 0.394822 | 0.865190 |
+| Persistence | step6 | 42.1124 | 0.493798 | 1.017970 |
+| Persistence | step12 | 52.5797 | 0.617089 | 1.154756 |
+| Persistence | overall_12step | 40.9818 | 0.480569 | 0.991299 |
+| Daily-lag naive | prefix_h1 | 48.0422 | 0.562900 | 1.092739 |
+| Daily-lag naive | prefix_h3 | 48.0465 | 0.563032 | 1.092940 |
+| Daily-lag naive | prefix_h6 | 48.0525 | 0.563233 | 1.093192 |
+| Daily-lag naive | prefix_h12 | 48.0583 | 0.563552 | 1.093594 |
+| Daily-lag naive | step1 | 48.0422 | 0.562900 | 1.092739 |
+| Daily-lag naive | step3 | 48.0506 | 0.563157 | 1.093112 |
+| Daily-lag naive | step6 | 48.0601 | 0.563539 | 1.093551 |
+| Daily-lag naive | step12 | 48.0635 | 0.564086 | 1.094253 |
+| Daily-lag naive | overall_12step | 48.0583 | 0.563552 | 1.093594 |
 
 ## Aggregation Effect
 
+Prefix and exact-step feeder aggregate WAPE are both reported.
+
 | Method | Horizon | Node WAPE | Feeder aggregate WAPE |
 |---|---:|---:|---:|
-| PA-STFed | h1 | 18.3582 | 4.7410 |
-| PA-STFed | h3 | 23.7940 | 6.8742 |
-| PA-STFed | h6 | 26.6515 | 8.1472 |
-| PA-STFed | h12 | 29.3737 | 8.8903 |
-| GWN | h1 | 17.3894 | 5.0082 |
-| GWN | h3 | 23.1853 | 6.9185 |
-| GWN | h6 | 26.2692 | 8.0402 |
-| GWN | h12 | 29.0054 | 8.7677 |
-| Persistence | h1 | 18.0189 | 5.2410 |
-| Persistence | h3 | 26.7421 | 7.5164 |
-| Persistence | h6 | 33.3026 | 9.9025 |
-| Persistence | h12 | 40.9818 | 14.1932 |
-| Daily-lag naive | h1 | 48.0422 | 16.0472 |
-| Daily-lag naive | h3 | 48.0465 | 16.0453 |
-| Daily-lag naive | h6 | 48.0525 | 16.0437 |
-| Daily-lag naive | h12 | 48.0583 | 16.0348 |
+| PA-STFed | prefix_h1 | 18.3582 | 4.7410 |
+| PA-STFed | prefix_h3 | 23.7940 | 6.8742 |
+| PA-STFed | prefix_h6 | 26.6515 | 8.1472 |
+| PA-STFed | prefix_h12 | 29.3737 | 8.8903 |
+| PA-STFed | step1 | 18.3582 | 4.7410 |
+| PA-STFed | step3 | 27.5897 | 8.7947 |
+| PA-STFed | step6 | 30.1749 | 9.5295 |
+| PA-STFed | step12 | 33.3626 | 9.9439 |
+| PA-STFed | overall_12step | 29.3737 | 8.8903 |
+| GWN | prefix_h1 | 17.3894 | 5.0082 |
+| GWN | prefix_h3 | 23.1853 | 6.9185 |
+| GWN | prefix_h6 | 26.2692 | 8.0402 |
+| GWN | prefix_h12 | 29.0054 | 8.7677 |
+| GWN | step1 | 17.3894 | 5.0082 |
+| GWN | step3 | 27.3556 | 8.3154 |
+| GWN | step6 | 30.0644 | 9.3665 |
+| GWN | step12 | 32.8986 | 9.7152 |
+| GWN | overall_12step | 29.0054 | 8.7677 |
+| Persistence | prefix_h1 | 18.0189 | 5.2410 |
+| Persistence | prefix_h3 | 26.7421 | 7.5164 |
+| Persistence | prefix_h6 | 33.3026 | 9.9025 |
+| Persistence | prefix_h12 | 40.9818 | 14.1932 |
+| Persistence | step1 | 18.0189 | 5.2410 |
+| Persistence | step3 | 33.6876 | 9.4737 |
+| Persistence | step6 | 42.1124 | 13.6675 |
+| Persistence | step12 | 52.5797 | 21.8657 |
+| Persistence | overall_12step | 40.9818 | 14.1932 |
+| Daily-lag naive | prefix_h1 | 48.0422 | 16.0472 |
+| Daily-lag naive | prefix_h3 | 48.0465 | 16.0453 |
+| Daily-lag naive | prefix_h6 | 48.0525 | 16.0437 |
+| Daily-lag naive | prefix_h12 | 48.0583 | 16.0348 |
+| Daily-lag naive | step1 | 48.0422 | 16.0472 |
+| Daily-lag naive | step3 | 48.0506 | 16.0436 |
+| Daily-lag naive | step6 | 48.0601 | 16.0393 |
+| Daily-lag naive | step12 | 48.0635 | 16.0231 |
+| Daily-lag naive | overall_12step | 48.0583 | 16.0348 |
 
 ## Node Difficulty
 
@@ -66,6 +110,6 @@ Validation-only; no training, no test loader, and no existing result JSON was mo
 ## Conclusions
 
 1. PA-STFed node-micro WAPE is 29.37% and feeder-aggregate WAPE is 8.89%; this quantifies the aggregation-level effect.
-2. PA-STFed h12 minus h1 WAPE is 11.02 percentage points, so horizon degradation is present.
+2. PA-STFed overall prefix WAPE minus exact step1 WAPE is 11.02 percentage points, so horizon degradation is present.
 3. The reported Spearman correlations quantify whether high error tracks CV, autocorrelation, or mean shift; no causal claim is made.
-4. PA-STFed versus GWN h12 WAPE gap is 0.37 percentage points; horizon-wise and node-level tables above show where it concentrates.
+4. PA-STFed versus GWN overall-12-step WAPE gap is 0.37 percentage points; horizon-wise and node-level tables above show where it concentrates.
