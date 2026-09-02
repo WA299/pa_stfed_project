@@ -167,6 +167,7 @@ def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: t
         "code_revision": existing.get("code_revision"),
         "split_bounds": bounds.__dict__,
         "n_validation_origins": int(len(dataset)),
+        "validation_origins": dataset.origins.copy(),
         "predictions": prediction,
         "target": target,
         "persistence": persistence,
@@ -188,6 +189,21 @@ def main() -> None:
     data = pa["dataset"]
     target = pa["target"]
     methods = {"PA-STFed": pa["predictions"], "GWN": gwn["predictions"], "Persistence": pa["persistence"], "Daily-lag naive": pa["daily_naive"]}
+    # 严格按未来目标步构造 seasonal naive；source 只来自 validation origin 之前
+    # 的 raw load_ts，不依赖模型、不访问 test，也不进行插值或平移。
+    raw_load = data.load_ts[:, data.active_indices].astype(np.float32, copy=False)
+    origins = np.asarray(pa["validation_origins"], dtype=np.int64)
+    target_positions = origins[:, None] + 1 + np.arange(int(pa["cfg"]["data"]["horizon"]), dtype=np.int64)[None, :]
+    assert np.all(target_positions < int(pa["split_bounds"]["val_end"]))
+    assert np.all(target_positions - 672 >= 0)
+    daily_source = raw_load[target_positions - 96]
+    weekly_source = raw_load[target_positions - 672]
+    daily_lag_formula = daily_source
+    weekly_lag = weekly_source
+    methods["Weekly-lag naive"] = weekly_lag
+    blend_alphas = (0.0, 0.25, 0.5, 0.75, 1.0)
+    for alpha in blend_alphas:
+        methods[f"Daily-weekly blend alpha={alpha:.2f}"] = alpha * daily_lag_formula + (1.0 - alpha) * weekly_lag
     horizons = {name: _horizon_metrics(pred, target) for name, pred in methods.items()}
     aggregation = {
         name: {
@@ -214,6 +230,9 @@ def main() -> None:
             "worst10": [{"node_id": node_ids[i], "wape": float(values[i])} for i in order[-10:][::-1]],
             "wape_by_node": {node_ids[i]: float(values[i]) for i in range(len(values))},
         }
+    weekly_values = _node_wape(weekly_lag, target)
+    pa_values = _node_wape(pa["predictions"], target)
+    weekly_order = np.argsort(weekly_values, kind="mergesort")
     load = data.load_ts[:, data.active_indices].astype(np.float64)
     train_end, val_end = pa["split_bounds"]["train_end"], pa["split_bounds"]["val_end"]
     train, val = load[:train_end], load[train_end:val_end]
@@ -256,8 +275,15 @@ def main() -> None:
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
         "aggregation_effect": aggregation,
         "node_difficulty": node_difficulty,
+        "weekly_naive_node_wape_distribution": {
+            "quantiles": {key: float(np.quantile(weekly_values, q)) for key, q in (("min", 0), ("p10", .1), ("p25", .25), ("median", .5), ("p75", .75), ("p90", .9), ("max", 1))},
+            "best10": [{"node_id": node_ids[i], "wape": float(weekly_values[i])} for i in weekly_order[:10]],
+            "worst10": [{"node_id": node_ids[i], "wape": float(weekly_values[i])} for i in weekly_order[-10:][::-1]],
+            "pa_wape_better_count": int((pa_values < weekly_values).sum()),
+            "weekly_naive_better_or_equal_count": int((weekly_values <= pa_values).sum()),
+        },
         "data_forecastability": forecastability,
-        "naive_sanity": {"recomputed": naive_recomputed, "existing_baseline_centralized": naive_existing, "comparison": naive_comparison, "same_definition": True, "daily_lag_definition": "prediction at future step h uses the input load at origin+h-96; this matches the existing baseline implementation."},
+        "naive_sanity": {"recomputed": naive_recomputed, "existing_baseline_centralized": naive_existing, "comparison": naive_comparison, "same_definition": True, "daily_lag_definition": "prediction at future step h uses the input load at origin+h-96; this matches the existing baseline implementation.", "weekly_lag_definition": "prediction at future step h uses raw load at origin+h-672.", "blend_definition": "alpha * raw load(origin+h-96) + (1-alpha) * raw load(origin+h-672), with alpha in {0, 0.25, 0.5, 0.75, 1}."},
     }
     REPORTS.mkdir(exist_ok=True)
     (RESULTS / "forecastability_audit.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_value), encoding="utf-8")
@@ -275,6 +301,8 @@ def main() -> None:
     lines += ["", "## Node Difficulty", ""]
     for method, details in node_difficulty.items():
         lines.append(f"- {method}: {details['quantiles']}; counts={details['counts']}")
+    weekly_details = payload["weekly_naive_node_wape_distribution"]
+    lines += ["", "## Weekly-lag Node Distribution", "", f"- quantiles: {weekly_details['quantiles']}", f"- PA-STFed has lower overall node WAPE than weekly-lag naive for {weekly_details['pa_wape_better_count']} of 92 nodes; weekly-lag is lower or equal for {weekly_details['weekly_naive_better_or_equal_count']} nodes.", f"- best10: {weekly_details['best10']}", f"- worst10: {weekly_details['worst10']}"]
     lines += ["", "## Forecastability Correlations", ""]
     for method in methods:
         lines.append(f"- {method}: {forecastability[method]}")
