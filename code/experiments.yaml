@@ -485,6 +485,24 @@ experiments:
         personalized_head: false
       privacy: {enabled: false}
 
+  # Development-only screening：在当前 centralized PA-STFed 上启用持久性残差锚定。
+  # 输出语义为最后观测负荷加网络学习的修正量，不纳入 formal 主账本。
+  pa_residual_anchor_dev:
+    task: centralized
+    tag: pa_residual_anchor_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      model:
+        architecture: pa_stfed
+        use_residual_anchor: true
+      training:
+        <<: *formal_centralized_training
+        evaluate_test: false
+      privacy: {enabled: false}
+
   # 每轮 8/8 客户端全参与，故 q=1；记录 C=1、sigma=3.2、delta=1e-5 和 epsilon。
   dp_fedavg:
     task: federated
