@@ -453,6 +453,7 @@ experiments:
         local_epochs: 1
         patience: 5
         ala_sample_ratio: 0.80
+        ala_max_windows: 2048
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1
@@ -477,6 +478,7 @@ experiments:
         local_epochs: 1
         patience: 5
         ala_sample_ratio: 0.80
+        ala_max_windows: 2048
         ala_weight_lr: 1.0
         ala_initial_epochs: 1
         ala_adapt_epochs: 1

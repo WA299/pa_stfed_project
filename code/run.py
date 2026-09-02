@@ -11,6 +11,7 @@ import csv
 import gc
 import hashlib
 import json
+import time
 import traceback
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -1623,6 +1624,46 @@ def _alpha_module_statistics(
     return statistics
 
 
+def _ala_window_indices(
+    length: int,
+    ratio: float,
+    max_windows: int,
+    seed: int,
+) -> list[int]:
+    """按整个 train 时间范围确定性分层抽取 ALA 窗口索引。
+
+    滑窗之间高度重叠，随机抽取会把样本集中在局部时间段。这里把 train
+    窗口划成等宽时间桶，每桶取一个由 ``seed`` 确定的中心位置；seed 仍由
+    实验、客户端和通信轮次共同派生，因此每轮可复现地重采样，同时覆盖
+    整个 train split。返回顺序按时间排序，便于审计。
+    """
+
+    if length < 1:
+        return []
+    if not 0.0 < ratio <= 1.0:
+        raise ValueError("federated.ala_sample_ratio must be in (0, 1]")
+    if max_windows < 1:
+        raise ValueError("federated.ala_max_windows must be positive")
+    count = min(length, max(1, int(np.ceil(length * ratio))), int(max_windows))
+    if count == length:
+        return list(range(length))
+    # 每个时间桶只选一个位置。用整数哈希产生桶内确定性偏移，避免
+    # Python hash 的进程随机化，同时保证首尾时间段都被覆盖。
+    seed_u = int(seed) & 0xFFFFFFFFFFFFFFFF
+    positions: list[int] = []
+    for bucket in range(count):
+        start = (bucket * length) // count
+        end = ((bucket + 1) * length) // count
+        width = max(1, end - start)
+        value = (seed_u + 0x9E3779B97F4A7C15 * (bucket + 1)) & 0xFFFFFFFFFFFFFFFF
+        value ^= value >> 30
+        value = (value * 0xBF58476D1CE4E5B9) & 0xFFFFFFFFFFFFFFFF
+        value ^= value >> 27
+        offset = int(value % width)
+        positions.append(start + offset)
+    return positions
+
+
 def _learn_moduleala_weights(
     model: PA_STFed,
     previous_local_state: dict[str, torch.Tensor],
@@ -1659,6 +1700,8 @@ def _learn_moduleala_weights(
     for parameter in model.parameters():
         parameter.requires_grad_(False)
     adjacency, edge_features = graph_tensors_device
+    # 每个 client/round 只做一次 CPU->device 拷贝和静态 state 构造。
+    # functional_call 仍接收完整 state，但 batch 内只重新计算 ALA 张量。
     previous_local_state = {
         name: value.to(device=device)
         for name, value in previous_local_state.items()
@@ -1667,8 +1710,24 @@ def _learn_moduleala_weights(
         name: value.to(device=device)
         for name, value in global_state.items()
     }
+    current_state = model.state_dict()
+    local_prefixes = local_parameter_prefixes(False)
+    static_state: dict[str, torch.Tensor] = {}
+    local_values: dict[str, torch.Tensor] = {}
+    global_values: dict[str, torch.Tensor] = {}
+    for name, value in current_state.items():
+        if name in alpha_parameters:
+            local_values[name] = previous_local_state[name].to(dtype=value.dtype)
+            global_values[name] = global_device_state[name].to(dtype=value.dtype)
+        elif name.startswith(local_prefixes):
+            static_state[name] = previous_local_state[name].to(dtype=value.dtype)
+        elif name in global_device_state:
+            static_state[name] = global_device_state[name].to(dtype=value.dtype)
+        else:
+            static_state[name] = previous_local_state[name].to(dtype=value.dtype)
     model.eval()
     steps = 0
+    ala_started = time.perf_counter()
     last_loss = torch.zeros((), device=device)
     max_epochs = int(
         config["federated"].get(
@@ -1679,20 +1738,18 @@ def _learn_moduleala_weights(
         for inputs, targets in loader:
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
             targets = targets.to(device, non_blocking=device.type == "cuda")
-            state: dict[str, torch.Tensor] = {}
-            for name, value in model.state_dict().items():
-                if name in alpha_parameters:
-                    local_value = previous_local_state[name].to(dtype=value.dtype)
-                    global_value = global_device_state[name].to(dtype=value.dtype)
-                    state[name] = local_value + alpha_parameters[name].to(dtype=value.dtype) * (global_value - local_value)
-                elif name.startswith(local_parameter_prefixes(False)):
-                    state[name] = previous_local_state[name].to(dtype=value.dtype)
-                elif name in global_device_state:
-                    state[name] = global_device_state[name].to(dtype=value.dtype)
-                else:
-                    state[name] = previous_local_state[name].to(dtype=value.dtype)
-            output = functional_call(model, state, (inputs, adjacency, edge_features))["prediction"]
-            loss = charbonnier_loss(output, targets, float(config["model"]["robust_kappa"]))
+            # 只为 ALA 参数计算 local + alpha * (global-local)，其余张量复用缓存。
+            state = dict(static_state)
+            for name in alpha_parameters:
+                local_value = local_values[name]
+                global_value = global_values[name]
+                mixed_fp32 = local_value.float() + alpha_parameters[name] * (
+                    global_value.float() - local_value.float()
+                )
+                state[name] = mixed_fp32.to(dtype=current_state[name].dtype)
+            with autocast_context(training_config, device):
+                output = functional_call(model, state, (inputs, adjacency, edge_features))["prediction"]
+                loss = charbonnier_loss(output, targets, float(config["model"]["robust_kappa"]))
             if not torch.isfinite(loss):
                 raise RuntimeError("ModuleALA alpha learning produced NaN/Inf loss")
             optimizer.zero_grad(set_to_none=True)
@@ -1703,6 +1760,8 @@ def _learn_moduleala_weights(
                     parameter.clamp_(0.0, 1.0)
             last_loss = loss.detach()
             steps += 1
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
     for parameter in model.parameters():
         parameter.requires_grad_(True)
     learned = {name: parameter.detach().cpu().clone().clamp(0.0, 1.0) for name, parameter in alpha_parameters.items()}
@@ -1715,6 +1774,8 @@ def _learn_moduleala_weights(
     stats.update({
         "loss": float(last_loss.cpu()),
         "steps": float(steps),
+        "ala_batches": float(steps),
+        "ala_seconds": float(time.perf_counter() - ala_started),
         "alpha_non_one": float((all_alpha - 1.0).abs().gt(1e-7).sum().item()),
     })
     return stats
@@ -1867,6 +1928,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
         ratio = float(cfg["federated"].get("ala_sample_ratio", 0.05))
         if not 0.0 < ratio <= 1.0:
             raise ValueError("federated.ala_sample_ratio must be in (0, 1]")
+        ala_max_windows = int(cfg["federated"].get("ala_max_windows", 2048))
+        if ala_max_windows < 1:
+            raise ValueError("federated.ala_max_windows must be positive")
 
     for round_index in range(1, int(cfg["federated"]["rounds"]) + 1):
         local_states: list[dict[str, torch.Tensor]] = []
@@ -1879,13 +1943,14 @@ def federated(cfg: dict, device: torch.device) -> dict:
             if (name in set(ala_eligible_names) if is_vanilla_ala else name.startswith(ala_prefixes))
         }
         ala_sample_loaders: list[DataLoader] = []
+        ala_window_counts: list[int] = []
         if is_ala:
             for client_index, dataset in enumerate(train_sets):
-                count = max(1, int(np.ceil(len(dataset) * ratio)))
+                count = min(len(dataset), max(1, int(np.ceil(len(dataset) * ratio))), ala_max_windows)
                 round_seed = int(cfg["seed"]) + 1009 * (client_index + 1) + 9176 * round_index
-                generator = torch.Generator().manual_seed(round_seed)
-                indices = torch.randperm(len(dataset), generator=generator)[:count].tolist()
+                indices = _ala_window_indices(len(dataset), ratio, ala_max_windows, round_seed)
                 ala_sample_loaders.append(make_data_loader(Subset(dataset, indices), train_batch_size, True, cfg["training"]))
+                ala_window_counts.append(len(indices))
 
         for client_index, (model, train_set, graph) in enumerate(
             zip(models, train_sets, graphs)
@@ -1894,7 +1959,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 if round_index == 1:
                     # 第一轮严格按 FedAvg 初始化，ALA 从第二轮才启用。
                     load_shared_state(model, global_state)
-                    ala_round_stats.append({"executed": 0.0, "alpha_min": 1.0, "alpha_max": 1.0, "alpha_mean": 1.0, "nonzero_initialization": 0.0})
+                    ala_round_stats.append({"executed": 0.0, "alpha_min": 1.0, "alpha_max": 1.0, "alpha_mean": 1.0, "nonzero_initialization": 0.0, "ala_windows": float(ala_window_counts[client_index]), "ala_batches": 0.0, "ala_seconds": 0.0})
                 else:
                     stats = _learn_moduleala_weights(
                         model,
@@ -1916,6 +1981,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names)
             elif not local_only:
                 load_shared_state(model, global_state)
+            local_started = time.perf_counter()
+            if device.type == "cuda":
+                torch.cuda.synchronize(device)
             state, metrics = train_local(
                 model,
                 train_set,
@@ -1927,6 +1995,15 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 optimizer=local_optimizers[client_index],
                 scaler=local_scalers[client_index],
             )
+            if device.type == "cuda":
+                torch.cuda.synchronize(device)
+            local_seconds = float(time.perf_counter() - local_started)
+            metrics["local_train_seconds"] = local_seconds
+            if is_ala:
+                ala_round_stats[client_index].update({
+                    "ala_windows": float(ala_window_counts[client_index]),
+                    "local_train_seconds": local_seconds,
+                })
             if is_personalized_module:
                 local_states.append({name: state[name] for name in global_state})
             else:
@@ -2025,6 +2102,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "nonzero_initialization_total": float(sum(item.get("nonzero_initialization", 0.0) for item in ala_round_stats)),
                 "alpha_non_one_total": float(sum(item.get("alpha_non_one", 0.0) for item in ala_round_stats)),
                 "global_ala_max_abs_delta": global_ala_delta,
+                "sample_ratio": float(ratio) if is_ala else None,
+                "max_windows": int(ala_max_windows) if is_ala else None,
+                "ala_windows_total": int(sum(item.get("ala_windows", 0.0) for item in ala_round_stats)),
+                "ala_batches_total": int(sum(item.get("ala_batches", 0.0) for item in ala_round_stats)),
+                "ala_seconds_total": float(sum(item.get("ala_seconds", 0.0) for item in ala_round_stats)),
+                "local_train_seconds_total": float(sum(item.get("local_train_seconds", 0.0) for item in ala_round_stats)),
             } if is_ala else None,
         }
         history.append(record)
@@ -2434,6 +2517,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "uniform_mean": bool(cfg["federated"].get("uniform_mean", True)),
             "personalized_head": bool(cfg["federated"].get("personalized_head", False)),
             "ala_sample_ratio": cfg["federated"].get("ala_sample_ratio"),
+            "ala_max_windows": cfg["federated"].get("ala_max_windows"),
             "ala_weight_lr": cfg["federated"].get("ala_weight_lr"),
             "ala_initial_epochs": cfg["federated"].get("ala_initial_epochs"),
             "ala_adapt_epochs": cfg["federated"].get("ala_adapt_epochs"),
