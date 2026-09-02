@@ -2720,6 +2720,22 @@ def collect_existing_formal_items() -> list[dict]:
     """
 
     by_key: dict[tuple[str, int], dict] = {}
+    catalog = load_experiment_catalog().get("experiments", {})
+    def is_formal_name(name: str) -> bool:
+        """判断结果是否属于 formal 主账本；显式筛除开发/审计任务。"""
+
+        job = catalog.get(name, {})
+        if str(job.get("result_scope", "formal")).lower() != "formal":
+            return False
+        lowered = str(name).lower()
+        return not (
+            lowered.startswith("stage_")
+            or lowered.startswith("calendar_")
+            or lowered.endswith("_dev")
+            or lowered.endswith("_r40")
+        )
+
+    formal_names = {str(name) for name in catalog if is_formal_name(str(name))}
     manifest_path = OUTPUTS / "all_manifest.json"
     if manifest_path.exists():
         try:
@@ -2734,6 +2750,8 @@ def collect_existing_formal_items() -> list[dict]:
             try:
                 key = (str(item["experiment"]), int(item["seed"]))
             except (KeyError, TypeError, ValueError):
+                continue
+            if key[0] not in formal_names:
                 continue
             brief = item.get("result")
             if brief is None:
@@ -2768,6 +2786,8 @@ def collect_existing_formal_items() -> list[dict]:
         try:
             key = (str(payload["experiment_name"]), int(payload["seed"]))
         except (KeyError, TypeError, ValueError):
+            continue
+        if key[0] not in formal_names:
             continue
         # 已有 manifest 项优先；结果目录只负责补齐缺失的正式记录。
         if key in by_key:
@@ -3060,7 +3080,7 @@ def run_all(
     failures = [item for item in manifest["items"] if item["status"] == "failed"]
     manifest["status"] = "failed" if failures else "completed"
     manifest["failed_count"] = len(failures)
-    summary_path = OUTPUTS / "all_summary.json"
+    summary_path = OUTPUTS / f"{manifest_stem}_summary.json"
     summary_path.write_text(
         json.dumps(summarize_all_items(manifest["items"]), ensure_ascii=False, indent=2),
         encoding="utf-8",

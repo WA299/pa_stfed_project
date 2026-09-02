@@ -5,12 +5,12 @@
     2026
   ],
   "experiments": [
-    "layerala_dev",
-    "modulelocal_dev"
+    "modulelocal_dev",
+    "layerala_dev"
   ],
   "seed_count_by_experiment": {
-    "layerala_dev": 1,
-    "modulelocal_dev": 1
+    "modulelocal_dev": 1,
+    "layerala_dev": 1
   },
   "resume": false,
   "skip_dp": false,
@@ -89,6 +89,6 @@
       }
     }
   ],
-  "failed_count": 0,
-  "summary_path": "E:\\pa_stfed_project\\results\\all_summary.json"
+  "summary_path": "E:\\pa_stfed_project\\results\\development_summary.json",
+  "failed_count": 0
 }
