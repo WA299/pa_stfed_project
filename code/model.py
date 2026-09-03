@@ -681,10 +681,11 @@ class HorizonCrossAttentionDecoder(nn.Module):
         self.query_time_features = bool(query_time_features)
         self.daily_period = int(daily_period)
         self.weekly_period = int(weekly_period)
+        # Keep the original horizon decoder initialization sequence intact.
+        # The optional time-query projection is deliberately created only
+        # after every original decoder parameter has been initialized.
         self.query = nn.Parameter(torch.empty(self.horizon, self.hidden_dim))
         nn.init.normal_(self.query, std=0.02)
-        if self.query_time_features:
-            self.time_query = nn.Linear(4, self.hidden_dim)
         self.cross_attention = nn.MultiheadAttention(
             embed_dim=self.hidden_dim,
             num_heads=self.heads,
@@ -702,6 +703,8 @@ class HorizonCrossAttentionDecoder(nn.Module):
         self.correction = nn.Linear(self.hidden_dim, 1)
         nn.init.zeros_(self.correction.weight)
         nn.init.zeros_(self.correction.bias)
+        if self.query_time_features:
+            self.time_query = nn.Linear(4, self.hidden_dim)
 
     def forward(
         self,
@@ -1093,6 +1096,35 @@ def horizon_decoder_metadata(model: nn.Module) -> dict | None:
         "weekly_period": int(decoder.weekly_period),
         "causal_source": "historical temporal memory only",
     }
+
+
+def check_horizon_decoder_initialization_consistency(seed: int = 2026) -> dict[str, object]:
+    """Verify optional time-query conditioning preserves all legacy parameters."""
+
+    torch.manual_seed(int(seed))
+    legacy = HorizonCrossAttentionDecoder(
+        horizon=12, hidden_dim=64, heads=4, layers=1, query_time_features=False
+    )
+    torch.manual_seed(int(seed))
+    conditioned = HorizonCrossAttentionDecoder(
+        horizon=12, hidden_dim=64, heads=4, layers=1, query_time_features=True
+    )
+    legacy_state = legacy.state_dict()
+    conditioned_state = conditioned.state_dict()
+    common_names = sorted(set(legacy_state).intersection(conditioned_state))
+    if set(legacy_state) != set(common_names):
+        raise AssertionError("time-conditioned decoder changed legacy parameter names")
+    for name in common_names:
+        if not torch.equal(legacy_state[name], conditioned_state[name]):
+            raise AssertionError(f"horizon decoder initialization mismatch: {name}")
+    added_names = sorted(set(conditioned_state) - set(legacy_state))
+    if added_names != ["time_query.bias", "time_query.weight"]:
+        raise AssertionError(f"unexpected time-query parameters: {added_names}")
+    if not torch.equal(conditioned.correction.weight, torch.zeros_like(conditioned.correction.weight)):
+        raise AssertionError("horizon correction weight is not zero initialized")
+    if not torch.equal(conditioned.correction.bias, torch.zeros_like(conditioned.correction.bias)):
+        raise AssertionError("horizon correction bias is not zero initialized")
+    return {"common_parameter_count": len(common_names), "added_parameters": added_names}
 
 
 def shared_state_dict(model: PA_STFed, personalized_head: bool = False) -> dict[str, Tensor]:
