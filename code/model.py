@@ -611,31 +611,37 @@ class MultiScalePatchTemporalBranch(nn.Module):
         batch, history, nodes, hidden = x.shape
         if history != self.history or hidden != self.hidden_dim:
             raise ValueError("MultiScalePatchTemporalBranch input shape does not match configuration")
-        sequence = x.permute(0, 2, 1, 3).reshape(batch * nodes, history, hidden)
-        outputs: list[Tensor] = []
-        for patch_size, stride, projection, encoder in zip(
-            self.patch_sizes,
-            self.patch_strides,
-            self.patch_projections,
-            self.patch_encoders,
-        ):
-            # [BN, hidden, patch_count, patch_size] -> [BN, patch_count, patch_size*hidden]
-            patches = sequence.transpose(1, 2).unfold(2, patch_size, stride)
-            patch_count = patches.shape[2]
-            patches = patches.permute(0, 2, 3, 1).reshape(
-                batch * nodes, patch_count, patch_size * hidden
-            )
-            tokens = projection(patches)
-            causal_mask = torch.triu(
-                torch.ones(patch_count, patch_count, dtype=torch.bool, device=x.device),
-                diagonal=1,
-            )
-            encoded = encoder(tokens, mask=causal_mask)
-            outputs.append(encoded[:, -1])
-        scale_weights = torch.softmax(self.scale_logits, dim=0)
-        fused = torch.stack(outputs, dim=0)
-        fused = (fused * scale_weights[:, None, None]).sum(dim=0)
-        return fused.reshape(batch, nodes, hidden)
+        # Patch projection expands each token from P*H values.  Keeping this
+        # auxiliary branch in float32 avoids BF16 overflow in the enlarged
+        # projection/attention path while the existing Transformer remains on
+        # the caller's normal AMP path.  The returned tensor is converted back
+        # to the spatial branch dtype before fusion.
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            sequence = x.float().permute(0, 2, 1, 3).reshape(batch * nodes, history, hidden)
+            outputs: list[Tensor] = []
+            for patch_size, stride, projection, encoder in zip(
+                self.patch_sizes,
+                self.patch_strides,
+                self.patch_projections,
+                self.patch_encoders,
+            ):
+                # [BN, hidden, patch_count, patch_size] -> [BN, patch_count, patch_size*hidden]
+                patches = sequence.transpose(1, 2).unfold(2, patch_size, stride)
+                patch_count = patches.shape[2]
+                patches = patches.permute(0, 2, 3, 1).reshape(
+                    batch * nodes, patch_count, patch_size * hidden
+                )
+                tokens = projection(patches)
+                causal_mask = torch.triu(
+                    torch.ones(patch_count, patch_count, dtype=torch.bool, device=x.device),
+                    diagonal=1,
+                )
+                encoded = encoder(tokens, mask=causal_mask)
+                outputs.append(encoded[:, -1])
+            scale_weights = torch.softmax(self.scale_logits.float(), dim=0)
+            fused = torch.stack(outputs, dim=0)
+            fused = (fused * scale_weights[:, None, None]).sum(dim=0)
+        return fused.to(dtype=x.dtype).reshape(batch, nodes, hidden)
 
 
 class TemporalEncoder(nn.Module):
