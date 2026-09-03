@@ -8,6 +8,7 @@
     "layerala_dev",
     "moduleala_dev",
     "modulelocal_dev",
+    "pa_multilevel_tcn_transformer_dev",
     "pa_residual_anchor_dev",
     "pa_residual_multilevel_l002_dev",
     "pa_residual_multilevel_l005_dev",
@@ -18,6 +19,7 @@
     "layerala_dev": 1,
     "moduleala_dev": 1,
     "modulelocal_dev": 1,
+    "pa_multilevel_tcn_transformer_dev": 1,
     "pa_residual_anchor_dev": 1,
     "pa_residual_multilevel_l002_dev": 1,
     "pa_residual_multilevel_l005_dev": 1,
@@ -278,6 +280,35 @@
         },
         "test": null,
         "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_multilevel_tcn_transformer_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_multilevel_tcn_transformer_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_multilevel_tcn_transformer_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.34213563799858093,
+          "rmse": 0.7122297286987305,
+          "wape": 29.176477432250977,
+          "smape": 29.438013076782227,
+          "mape": 34.01337432861328,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32328054308891296,
+          "rmse": 0.7133602499961853,
+          "wape": 20.95372200012207,
+          "smape": 22.54574203491211,
+          "mape": 24.225156784057617,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 8,
         "selection_metric": "wape"
       }
     }
