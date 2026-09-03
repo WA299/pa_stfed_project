@@ -547,6 +547,97 @@ class CausalTCNBranch(nn.Module):
         return hidden.transpose(1, 2)
 
 
+class MultiScalePatchTemporalBranch(nn.Module):
+    """多尺度重叠 patch 的因果 Transformer 分支。
+
+    输入为 spatial fusion 后的 ``[B, history, nodes, hidden]`` 表示。
+    每个尺度只由当前及过去的 patch token 构成，并使用上三角 causal mask，
+    因此不会读取历史窗口末端之后的任何信息。
+    """
+
+    def __init__(
+        self,
+        history: int,
+        hidden_dim: int,
+        dropout: float,
+        patch_sizes: tuple[int, ...] = (4, 12, 24),
+        patch_strides: tuple[int, ...] = (2, 6, 12),
+        transformer_layers: int = 1,
+        transformer_heads: int = 4,
+        patch_gain_init: float = 0.0,
+    ) -> None:
+        super().__init__()
+        if len(patch_sizes) != len(patch_strides) or not patch_sizes:
+            raise ValueError("patch_sizes and patch_strides must be non-empty and aligned")
+        if transformer_layers < 1 or transformer_heads < 1:
+            raise ValueError("patch Transformer layers and heads must be positive")
+        if patch_gain_init != 0.0:
+            raise ValueError("patch_gain_init must be exactly 0 for this protocol")
+        if hidden_dim % transformer_heads != 0:
+            raise ValueError("hidden_dim must be divisible by patch_transformer_heads")
+        self.history = int(history)
+        self.hidden_dim = int(hidden_dim)
+        self.patch_sizes = tuple(int(value) for value in patch_sizes)
+        self.patch_strides = tuple(int(value) for value in patch_strides)
+        for size, stride in zip(self.patch_sizes, self.patch_strides):
+            if size < 1 or stride < 1 or size > self.history:
+                raise ValueError("patch size/stride is incompatible with history")
+        self.patch_transformer_layers = int(transformer_layers)
+        self.patch_transformer_heads = int(transformer_heads)
+        self.patch_projections = nn.ModuleList(
+            [nn.Linear(size * hidden_dim, hidden_dim) for size in self.patch_sizes]
+        )
+        self.patch_encoders = nn.ModuleList(
+            [
+                nn.TransformerEncoder(
+                    nn.TransformerEncoderLayer(
+                        d_model=hidden_dim,
+                        nhead=transformer_heads,
+                        dim_feedforward=4 * hidden_dim,
+                        dropout=dropout,
+                        activation="gelu",
+                        batch_first=True,
+                        norm_first=False,
+                    ),
+                    num_layers=transformer_layers,
+                )
+                for _ in self.patch_sizes
+            ]
+        )
+        self.scale_logits = nn.Parameter(torch.zeros(len(self.patch_sizes)))
+        self.patch_gain = nn.Parameter(torch.tensor(float(patch_gain_init)))
+
+    def forward(self, x: Tensor) -> Tensor:
+        batch, history, nodes, hidden = x.shape
+        if history != self.history or hidden != self.hidden_dim:
+            raise ValueError("MultiScalePatchTemporalBranch input shape does not match configuration")
+        sequence = x.permute(0, 2, 1, 3).reshape(batch * nodes, history, hidden)
+        outputs: list[Tensor] = []
+        for patch_size, stride, projection, encoder in zip(
+            self.patch_sizes,
+            self.patch_strides,
+            self.patch_projections,
+            self.patch_encoders,
+        ):
+            # [BN, hidden, patch_count, patch_size] -> [BN, patch_count, patch_size*hidden]
+            patches = sequence.transpose(1, 2).unfold(2, patch_size, stride)
+            patch_count = patches.shape[2]
+            patches = patches.permute(0, 2, 3, 1).reshape(
+                batch * nodes, patch_count, patch_size * hidden
+            )
+            tokens = projection(patches)
+            causal_mask = torch.triu(
+                torch.ones(patch_count, patch_count, dtype=torch.bool, device=x.device),
+                diagonal=1,
+            )
+            encoded = encoder(tokens, mask=causal_mask)
+            outputs.append(encoded[:, -1])
+        scale_weights = torch.softmax(self.scale_logits, dim=0)
+        fused = torch.stack(outputs, dim=0)
+        fused = (fused * scale_weights[:, None, None]).sum(dim=0)
+        return fused.reshape(batch, nodes, hidden)
+
+
 class TemporalEncoder(nn.Module):
     """因果 Transformer，可选与轻量因果 TCN 并行融合。"""
 
@@ -628,6 +719,12 @@ class PA_STFed(nn.Module):
         functional_graph_mode: str = "static",
         dynamic_context_steps: int = 12,
         dynamic_gain_init: float = 0.0,
+        use_multiscale_patch_branch: bool = False,
+        patch_sizes: tuple[int, ...] = (4, 12, 24),
+        patch_strides: tuple[int, ...] = (2, 6, 12),
+        patch_transformer_layers: int = 1,
+        patch_transformer_heads: int = 4,
+        patch_gain_init: float = 0.0,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -681,6 +778,26 @@ class PA_STFed(nn.Module):
             # 避免短期负荷预测在训练初期产生大幅无方向偏移。
             nn.init.zeros_(self.head[-1].weight)
             nn.init.zeros_(self.head[-1].bias)
+        # 创建在全部原有模块初始化之后，保证旧模型在相同 seed 下的参数初始化
+        # 顺序和数值完全不变；默认关闭时不会向 state_dict 添加任何参数。
+        self.use_multiscale_patch_branch = bool(use_multiscale_patch_branch)
+        self.patch_sizes = tuple(int(value) for value in patch_sizes)
+        self.patch_strides = tuple(int(value) for value in patch_strides)
+        self.patch_transformer_layers = int(patch_transformer_layers)
+        self.patch_transformer_heads = int(patch_transformer_heads)
+        self.patch_gain_init = float(patch_gain_init)
+        self.multiscale_patch = None
+        if self.use_multiscale_patch_branch:
+            self.multiscale_patch = MultiScalePatchTemporalBranch(
+                history=history,
+                hidden_dim=hidden_dim,
+                dropout=dropout,
+                patch_sizes=self.patch_sizes,
+                patch_strides=self.patch_strides,
+                transformer_layers=self.patch_transformer_layers,
+                transformer_heads=self.patch_transformer_heads,
+                patch_gain_init=self.patch_gain_init,
+            )
 
     def forward(self, x: Tensor, adjacency: Tensor, edge_features: Tensor) -> dict[str, Tensor]:
         if x.ndim != 4:
@@ -725,7 +842,11 @@ class PA_STFed(nn.Module):
             spatial = base
 
         # 4. Transformer 捕捉历史依赖；第二级门控融合即时空间状态与时间状态。
-        temporal_last = self.temporal(self.dropout(spatial))
+        temporal_input = self.dropout(spatial)
+        temporal_last = self.temporal(temporal_input)
+        if self.multiscale_patch is not None:
+            patch_fused = self.multiscale_patch(temporal_input)
+            temporal_last = temporal_last + torch.tanh(self.multiscale_patch.patch_gain) * patch_fused
         spatial_last = spatial[:, -1]
         if self.use_temporal_gate:
             gate = torch.sigmoid(
@@ -752,6 +873,27 @@ class PA_STFed(nn.Module):
             "functional": functional,
             "functional_adjacency": functional_adjacency,
         }
+
+
+def multiscale_patch_metadata(model: nn.Module) -> dict | None:
+    """返回 MultiScalePatchTemporalBranch 的配置与当前可学习状态。"""
+
+    branch = getattr(model, "multiscale_patch", None)
+    if branch is None:
+        return None
+    with torch.no_grad():
+        weights = torch.softmax(branch.scale_logits, dim=0).detach().cpu().tolist()
+        gain = float(branch.patch_gain.detach().cpu().item())
+    return {
+        "patch_sizes": list(branch.patch_sizes),
+        "patch_strides": list(branch.patch_strides),
+        "patch_transformer_layers": int(branch.patch_transformer_layers),
+        "patch_transformer_heads": int(branch.patch_transformer_heads),
+        "patch_gain_init": float(branch.patch_gain_init),
+        "learned_scale_weights": [float(value) for value in weights],
+        "learned_patch_gain": gain,
+        "causal": True,
+    }
 
 
 def shared_state_dict(model: PA_STFed, personalized_head: bool = False) -> dict[str, Tensor]:

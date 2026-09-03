@@ -57,6 +57,7 @@ from model import (
     ala_parameter_prefixes,
     load_shared_state,
     local_parameter_prefixes,
+    multiscale_patch_metadata,
     shared_state_dict,
     vanilla_ala_parameter_names,
 )
@@ -349,6 +350,20 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         functional_graph_mode=str(cfg["model"].get("functional_graph_mode", "static")),
         dynamic_context_steps=int(cfg["model"].get("dynamic_context_steps", 12)),
         dynamic_gain_init=float(cfg["model"].get("dynamic_gain_init", 0.0)),
+        use_multiscale_patch_branch=bool(
+            cfg["model"].get("use_multiscale_patch_branch", False)
+        ),
+        patch_sizes=tuple(
+            int(value) for value in cfg["model"].get("patch_sizes", [4, 12, 24])
+        ),
+        patch_strides=tuple(
+            int(value) for value in cfg["model"].get("patch_strides", [2, 6, 12])
+        ),
+        patch_transformer_layers=int(
+            cfg["model"].get("patch_transformer_layers", 1)
+        ),
+        patch_transformer_heads=int(cfg["model"].get("patch_transformer_heads", 4)),
+        patch_gain_init=float(cfg["model"].get("patch_gain_init", 0.0)),
     ).to(device)
 
 
@@ -1449,6 +1464,7 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
         "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
         "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
+        "multiscale_patch_config": multiscale_patch_metadata(model),
         "loss_mode": loss_mode,
         "scale_source": scale_source,
         "feeder_loss_weight": feeder_loss_weight,
@@ -2673,6 +2689,22 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
             "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
             "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
+            "use_multiscale_patch_branch": bool(
+                cfg["model"].get("use_multiscale_patch_branch", False)
+            ),
+            "patch_sizes": [
+                int(value) for value in cfg["model"].get("patch_sizes", [4, 12, 24])
+            ],
+            "patch_strides": [
+                int(value) for value in cfg["model"].get("patch_strides", [2, 6, 12])
+            ],
+            "patch_transformer_layers": int(
+                cfg["model"].get("patch_transformer_layers", 1)
+            ),
+            "patch_transformer_heads": int(
+                cfg["model"].get("patch_transformer_heads", 4)
+            ),
+            "patch_gain_init": float(cfg["model"].get("patch_gain_init", 0.0)),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
             **{
