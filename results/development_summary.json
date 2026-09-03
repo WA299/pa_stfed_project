@@ -435,5 +435,45 @@
         "n": 1
       }
     }
+  },
+  "pa_horizon_decoder_scale_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3373679220676422,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 30.89664077758789,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7180846333503723,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.528690338134766,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 28.769895553588867,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
