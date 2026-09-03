@@ -8,6 +8,7 @@
     "layerala_dev",
     "moduleala_dev",
     "modulelocal_dev",
+    "pa_dynamic_functional_scale_dev",
     "pa_multilevel_tcn_transformer_dev",
     "pa_residual_anchor_dev",
     "pa_residual_multilevel_l002_dev",
@@ -19,6 +20,7 @@
     "layerala_dev": 1,
     "moduleala_dev": 1,
     "modulelocal_dev": 1,
+    "pa_dynamic_functional_scale_dev": 1,
     "pa_multilevel_tcn_transformer_dev": 1,
     "pa_residual_anchor_dev": 1,
     "pa_residual_multilevel_l002_dev": 1,
@@ -309,6 +311,35 @@
         },
         "test": null,
         "best_epoch": 8,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_dynamic_functional_scale_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_dynamic_functional_scale_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_dynamic_functional_scale_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.34429842233657837,
+          "rmse": 0.7193799018859863,
+          "wape": 29.360912322998047,
+          "smape": 29.173358917236328,
+          "mape": 32.70924758911133,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3257971405982971,
+          "rmse": 0.716999888420105,
+          "wape": 21.116838455200195,
+          "smape": 22.528640747070312,
+          "mape": 23.96355628967285,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
         "selection_metric": "wape"
       }
     }
