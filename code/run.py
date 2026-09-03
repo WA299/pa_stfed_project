@@ -1064,6 +1064,7 @@ def model_diagnostics(
     physical_tokens: list[torch.Tensor] = []
     functional_tokens: list[torch.Tensor] = []
     horizon_entropies: list[torch.Tensor] = []
+    horizon_entropy_by_step: list[torch.Tensor] = []
     gate_count = 0
     cka_count = 0
 
@@ -1078,6 +1079,10 @@ def model_diagnostics(
             if "horizon_cross_attention_entropy" in output:
                 horizon_entropies.append(
                     output["horizon_cross_attention_entropy"].detach().float().cpu().reshape(-1)
+                )
+            if "horizon_cross_attention_entropy_by_step" in output:
+                horizon_entropy_by_step.append(
+                    output["horizon_cross_attention_entropy_by_step"].detach().float().cpu().reshape(-1)
                 )
             if gate_count < max_gate_values:
                 remaining = max_gate_values - gate_count
@@ -1110,6 +1115,11 @@ def model_diagnostics(
         diagnostics["horizon_cross_attention_entropy_mean"] = float(
             torch.cat(horizon_entropies).mean()
         )
+    if horizon_entropy_by_step:
+        diagnostics["horizon_cross_attention_entropy_by_step"] = [
+            float(value)
+            for value in torch.stack(horizon_entropy_by_step, dim=0).mean(dim=0)
+        ]
     return diagnostics
 
 

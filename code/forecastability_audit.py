@@ -135,12 +135,22 @@ def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: t
     model.eval()
     adjacency, edge_features = graph_tensors(data.graph_view(data.active_indices, cfg["data"]["graph"], int(cfg["data"].get("hop_radius", 2)), int(cfg["data"].get("target_knn_k", 6))), device)
     predictions, targets, persist, daily = [], [], [], []
+    attention_entropy, attention_entropy_by_step = [], []
     with torch.inference_mode():
         for inputs, target in loader:
             inputs_device = inputs.to(device)
             with autocast_context(cfg["training"], device):
-                output = model(inputs_device, adjacency, edge_features)["prediction"]
-            prediction = dataset.denormalize(output).float().cpu().numpy()
+                output = model(inputs_device, adjacency, edge_features)
+            prediction_output = output["prediction"]
+            if "horizon_cross_attention_entropy" in output:
+                attention_entropy.append(
+                    output["horizon_cross_attention_entropy"].detach().float().cpu().reshape(-1)
+                )
+            if "horizon_cross_attention_entropy_by_step" in output:
+                attention_entropy_by_step.append(
+                    output["horizon_cross_attention_entropy_by_step"].detach().float().cpu().reshape(-1)
+                )
+            prediction = dataset.denormalize(prediction_output).float().cpu().numpy()
             actual = dataset.denormalize(target.to(device)).float().cpu().numpy()
             last = dataset.denormalize(inputs[:, -1, :, 0].to(device)).float().cpu().numpy()
             day = dataset.denormalize(inputs[:, : dataset.horizon, :, 0].to(device)).float().cpu().numpy()
@@ -159,6 +169,15 @@ def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: t
     diffs = {key: abs(recomputed[key] - float(expected[key])) for key in ("wape", "mae", "rmse")}
     if any(value > 1e-4 for value in diffs.values()):
         raise RuntimeError(f"metric sanity failed for {name}: {diffs}")
+    entropy_summary = None
+    if attention_entropy:
+        entropy_summary = {
+            "overall": float(torch.cat(attention_entropy).mean()),
+            "by_horizon": [
+                float(value)
+                for value in torch.stack(attention_entropy_by_step, dim=0).mean(dim=0)
+            ] if attention_entropy_by_step else None,
+        }
     return {
         "experiment": name,
         "result_json": str(result_path),
@@ -177,6 +196,7 @@ def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: t
         "metric_diffs": diffs,
         "dataset": data,
         "cfg": cfg,
+        "attention_entropy": entropy_summary,
     }
 
 
@@ -195,6 +215,12 @@ def main() -> None:
     residual_scale = _load_and_predict(
         "pa_residual_scale_loss_dev",
         "pa_residual_scale_loss_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
+    horizon_decoder = _load_and_predict(
+        "pa_horizon_decoder_scale_dev",
+        "pa_horizon_decoder_scale_dev_seed2026_centralized_model.pt",
         base_cfg,
         device,
     )
@@ -222,6 +248,7 @@ def main() -> None:
         "PA-STFed": pa["predictions"],
         "PA-STFed residual-anchor": residual["predictions"],
         "PA-STFed residual-scale-loss": residual_scale["predictions"],
+        "PA-STFed horizon-decoder": horizon_decoder["predictions"],
         "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
         "PA-STFed residual-multilevel-lambda0.02": residual_multilevel_l002["predictions"],
         "PA-STFed residual-multilevel-lambda0.05": residual_multilevel_l005["predictions"],
@@ -348,6 +375,15 @@ def main() -> None:
             }
             for key in exact_horizons
         }
+
+    horizon_decoder_deltas = {
+        "horizon_decoder_minus_residual_scale": _metric_deltas(
+            "PA-STFed horizon-decoder", "PA-STFed residual-scale-loss"
+        ),
+        "horizon_decoder_minus_gwn": _metric_deltas(
+            "PA-STFed horizon-decoder", "GWN"
+        ),
+    }
 
     weight_deltas = {
         "lambda0.02_minus_scale_aware_lambda0": _metric_deltas(
@@ -489,12 +525,15 @@ def main() -> None:
                 ("PA-STFed residual-multilevel-loss", residual_multilevel),
                 ("PA-STFed residual-multilevel-lambda0.02", residual_multilevel_l002),
                 ("PA-STFed residual-multilevel-lambda0.05", residual_multilevel_l005),
+                ("PA-STFed horizon-decoder", horizon_decoder),
             )
         },
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
         "aggregation_effect": aggregation,
         "model_deltas": model_deltas,
         "loss_deltas": loss_deltas,
+        "horizon_decoder_deltas": horizon_decoder_deltas,
+        "horizon_decoder_attention": horizon_decoder["attention_entropy"],
         "multilevel_weight_deltas": weight_deltas,
         "multilevel_lambda_table": lambda_table,
         "node_wape_deltas": node_wape_deltas,
@@ -534,6 +573,16 @@ def main() -> None:
     ):
         for horizon, metrics in values.items():
             lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Horizon Decoder Differences", "", "Differences are horizon-decoder minus comparison; negative values favor the horizon decoder.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
+    for comparison, values in horizon_decoder_deltas.items():
+        label = comparison.replace("horizon_decoder_minus_", "")
+        for horizon, metrics in values.items():
+            lines.append(f"| decoder - {label} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    attention = payload.get("horizon_decoder_attention")
+    if attention:
+        lines += ["", "## Horizon Decoder Attention", "", f"- overall entropy: {attention['overall']:.6f}"]
+        if attention.get("by_horizon") is not None:
+            lines.append("- exact horizon entropy: " + ", ".join(f"h{i + 1}={value:.6f}" for i, value in enumerate(attention["by_horizon"])))
     lines += ["", "## Multilevel Lambda Table", "", "Exact forecast steps and overall 12-step; lambda=0 is the scale-aware node loss without the feeder term.", "", "| Lambda | Horizon | Node-micro WAPE | Feeder aggregate WAPE |", "|---:|---:|---:|---:|"]
     for lambda_name, values in lambda_table.items():
         lambda_label = lambda_name.replace("lambda_", "lambda=", 1)

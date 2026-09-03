@@ -693,7 +693,7 @@ class HorizonCrossAttentionDecoder(nn.Module):
         nn.init.zeros_(self.correction.weight)
         nn.init.zeros_(self.correction.bias)
 
-    def forward(self, memory: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, memory: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         if memory.ndim != 4:
             raise ValueError("horizon decoder memory must have shape [B, N, T, H]")
         batch, nodes, _, hidden = memory.shape
@@ -713,8 +713,11 @@ class HorizonCrossAttentionDecoder(nn.Module):
         # weights: [B*N, heads, horizon, history].  This is an optional
         # diagnostic only; it does not affect the correction values.
         probabilities = weights.float().clamp_min(torch.finfo(torch.float32).tiny)
-        entropy = -(probabilities * probabilities.log()).sum(dim=-1).mean()
-        return decoded.reshape(batch, nodes, self.horizon, hidden), entropy
+        # Keep a per-horizon statistic for auditability, while the scalar mean
+        # remains the compact diagnostic used by existing result consumers.
+        entropy_by_horizon = -(probabilities * probabilities.log()).sum(dim=-1).mean(dim=(0, 1))
+        entropy = entropy_by_horizon.mean()
+        return decoded.reshape(batch, nodes, self.horizon, hidden), entropy, entropy_by_horizon
 
 
 class TemporalEncoder(nn.Module):
@@ -970,7 +973,7 @@ class PA_STFed(nn.Module):
         prediction = self.head(fused).permute(0, 2, 1)
         horizon_entropy = None
         if self.horizon_decoder is not None and temporal_memory is not None:
-            decoder_hidden, horizon_entropy = self.horizon_decoder(temporal_memory)
+            decoder_hidden, horizon_entropy, horizon_entropy_by_step = self.horizon_decoder(temporal_memory)
             correction = self.horizon_decoder.correction(decoder_hidden).squeeze(-1).permute(0, 2, 1)
             prediction = prediction + correction
         if self.use_residual_anchor:
@@ -988,6 +991,7 @@ class PA_STFed(nn.Module):
         }
         if horizon_entropy is not None:
             result["horizon_cross_attention_entropy"] = horizon_entropy
+            result["horizon_cross_attention_entropy_by_step"] = horizon_entropy_by_step
         return result
 
 
