@@ -446,27 +446,69 @@ class EdgeAwareSpatialGAT(nn.Module):
 
 
 class StaticFunctionalGraph(nn.Module):
-    """客户端本地可学习的静态功能关系图。
+    """客户端功能关系图，支持保持兼容的静态或动态残差关系。
 
     两组节点嵌入生成非对称关系分数。该图每个客户端只学习一份，避免在
     仅有 11--12 个节点的小子图上逐时刻重建 TopK 图导致过拟合。
     """
 
-    def __init__(self, node_count: int, hidden_dim: int, functional_dim: int) -> None:
+    def __init__(
+        self,
+        node_count: int,
+        hidden_dim: int,
+        functional_dim: int,
+        graph_mode: str = "static",
+        dynamic_context_steps: int = 12,
+        dynamic_gain_init: float = 0.0,
+    ) -> None:
         super().__init__()
+        graph_mode = str(graph_mode).lower()
+        if graph_mode not in {"static", "dynamic_residual"}:
+            raise ValueError(f"Unsupported functional graph mode: {graph_mode!r}")
+        if dynamic_context_steps < 1:
+            raise ValueError("dynamic_context_steps must be positive")
+        if dynamic_gain_init != 0.0 and graph_mode == "dynamic_residual":
+            raise ValueError("dynamic_gain_init must be 0 for the current protocol")
+        self.graph_mode = graph_mode
+        self.dynamic_context_steps = int(dynamic_context_steps)
+        self.dynamic_gain_init = float(dynamic_gain_init)
         self.embedding_1 = nn.Parameter(torch.randn(node_count, functional_dim) * 0.02)
         self.embedding_2 = nn.Parameter(torch.randn(node_count, functional_dim) * 0.02)
         self.value = nn.Linear(hidden_dim, hidden_dim)
+        if graph_mode == "dynamic_residual":
+            self.query_projection = nn.Linear(hidden_dim, functional_dim)
+            self.key_projection = nn.Linear(hidden_dim, functional_dim)
+            self.dynamic_gain = nn.Parameter(torch.tensor(float(dynamic_gain_init)))
+
+    def static_logits(self) -> Tensor:
+        # A_k^A = softmax(ReLU(E_{k,1} E_{k,2}^T))。
+        return torch.relu(self.embedding_1 @ self.embedding_2.T)
 
     def adjacency(self) -> Tensor:
-        # A_k^A = softmax(ReLU(E_{k,1} E_{k,2}^T))。
-        score = torch.relu(self.embedding_1 @ self.embedding_2.T)
-        return torch.softmax(score, dim=-1)
+        """返回 static 模式关系；保留旧调用的数值行为。"""
+
+        return torch.softmax(self.static_logits(), dim=-1)
 
     def forward(self, x: Tensor) -> Tensor:
-        relation = self.adjacency()
+        static_logits = self.static_logits()
         values = self.value(x)
-        output = torch.einsum("ij,bljd->blid", relation, values)
+        if self.graph_mode == "static":
+            relation = torch.softmax(static_logits, dim=-1)
+            output = torch.einsum("ij,bljd->blid", relation, values)
+        else:
+            context_steps = min(self.dynamic_context_steps, x.shape[1])
+            context = x[:, -context_steps:].mean(dim=1)
+            query = self.query_projection(context)
+            key = self.key_projection(context)
+            dynamic_logits = torch.tanh(
+                torch.matmul(query, key.transpose(-1, -2))
+                / (self.embedding_1.shape[-1] ** 0.5)
+            )
+            relation = torch.softmax(
+                static_logits.unsqueeze(0) + self.dynamic_gain * dynamic_logits,
+                dim=-1,
+            )
+            output = torch.einsum("bij,bljd->blid", relation, values)
         return torch.nn.functional.gelu(output), relation
 
 
@@ -583,6 +625,9 @@ class PA_STFed(nn.Module):
         use_residual_anchor: bool = False,
         temporal_architecture: str = "transformer",
         tcn_kernel_size: int = 3,
+        functional_graph_mode: str = "static",
+        dynamic_context_steps: int = 12,
+        dynamic_gain_init: float = 0.0,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -599,7 +644,17 @@ class PA_STFed(nn.Module):
         self.use_residual_anchor = use_residual_anchor
         self.input_projection = nn.Linear(input_dim, hidden_dim)
         self.physical = EdgeAwareSpatialGAT(hidden_dim, heads=spatial_heads)
-        self.functional = StaticFunctionalGraph(node_count, hidden_dim, functional_dim)
+        self.functional_graph_mode = str(functional_graph_mode).lower()
+        self.dynamic_context_steps = int(dynamic_context_steps)
+        self.dynamic_gain_init = float(dynamic_gain_init)
+        self.functional = StaticFunctionalGraph(
+            node_count,
+            hidden_dim,
+            functional_dim,
+            graph_mode=self.functional_graph_mode,
+            dynamic_context_steps=self.dynamic_context_steps,
+            dynamic_gain_init=self.dynamic_gain_init,
+        )
         self.spatial_gate = nn.Linear(2 * hidden_dim, hidden_dim)
         self.temporal_architecture = str(temporal_architecture).lower()
         self.tcn_kernel_size = int(tcn_kernel_size)

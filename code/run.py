@@ -346,6 +346,9 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         use_residual_anchor=bool(cfg["model"].get("use_residual_anchor", False)),
         temporal_architecture=str(cfg["model"].get("temporal_architecture", "transformer")),
         tcn_kernel_size=int(cfg["model"].get("tcn_kernel_size", 3)),
+        functional_graph_mode=str(cfg["model"].get("functional_graph_mode", "static")),
+        dynamic_context_steps=int(cfg["model"].get("dynamic_context_steps", 12)),
+        dynamic_gain_init=float(cfg["model"].get("dynamic_gain_init", 0.0)),
     ).to(device)
 
 
@@ -1443,6 +1446,9 @@ def centralized(cfg: dict, device: torch.device) -> dict:
             if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
             else None
         ),
+        "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
+        "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
+        "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
         "loss_mode": loss_mode,
         "scale_source": scale_source,
         "feeder_loss_weight": feeder_loss_weight,
@@ -2664,6 +2670,9 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
                 if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
                 else None
             ),
+            "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
+            "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
+            "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
             **{
