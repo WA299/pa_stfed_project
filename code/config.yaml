@@ -75,6 +75,11 @@ model:
   patch_transformer_layers: 1
   patch_transformer_heads: 4
   patch_gain_init: 0.0
+  # Horizon cross-attention decoder 仅由 development screen 显式开启；默认关闭。
+  use_horizon_decoder: false
+  horizon_decoder_heads: 4
+  horizon_decoder_layers: 1
+  horizon_correction_init: 0.0
 
 baselines:
   # LSTM 负荷预测基线使用两层编码器；输入同样为 historical load 与 4 维

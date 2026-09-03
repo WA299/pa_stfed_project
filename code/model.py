@@ -645,6 +645,78 @@ class MultiScalePatchTemporalBranch(nn.Module):
         return fused.to(dtype=x.dtype).reshape(batch, nodes, hidden)
 
 
+class HorizonCrossAttentionDecoder(nn.Module):
+    """用完整历史 memory 生成逐 horizon 的残差修正。
+
+    Query 是未来步索引的可学习表示，key/value 只来自输入历史 memory；
+    因而该模块不会访问目标值或预测窗口之后的观测。
+    """
+
+    def __init__(
+        self,
+        horizon: int,
+        hidden_dim: int,
+        heads: int = 4,
+        layers: int = 1,
+        dropout: float = 0.1,
+        correction_init: float = 0.0,
+    ) -> None:
+        super().__init__()
+        if horizon < 1 or hidden_dim < 1 or heads < 1 or layers != 1:
+            raise ValueError("invalid horizon decoder dimensions; layers must be 1")
+        if hidden_dim % heads != 0:
+            raise ValueError("hidden_dim must be divisible by horizon decoder heads")
+        if correction_init != 0.0:
+            raise ValueError("horizon decoder correction head must initialize to zero")
+        self.horizon = int(horizon)
+        self.hidden_dim = int(hidden_dim)
+        self.heads = int(heads)
+        self.layers = int(layers)
+        self.correction_init = float(correction_init)
+        self.query = nn.Parameter(torch.empty(self.horizon, self.hidden_dim))
+        nn.init.normal_(self.query, std=0.02)
+        self.cross_attention = nn.MultiheadAttention(
+            embed_dim=self.hidden_dim,
+            num_heads=self.heads,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.norm1 = nn.LayerNorm(self.hidden_dim)
+        self.ffn = nn.Sequential(
+            nn.Linear(self.hidden_dim, 4 * self.hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(4 * self.hidden_dim, self.hidden_dim),
+        )
+        self.norm2 = nn.LayerNorm(self.hidden_dim)
+        self.correction = nn.Linear(self.hidden_dim, 1)
+        nn.init.zeros_(self.correction.weight)
+        nn.init.zeros_(self.correction.bias)
+
+    def forward(self, memory: Tensor) -> tuple[Tensor, Tensor]:
+        if memory.ndim != 4:
+            raise ValueError("horizon decoder memory must have shape [B, N, T, H]")
+        batch, nodes, _, hidden = memory.shape
+        if hidden != self.hidden_dim:
+            raise ValueError("horizon decoder memory hidden dimension mismatch")
+        keys = memory.reshape(batch * nodes, memory.shape[2], hidden)
+        queries = self.query.unsqueeze(0).expand(batch * nodes, -1, -1)
+        attended, weights = self.cross_attention(
+            queries,
+            keys,
+            keys,
+            need_weights=True,
+            average_attn_weights=False,
+        )
+        decoded = self.norm1(queries + attended)
+        decoded = self.norm2(decoded + self.ffn(decoded))
+        # weights: [B*N, heads, horizon, history].  This is an optional
+        # diagnostic only; it does not affect the correction values.
+        probabilities = weights.float().clamp_min(torch.finfo(torch.float32).tiny)
+        entropy = -(probabilities * probabilities.log()).sum(dim=-1).mean()
+        return decoded.reshape(batch, nodes, self.horizon, hidden), entropy
+
+
 class TemporalEncoder(nn.Module):
     """因果 Transformer，可选与轻量因果 TCN 并行融合。"""
 
@@ -681,7 +753,7 @@ class TemporalEncoder(nn.Module):
             # Per-channel sigmoid gate is shared across time, nodes and batches.
             self.temporal_fusion_gate = nn.Parameter(torch.zeros(hidden_dim))
 
-    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, x: Tensor, return_memory: bool = False) -> Tensor | tuple[Tensor, Tensor]:
         batch, history, nodes, hidden = x.shape
         if history > self.position.shape[1]:
             raise ValueError("Input history is longer than configured positional embedding")
@@ -698,7 +770,10 @@ class TemporalEncoder(nn.Module):
             encoded_last = gate * transformer_last + (1.0 - gate) * tcn_last
         else:
             encoded_last = transformer_last
-        return encoded_last.reshape(batch, nodes, hidden)
+        last = encoded_last.reshape(batch, nodes, hidden)
+        if return_memory:
+            return last, encoded.reshape(batch, nodes, history, hidden)
+        return last
 
 
 class PA_STFed(nn.Module):
@@ -732,6 +807,10 @@ class PA_STFed(nn.Module):
         patch_transformer_layers: int = 1,
         patch_transformer_heads: int = 4,
         patch_gain_init: float = 0.0,
+        use_horizon_decoder: bool = False,
+        horizon_decoder_heads: int = 4,
+        horizon_decoder_layers: int = 1,
+        horizon_correction_init: float = 0.0,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -805,6 +884,20 @@ class PA_STFed(nn.Module):
                 transformer_heads=self.patch_transformer_heads,
                 patch_gain_init=self.patch_gain_init,
             )
+        self.use_horizon_decoder = bool(use_horizon_decoder)
+        self.horizon_decoder_heads = int(horizon_decoder_heads)
+        self.horizon_decoder_layers = int(horizon_decoder_layers)
+        self.horizon_correction_init = float(horizon_correction_init)
+        self.horizon_decoder = None
+        if self.use_horizon_decoder:
+            self.horizon_decoder = HorizonCrossAttentionDecoder(
+                horizon=horizon,
+                hidden_dim=hidden_dim,
+                heads=self.horizon_decoder_heads,
+                layers=self.horizon_decoder_layers,
+                dropout=dropout,
+                correction_init=self.horizon_correction_init,
+            )
 
     def forward(self, x: Tensor, adjacency: Tensor, edge_features: Tensor) -> dict[str, Tensor]:
         if x.ndim != 4:
@@ -850,7 +943,15 @@ class PA_STFed(nn.Module):
 
         # 4. Transformer 捕捉历史依赖；第二级门控融合即时空间状态与时间状态。
         temporal_input = self.dropout(spatial)
-        temporal_last = self.temporal(temporal_input)
+        temporal_result = self.temporal(
+            temporal_input,
+            return_memory=self.horizon_decoder is not None,
+        )
+        if self.horizon_decoder is not None:
+            temporal_last, temporal_memory = temporal_result
+        else:
+            temporal_last = temporal_result
+            temporal_memory = None
         if self.multiscale_patch is not None:
             patch_fused = self.multiscale_patch(temporal_input)
             temporal_last = temporal_last + torch.tanh(self.multiscale_patch.patch_gain) * patch_fused
@@ -867,12 +968,17 @@ class PA_STFed(nn.Module):
 
         # 5. 每个节点独立输出未来 horizon 个时间步，再转为 [B, H, N]。
         prediction = self.head(fused).permute(0, 2, 1)
+        horizon_entropy = None
+        if self.horizon_decoder is not None and temporal_memory is not None:
+            decoder_hidden, horizon_entropy = self.horizon_decoder(temporal_memory)
+            correction = self.horizon_decoder.correction(decoder_hidden).squeeze(-1).permute(0, 2, 1)
+            prediction = prediction + correction
         if self.use_residual_anchor:
             # 输入与目标均处于同一节点级归一化空间，最后观测值可直接作为
             # 多步基线；网络只需学习未来相对该基线的残差。
             persistence = x[:, -1, :, 0].unsqueeze(1)
             prediction = prediction + persistence
-        return {
+        result = {
             "prediction": prediction,
             "gamma": gamma,
             "temporal_gate": gate,
@@ -880,6 +986,9 @@ class PA_STFed(nn.Module):
             "functional": functional,
             "functional_adjacency": functional_adjacency,
         }
+        if horizon_entropy is not None:
+            result["horizon_cross_attention_entropy"] = horizon_entropy
+        return result
 
 
 def multiscale_patch_metadata(model: nn.Module) -> dict | None:
@@ -900,6 +1009,22 @@ def multiscale_patch_metadata(model: nn.Module) -> dict | None:
         "learned_scale_weights": [float(value) for value in weights],
         "learned_patch_gain": gain,
         "causal": True,
+    }
+
+
+def horizon_decoder_metadata(model: nn.Module) -> dict | None:
+    """返回 HorizonCrossAttentionDecoder 配置与其零初始化约束。"""
+
+    decoder = getattr(model, "horizon_decoder", None)
+    if decoder is None:
+        return None
+    return {
+        "enabled": True,
+        "heads": int(decoder.heads),
+        "layers": int(decoder.layers),
+        "horizon": int(decoder.horizon),
+        "correction_head_init": float(decoder.correction_init),
+        "causal_source": "historical temporal memory only",
     }
 
 

@@ -57,6 +57,7 @@ from model import (
     ala_parameter_prefixes,
     load_shared_state,
     local_parameter_prefixes,
+    horizon_decoder_metadata,
     multiscale_patch_metadata,
     shared_state_dict,
     vanilla_ala_parameter_names,
@@ -364,6 +365,10 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         ),
         patch_transformer_heads=int(cfg["model"].get("patch_transformer_heads", 4)),
         patch_gain_init=float(cfg["model"].get("patch_gain_init", 0.0)),
+        use_horizon_decoder=bool(cfg["model"].get("use_horizon_decoder", False)),
+        horizon_decoder_heads=int(cfg["model"].get("horizon_decoder_heads", 4)),
+        horizon_decoder_layers=int(cfg["model"].get("horizon_decoder_layers", 1)),
+        horizon_correction_init=float(cfg["model"].get("horizon_correction_init", 0.0)),
     ).to(device)
 
 
@@ -1058,6 +1063,7 @@ def model_diagnostics(
     temporal_values: list[torch.Tensor] = []
     physical_tokens: list[torch.Tensor] = []
     functional_tokens: list[torch.Tensor] = []
+    horizon_entropies: list[torch.Tensor] = []
     gate_count = 0
     cka_count = 0
 
@@ -1068,6 +1074,10 @@ def model_diagnostics(
                     inputs.to(device, non_blocking=transfer_non_blocking),
                     adjacency,
                     edge_features,
+                )
+            if "horizon_cross_attention_entropy" in output:
+                horizon_entropies.append(
+                    output["horizon_cross_attention_entropy"].detach().float().cpu().reshape(-1)
                 )
             if gate_count < max_gate_values:
                 remaining = max_gate_values - gate_count
@@ -1088,7 +1098,7 @@ def model_diagnostics(
         raise ValueError("validation dataset is empty; cannot compute gate diagnostics")
     physical_all = torch.cat(physical_tokens, dim=0)
     functional_all = torch.cat(functional_tokens, dim=0)
-    return {
+    diagnostics = {
         "spatial_gate": gate_diagnostics(torch.cat(gamma_values)),
         "temporal_gate": gate_diagnostics(torch.cat(temporal_values)),
         "physical_functional_cka": linear_cka(physical_all, functional_all),
@@ -1096,6 +1106,11 @@ def model_diagnostics(
         "diagnostic_gate_values": int(torch.cat(gamma_values).numel()),
         "diagnostic_cka_tokens": int(physical_all.shape[0]),
     }
+    if horizon_entropies:
+        diagnostics["horizon_cross_attention_entropy_mean"] = float(
+            torch.cat(horizon_entropies).mean()
+        )
+    return diagnostics
 
 
 def evaluate_naive_baseline(
@@ -1465,6 +1480,7 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
         "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
         "multiscale_patch_config": multiscale_patch_metadata(model),
+        "horizon_decoder": horizon_decoder_metadata(model),
         "loss_mode": loss_mode,
         "scale_source": scale_source,
         "feeder_loss_weight": feeder_loss_weight,
@@ -2705,6 +2721,18 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
                 cfg["model"].get("patch_transformer_heads", 4)
             ),
             "patch_gain_init": float(cfg["model"].get("patch_gain_init", 0.0)),
+            "use_horizon_decoder": bool(
+                cfg["model"].get("use_horizon_decoder", False)
+            ),
+            "horizon_decoder_heads": int(
+                cfg["model"].get("horizon_decoder_heads", 4)
+            ),
+            "horizon_decoder_layers": int(
+                cfg["model"].get("horizon_decoder_layers", 1)
+            ),
+            "horizon_correction_init": float(
+                cfg["model"].get("horizon_correction_init", 0.0)
+            ),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
             **{
