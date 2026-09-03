@@ -204,6 +204,18 @@ def main() -> None:
         base_cfg,
         device,
     )
+    residual_multilevel_l002 = _load_and_predict(
+        "pa_residual_multilevel_l002_dev",
+        "pa_residual_multilevel_l002_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
+    residual_multilevel_l005 = _load_and_predict(
+        "pa_residual_multilevel_l005_dev",
+        "pa_residual_multilevel_l005_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
     data = pa["dataset"]
     target = pa["target"]
     methods = {
@@ -211,6 +223,8 @@ def main() -> None:
         "PA-STFed residual-anchor": residual["predictions"],
         "PA-STFed residual-scale-loss": residual_scale["predictions"],
         "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
+        "PA-STFed residual-multilevel-lambda0.02": residual_multilevel_l002["predictions"],
+        "PA-STFed residual-multilevel-lambda0.05": residual_multilevel_l005["predictions"],
         "GWN": gwn["predictions"],
         "Persistence": pa["persistence"],
         "Daily-lag naive": pa["daily_naive"],
@@ -313,6 +327,70 @@ def main() -> None:
             for key in comparison_methods
         },
     }
+    exact_horizons = ("step1", "step3", "step6", "step12", "overall_12step")
+
+    def _metric_deltas(left_name: str, right_name: str) -> dict[str, dict[str, float]]:
+        """计算 exact-step/overall 的左方法减右方法差值。"""
+
+        return {
+            key: {
+                metric: float(
+                    horizons[left_name][key][metric]
+                    - horizons[right_name][key][metric]
+                )
+                for metric in ("wape", "mae", "rmse")
+            }
+            | {
+                "feeder_aggregate_wape": float(
+                    aggregation[left_name][key]["feeder_aggregate_wape"]
+                    - aggregation[right_name][key]["feeder_aggregate_wape"]
+                )
+            }
+            for key in exact_horizons
+        }
+
+    weight_deltas = {
+        "lambda0.02_minus_scale_aware_lambda0": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.02",
+            "PA-STFed residual-scale-loss",
+        ),
+        "lambda0.02_minus_lambda0.1": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.02",
+            "PA-STFed residual-multilevel-loss",
+        ),
+        "lambda0.02_minus_gwn": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.02", "GWN"
+        ),
+        "lambda0.05_minus_scale_aware_lambda0": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.05",
+            "PA-STFed residual-scale-loss",
+        ),
+        "lambda0.05_minus_lambda0.1": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.05",
+            "PA-STFed residual-multilevel-loss",
+        ),
+        "lambda0.05_minus_gwn": _metric_deltas(
+            "PA-STFed residual-multilevel-lambda0.05", "GWN"
+        ),
+    }
+    lambda_methods = {
+        "lambda_0.00": "PA-STFed residual-scale-loss",
+        "lambda_0.02": "PA-STFed residual-multilevel-lambda0.02",
+        "lambda_0.05": "PA-STFed residual-multilevel-lambda0.05",
+        "lambda_0.10": "PA-STFed residual-multilevel-loss",
+    }
+    lambda_table = {
+        lambda_name: {
+            key: {
+                "node_micro_wape": float(horizons[method][key]["wape"]),
+                "feeder_aggregate_wape": float(
+                    aggregation[method][key]["feeder_aggregate_wape"]
+                ),
+            }
+            for key in exact_horizons
+        }
+        for lambda_name, method in lambda_methods.items()
+    }
     node_ids = [str(x) for x in data.node_ids[data.active_indices]]
     node_difficulty = {}
     for name, prediction in methods.items():
@@ -409,12 +487,16 @@ def main() -> None:
                 ("PA-STFed residual-anchor", residual),
                 ("PA-STFed residual-scale-loss", residual_scale),
                 ("PA-STFed residual-multilevel-loss", residual_multilevel),
+                ("PA-STFed residual-multilevel-lambda0.02", residual_multilevel_l002),
+                ("PA-STFed residual-multilevel-lambda0.05", residual_multilevel_l005),
             )
         },
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
         "aggregation_effect": aggregation,
         "model_deltas": model_deltas,
         "loss_deltas": loss_deltas,
+        "multilevel_weight_deltas": weight_deltas,
+        "multilevel_lambda_table": lambda_table,
         "node_wape_deltas": node_wape_deltas,
         "node_difficulty": node_difficulty,
         "weekly_naive_node_wape_distribution": {
@@ -450,6 +532,17 @@ def main() -> None:
         ("multilevel - scale-aware", loss_deltas["multilevel_minus_scale"]),
         ("multilevel - GWN", loss_deltas["multilevel_minus_gwn"]),
     ):
+        for horizon, metrics in values.items():
+            lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Multilevel Lambda Table", "", "Exact forecast steps and overall 12-step; lambda=0 is the scale-aware node loss without the feeder term.", "", "| Lambda | Horizon | Node-micro WAPE | Feeder aggregate WAPE |", "|---:|---:|---:|---:|"]
+    for lambda_name, values in lambda_table.items():
+        lambda_label = lambda_name.replace("lambda_", "lambda=", 1)
+        if lambda_name == "lambda_0.00":
+            lambda_label += " (scale-aware)"
+        for horizon, metrics in values.items():
+            lines.append(f"| {lambda_label} | {horizon} | {metrics['node_micro_wape']:.4f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## New Lambda Differences", "", "Differences are left method minus right method; negative values favor the tested lambda.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
+    for comparison, values in weight_deltas.items():
         for horizon, metrics in values.items():
             lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
     lines += ["", "## Loss Ablation Node WAPE Differences", "", "Node deltas are left method minus right method in percentage points; negative values favor the left method."]

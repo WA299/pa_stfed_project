@@ -9,6 +9,8 @@ Validation-only; no training, no test loader, and no existing result JSON was mo
 - PA-STFed residual-anchor: recomputed WAPE/MAE/RMSE = {'wape': 28.996524810791016, 'mae': 0.34002548456192017, 'rmse': 0.720468282699585}; max difference = 0.00000381 (PASS)
 - PA-STFed residual-scale-loss: recomputed WAPE/MAE/RMSE = {'wape': 28.94508171081543, 'mae': 0.33942222595214844, 'rmse': 0.7123457193374634}; max difference = 0.00000000 (PASS)
 - PA-STFed residual-multilevel-loss: recomputed WAPE/MAE/RMSE = {'wape': 29.182409286499023, 'mae': 0.3422051966190338, 'rmse': 0.7109360694885254}; max difference = 0.00000191 (PASS)
+- PA-STFed residual-multilevel-lambda0.02: recomputed WAPE/MAE/RMSE = {'wape': 29.10218620300293, 'mae': 0.3412645161151886, 'rmse': 0.7116377353668213}; max difference = 0.00000006 (PASS)
+- PA-STFed residual-multilevel-lambda0.05: recomputed WAPE/MAE/RMSE = {'wape': 29.041759490966797, 'mae': 0.34055590629577637, 'rmse': 0.7117523550987244}; max difference = 0.00000000 (PASS)
 
 ## Horizon-wise Metrics
 
@@ -52,6 +54,24 @@ prefix_h* are cumulative prefix metrics; step* are exact forecast steps.
 | PA-STFed residual-multilevel-loss | step6 | 30.2030 | 0.354151 | 0.734610 |
 | PA-STFed residual-multilevel-loss | step12 | 32.9239 | 0.386403 | 0.766036 |
 | PA-STFed residual-multilevel-loss | overall_12step | 29.1824 | 0.342205 | 0.710936 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h1 | 17.8257 | 0.208860 | 0.463468 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h3 | 23.4380 | 0.274658 | 0.599990 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h6 | 26.4498 | 0.310024 | 0.666497 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h12 | 29.1022 | 0.341265 | 0.711638 |
+| PA-STFed residual-multilevel-lambda0.02 | step1 | 17.8257 | 0.208860 | 0.463468 |
+| PA-STFed residual-multilevel-lambda0.02 | step3 | 27.4461 | 0.321671 | 0.689090 |
+| PA-STFed residual-multilevel-lambda0.02 | step6 | 30.1079 | 0.353037 | 0.735669 |
+| PA-STFed residual-multilevel-lambda0.02 | step12 | 32.7655 | 0.384544 | 0.765710 |
+| PA-STFed residual-multilevel-lambda0.02 | overall_12step | 29.1022 | 0.341265 | 0.711638 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h1 | 17.9718 | 0.210571 | 0.462524 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h3 | 23.5480 | 0.275947 | 0.600430 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h6 | 26.4686 | 0.310244 | 0.666881 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h12 | 29.0418 | 0.340556 | 0.711752 |
+| PA-STFed residual-multilevel-lambda0.05 | step1 | 17.9718 | 0.210571 | 0.462524 |
+| PA-STFed residual-multilevel-lambda0.05 | step3 | 27.4774 | 0.322037 | 0.690513 |
+| PA-STFed residual-multilevel-lambda0.05 | step6 | 29.9776 | 0.351508 | 0.735831 |
+| PA-STFed residual-multilevel-lambda0.05 | step12 | 32.6563 | 0.383263 | 0.767057 |
+| PA-STFed residual-multilevel-lambda0.05 | overall_12step | 29.0418 | 0.340556 | 0.711752 |
 | GWN | prefix_h1 | 17.3894 | 0.203748 | 0.457321 |
 | GWN | prefix_h3 | 23.1853 | 0.271697 | 0.600164 |
 | GWN | prefix_h6 | 26.2692 | 0.307907 | 0.668225 |
@@ -176,6 +196,24 @@ Prefix and exact-step feeder aggregate WAPE are both reported.
 | PA-STFed residual-multilevel-loss | step6 | 30.2030 | 8.7262 |
 | PA-STFed residual-multilevel-loss | step12 | 32.9239 | 9.9349 |
 | PA-STFed residual-multilevel-loss | overall_12step | 29.1824 | 8.4795 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h1 | 17.8257 | 4.9775 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h3 | 23.4380 | 6.8683 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h6 | 26.4498 | 7.8756 |
+| PA-STFed residual-multilevel-lambda0.02 | prefix_h12 | 29.1022 | 8.7875 |
+| PA-STFed residual-multilevel-lambda0.02 | step1 | 17.8257 | 4.9775 |
+| PA-STFed residual-multilevel-lambda0.02 | step3 | 27.4461 | 8.3547 |
+| PA-STFed residual-multilevel-lambda0.02 | step6 | 30.1079 | 9.0613 |
+| PA-STFed residual-multilevel-lambda0.02 | step12 | 32.7655 | 10.3408 |
+| PA-STFed residual-multilevel-lambda0.02 | overall_12step | 29.1022 | 8.7875 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h1 | 17.9718 | 4.9513 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h3 | 23.5480 | 6.8400 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h6 | 26.4686 | 7.8500 |
+| PA-STFed residual-multilevel-lambda0.05 | prefix_h12 | 29.0418 | 8.8223 |
+| PA-STFed residual-multilevel-lambda0.05 | step1 | 17.9718 | 4.9513 |
+| PA-STFed residual-multilevel-lambda0.05 | step3 | 27.4774 | 8.3735 |
+| PA-STFed residual-multilevel-lambda0.05 | step6 | 29.9776 | 9.1207 |
+| PA-STFed residual-multilevel-lambda0.05 | step12 | 32.6563 | 10.5884 |
+| PA-STFed residual-multilevel-lambda0.05 | overall_12step | 29.0418 | 8.8223 |
 | GWN | prefix_h1 | 17.3894 | 5.0082 |
 | GWN | prefix_h3 | 23.1853 | 6.9185 |
 | GWN | prefix_h6 | 26.2692 | 8.0402 |
@@ -316,6 +354,70 @@ Negative values favor the first method named in each comparison; node WAPE and f
 | multilevel - GWN | step6 | 0.1385 | 0.001624 | -0.005642 | -0.6403 |
 | multilevel - GWN | step12 | 0.0252 | 0.000296 | 0.000964 | 0.2197 |
 | multilevel - GWN | overall_12step | 0.1770 | 0.002075 | -0.002070 | -0.2882 |
+
+## Multilevel Lambda Table
+
+Exact forecast steps and overall 12-step; lambda=0 is the scale-aware node loss without the feeder term.
+
+| Lambda | Horizon | Node-micro WAPE | Feeder aggregate WAPE |
+|---:|---:|---:|---:|
+| lambda=0.00 (scale-aware) | step1 | 17.7820 | 4.9895 |
+| lambda=0.00 (scale-aware) | step3 | 27.3262 | 8.6301 |
+| lambda=0.00 (scale-aware) | step6 | 29.8486 | 9.4696 |
+| lambda=0.00 (scale-aware) | step12 | 32.6839 | 10.5541 |
+| lambda=0.00 (scale-aware) | overall_12step | 28.9451 | 9.0346 |
+| lambda=0.02 | step1 | 17.8257 | 4.9775 |
+| lambda=0.02 | step3 | 27.4461 | 8.3547 |
+| lambda=0.02 | step6 | 30.1079 | 9.0613 |
+| lambda=0.02 | step12 | 32.7655 | 10.3408 |
+| lambda=0.02 | overall_12step | 29.1022 | 8.7875 |
+| lambda=0.05 | step1 | 17.9718 | 4.9513 |
+| lambda=0.05 | step3 | 27.4774 | 8.3735 |
+| lambda=0.05 | step6 | 29.9776 | 9.1207 |
+| lambda=0.05 | step12 | 32.6563 | 10.5884 |
+| lambda=0.05 | overall_12step | 29.0418 | 8.8223 |
+| lambda=0.10 | step1 | 17.8854 | 4.8553 |
+| lambda=0.10 | step3 | 27.4578 | 8.2269 |
+| lambda=0.10 | step6 | 30.2030 | 8.7262 |
+| lambda=0.10 | step12 | 32.9239 | 9.9349 |
+| lambda=0.10 | overall_12step | 29.1824 | 8.4795 |
+
+## New Lambda Differences
+
+Differences are left method minus right method; negative values favor the tested lambda.
+
+| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |
+|---|---:|---:|---:|---:|---:|
+| lambda0.02_minus_scale_aware_lambda0 | step1 | 0.0438 | 0.000513 | 0.000400 | -0.0119 |
+| lambda0.02_minus_scale_aware_lambda0 | step3 | 0.1199 | 0.001405 | -0.000415 | -0.2753 |
+| lambda0.02_minus_scale_aware_lambda0 | step6 | 0.2593 | 0.003040 | -0.001005 | -0.4083 |
+| lambda0.02_minus_scale_aware_lambda0 | step12 | 0.0816 | 0.000958 | -0.002158 | -0.2133 |
+| lambda0.02_minus_scale_aware_lambda0 | overall_12step | 0.1571 | 0.001842 | -0.000708 | -0.2471 |
+| lambda0.02_minus_lambda0.1 | step1 | -0.0597 | -0.000700 | -0.000096 | 0.1222 |
+| lambda0.02_minus_lambda0.1 | step3 | -0.0117 | -0.000137 | 0.000456 | 0.1278 |
+| lambda0.02_minus_lambda0.1 | step6 | -0.0951 | -0.001115 | 0.001059 | 0.3351 |
+| lambda0.02_minus_lambda0.1 | step12 | -0.1584 | -0.001859 | -0.000325 | 0.4059 |
+| lambda0.02_minus_lambda0.1 | overall_12step | -0.0802 | -0.000941 | 0.000702 | 0.3080 |
+| lambda0.02_minus_gwn | step1 | 0.4363 | 0.005112 | 0.006147 | -0.0307 |
+| lambda0.02_minus_gwn | step3 | 0.0905 | 0.001060 | -0.003052 | 0.0393 |
+| lambda0.02_minus_gwn | step6 | 0.0435 | 0.000510 | -0.004583 | -0.3052 |
+| lambda0.02_minus_gwn | step12 | -0.1331 | -0.001562 | 0.000639 | 0.6256 |
+| lambda0.02_minus_gwn | overall_12step | 0.0968 | 0.001135 | -0.001368 | 0.0198 |
+| lambda0.05_minus_scale_aware_lambda0 | step1 | 0.1898 | 0.002224 | -0.000544 | -0.0382 |
+| lambda0.05_minus_scale_aware_lambda0 | step3 | 0.1512 | 0.001772 | 0.001007 | -0.2566 |
+| lambda0.05_minus_scale_aware_lambda0 | step6 | 0.1290 | 0.001512 | -0.000843 | -0.3490 |
+| lambda0.05_minus_scale_aware_lambda0 | step12 | -0.0276 | -0.000324 | -0.000811 | 0.0343 |
+| lambda0.05_minus_scale_aware_lambda0 | overall_12step | 0.0967 | 0.001134 | -0.000593 | -0.2123 |
+| lambda0.05_minus_lambda0.1 | step1 | 0.0863 | 0.001012 | -0.001040 | 0.0960 |
+| lambda0.05_minus_lambda0.1 | step3 | 0.0196 | 0.000230 | 0.001878 | 0.1466 |
+| lambda0.05_minus_lambda0.1 | step6 | -0.2254 | -0.002643 | 0.001222 | 0.3945 |
+| lambda0.05_minus_lambda0.1 | step12 | -0.2676 | -0.003141 | 0.001022 | 0.6535 |
+| lambda0.05_minus_lambda0.1 | overall_12step | -0.1406 | -0.001649 | 0.000816 | 0.3428 |
+| lambda0.05_minus_gwn | step1 | 0.5824 | 0.006824 | 0.005203 | -0.0570 |
+| lambda0.05_minus_gwn | step3 | 0.1217 | 0.001427 | -0.001630 | 0.0581 |
+| lambda0.05_minus_gwn | step6 | -0.0869 | -0.001019 | -0.004420 | -0.2458 |
+| lambda0.05_minus_gwn | step12 | -0.2424 | -0.002844 | 0.001986 | 0.8732 |
+| lambda0.05_minus_gwn | overall_12step | 0.0363 | 0.000426 | -0.001253 | 0.0546 |
 
 ## Loss Ablation Node WAPE Differences
 
@@ -609,6 +711,8 @@ Node deltas are left method minus right method in percentage points; negative va
 - PA-STFed residual-anchor: {'min': 3.107927083969116, 'p10': 12.687405586242676, 'p25': 24.962587356567383, 'median': 29.210411071777344, 'p75': 40.534996032714844, 'p90': 46.20293045043945, 'max': 51.57440948486328}; counts={'lt10': 8, 'lt20': 12, 'lt30': 49, 'ge40': 27}
 - PA-STFed residual-scale-loss: {'min': 2.966158390045166, 'p10': 12.760388374328613, 'p25': 25.166942596435547, 'median': 30.08745574951172, 'p75': 40.65315628051758, 'p90': 47.164737701416016, 'max': 56.314857482910156}; counts={'lt10': 5, 'lt20': 12, 'lt30': 44, 'ge40': 27}
 - PA-STFed residual-multilevel-loss: {'min': 2.9211020469665527, 'p10': 12.846092224121094, 'p25': 25.29302215576172, 'median': 29.420238494873047, 'p75': 41.36602020263672, 'p90': 47.111663818359375, 'max': 56.19011688232422}; counts={'lt10': 5, 'lt20': 12, 'lt30': 49, 'ge40': 29}
+- PA-STFed residual-multilevel-lambda0.02: {'min': 3.2899539470672607, 'p10': 13.094197273254395, 'p25': 25.393531799316406, 'median': 29.494644165039062, 'p75': 40.71490478515625, 'p90': 47.05120086669922, 'max': 55.75004959106445}; counts={'lt10': 5, 'lt20': 12, 'lt30': 50, 'ge40': 29}
+- PA-STFed residual-multilevel-lambda0.05: {'min': 2.977898359298706, 'p10': 12.520881652832031, 'p25': 25.3557071685791, 'median': 29.725997924804688, 'p75': 40.629051208496094, 'p90': 47.267295837402344, 'max': 56.28422546386719}; counts={'lt10': 5, 'lt20': 12, 'lt30': 49, 'ge40': 29}
 - GWN: {'min': 3.839329719543457, 'p10': 14.086502075195312, 'p25': 23.372276306152344, 'median': 28.794334411621094, 'p75': 40.738258361816406, 'p90': 47.29705810546875, 'max': 49.12572479248047}; counts={'lt10': 8, 'lt20': 12, 'lt30': 49, 'ge40': 27}
 - Persistence: {'min': 4.913691997528076, 'p10': 19.870603561401367, 'p25': 35.058555603027344, 'median': 44.3123779296875, 'p75': 54.34208679199219, 'p90': 66.28288269042969, 'max': 92.21017456054688}; counts={'lt10': 5, 'lt20': 10, 'lt30': 11, 'ge40': 56}
 - Daily-lag naive: {'min': 7.026316165924072, 'p10': 19.96192169189453, 'p25': 39.092445373535156, 'median': 51.287315368652344, 'p75': 60.653995513916016, 'p90': 73.21785736083984, 'max': 95.0457534790039}; counts={'lt10': 3, 'lt20': 10, 'lt30': 13, 'ge40': 67}
@@ -632,6 +736,8 @@ Node deltas are left method minus right method in percentage points; negative va
 - PA-STFed residual-anchor: {'train_cv': 0.461432936920985, 'lag96_autocorr': -0.6224387894474926, 'lag672_autocorr': -0.6433604539000897, 'mean_shift': -0.3186044185062032}
 - PA-STFed residual-scale-loss: {'train_cv': 0.46554943243229185, 'lag96_autocorr': -0.622654635654078, 'lag672_autocorr': -0.6425279042461175, 'mean_shift': -0.3155209012692692}
 - PA-STFed residual-multilevel-loss: {'train_cv': 0.4367339638531439, 'lag96_autocorr': -0.6449330476909261, 'lag672_autocorr': -0.6593793259459616, 'mean_shift': -0.3144725054087117}
+- PA-STFed residual-multilevel-lambda0.02: {'train_cv': 0.4533232865878487, 'lag96_autocorr': -0.6272644939232943, 'lag672_autocorr': -0.6470452569982257, 'mean_shift': -0.31251447196325854}
+- PA-STFed residual-multilevel-lambda0.05: {'train_cv': 0.45875027692485243, 'lag96_autocorr': -0.6234255149633114, 'lag672_autocorr': -0.642265805280978, 'mean_shift': -0.30978555920857204}
 - GWN: {'train_cv': 0.37324434394467326, 'lag96_autocorr': -0.6908466193488729, 'lag672_autocorr': -0.7098102503560169, 'mean_shift': -0.35916808775806963}
 - Persistence: {'train_cv': 0.5171424605561467, 'lag96_autocorr': -0.5772605993306497, 'lag672_autocorr': -0.5890282083314053, 'mean_shift': -0.3037523712580391}
 - Daily-lag naive: {'train_cv': 0.4725705208285136, 'lag96_autocorr': -0.6697049615200726, 'lag672_autocorr': -0.7266614229090516, 'mean_shift': -0.506809173491263}
