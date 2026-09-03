@@ -660,6 +660,9 @@ class HorizonCrossAttentionDecoder(nn.Module):
         layers: int = 1,
         dropout: float = 0.1,
         correction_init: float = 0.0,
+        query_time_features: bool = False,
+        daily_period: int = 96,
+        weekly_period: int = 672,
     ) -> None:
         super().__init__()
         if horizon < 1 or hidden_dim < 1 or heads < 1 or layers != 1:
@@ -668,13 +671,20 @@ class HorizonCrossAttentionDecoder(nn.Module):
             raise ValueError("hidden_dim must be divisible by horizon decoder heads")
         if correction_init != 0.0:
             raise ValueError("horizon decoder correction head must initialize to zero")
+        if daily_period < 1 or weekly_period < 1:
+            raise ValueError("horizon decoder periods must be positive")
         self.horizon = int(horizon)
         self.hidden_dim = int(hidden_dim)
         self.heads = int(heads)
         self.layers = int(layers)
         self.correction_init = float(correction_init)
+        self.query_time_features = bool(query_time_features)
+        self.daily_period = int(daily_period)
+        self.weekly_period = int(weekly_period)
         self.query = nn.Parameter(torch.empty(self.horizon, self.hidden_dim))
         nn.init.normal_(self.query, std=0.02)
+        if self.query_time_features:
+            self.time_query = nn.Linear(4, self.hidden_dim)
         self.cross_attention = nn.MultiheadAttention(
             embed_dim=self.hidden_dim,
             num_heads=self.heads,
@@ -693,7 +703,11 @@ class HorizonCrossAttentionDecoder(nn.Module):
         nn.init.zeros_(self.correction.weight)
         nn.init.zeros_(self.correction.bias)
 
-    def forward(self, memory: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def forward(
+        self,
+        memory: Tensor,
+        last_cyclic_features: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor, Tensor]:
         if memory.ndim != 4:
             raise ValueError("horizon decoder memory must have shape [B, N, T, H]")
         batch, nodes, _, hidden = memory.shape
@@ -701,6 +715,39 @@ class HorizonCrossAttentionDecoder(nn.Module):
             raise ValueError("horizon decoder memory hidden dimension mismatch")
         keys = memory.reshape(batch * nodes, memory.shape[2], hidden)
         queries = self.query.unsqueeze(0).expand(batch * nodes, -1, -1)
+        if self.query_time_features:
+            if last_cyclic_features is None or last_cyclic_features.shape != (batch, nodes, 4):
+                raise ValueError(
+                    "time-conditioned horizon decoder requires [B, N, 4] cyclic features"
+                )
+            phase = last_cyclic_features.float()
+            step = torch.arange(
+                1,
+                self.horizon + 1,
+                device=memory.device,
+                dtype=phase.dtype,
+            )
+            daily_angle = 2.0 * torch.pi * step / float(self.daily_period)
+            weekly_angle = 2.0 * torch.pi * step / float(self.weekly_period)
+            daily_sin, daily_cos = phase[..., 0], phase[..., 1]
+            weekly_sin, weekly_cos = phase[..., 2], phase[..., 3]
+            future_phase = torch.stack(
+                (
+                    daily_sin.unsqueeze(-1) * daily_angle.cos()
+                    + daily_cos.unsqueeze(-1) * daily_angle.sin(),
+                    daily_cos.unsqueeze(-1) * daily_angle.cos()
+                    - daily_sin.unsqueeze(-1) * daily_angle.sin(),
+                    weekly_sin.unsqueeze(-1) * weekly_angle.cos()
+                    + weekly_cos.unsqueeze(-1) * weekly_angle.sin(),
+                    weekly_cos.unsqueeze(-1) * weekly_angle.cos()
+                    - weekly_sin.unsqueeze(-1) * weekly_angle.sin(),
+                ),
+                dim=-1,
+            )
+            time_query = self.time_query(future_phase).reshape(batch * nodes, self.horizon, hidden)
+            queries = queries + time_query.to(dtype=queries.dtype)
+        elif last_cyclic_features is not None:
+            raise ValueError("cyclic features supplied to an unconditioned horizon decoder")
         attended, weights = self.cross_attention(
             queries,
             keys,
@@ -814,6 +861,9 @@ class PA_STFed(nn.Module):
         horizon_decoder_heads: int = 4,
         horizon_decoder_layers: int = 1,
         horizon_correction_init: float = 0.0,
+        horizon_query_time_features: bool = False,
+        horizon_daily_period: int = 96,
+        horizon_weekly_period: int = 672,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -891,6 +941,9 @@ class PA_STFed(nn.Module):
         self.horizon_decoder_heads = int(horizon_decoder_heads)
         self.horizon_decoder_layers = int(horizon_decoder_layers)
         self.horizon_correction_init = float(horizon_correction_init)
+        self.horizon_query_time_features = bool(horizon_query_time_features)
+        self.horizon_daily_period = int(horizon_daily_period)
+        self.horizon_weekly_period = int(horizon_weekly_period)
         self.horizon_decoder = None
         if self.use_horizon_decoder:
             self.horizon_decoder = HorizonCrossAttentionDecoder(
@@ -900,6 +953,9 @@ class PA_STFed(nn.Module):
                 layers=self.horizon_decoder_layers,
                 dropout=dropout,
                 correction_init=self.horizon_correction_init,
+                query_time_features=self.horizon_query_time_features,
+                daily_period=self.horizon_daily_period,
+                weekly_period=self.horizon_weekly_period,
             )
 
     def forward(self, x: Tensor, adjacency: Tensor, edge_features: Tensor) -> dict[str, Tensor]:
@@ -973,7 +1029,11 @@ class PA_STFed(nn.Module):
         prediction = self.head(fused).permute(0, 2, 1)
         horizon_entropy = None
         if self.horizon_decoder is not None and temporal_memory is not None:
-            decoder_hidden, horizon_entropy, horizon_entropy_by_step = self.horizon_decoder(temporal_memory)
+            last_cyclic = x[:, -1, :, 1:5] if self.horizon_query_time_features else None
+            decoder_hidden, horizon_entropy, horizon_entropy_by_step = self.horizon_decoder(
+                temporal_memory,
+                last_cyclic_features=last_cyclic,
+            )
             correction = self.horizon_decoder.correction(decoder_hidden).squeeze(-1).permute(0, 2, 1)
             prediction = prediction + correction
         if self.use_residual_anchor:
@@ -1028,6 +1088,9 @@ def horizon_decoder_metadata(model: nn.Module) -> dict | None:
         "layers": int(decoder.layers),
         "horizon": int(decoder.horizon),
         "correction_head_init": float(decoder.correction_init),
+        "horizon_query_time_features": bool(decoder.query_time_features),
+        "daily_period": int(decoder.daily_period),
+        "weekly_period": int(decoder.weekly_period),
         "causal_source": "historical temporal memory only",
     }
 

@@ -80,6 +80,11 @@ model:
   horizon_decoder_heads: 4
   horizon_decoder_layers: 1
   horizon_correction_init: 0.0
+  # Optional horizon-query conditioning from the last observed cyclic phase;
+  # disabled by default so legacy horizon decoder behavior is unchanged.
+  horizon_query_time_features: false
+  horizon_daily_period: 96
+  horizon_weekly_period: 672
 
 baselines:
   # LSTM 负荷预测基线使用两层编码器；输入同样为 historical load 与 4 维

@@ -369,6 +369,11 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         horizon_decoder_heads=int(cfg["model"].get("horizon_decoder_heads", 4)),
         horizon_decoder_layers=int(cfg["model"].get("horizon_decoder_layers", 1)),
         horizon_correction_init=float(cfg["model"].get("horizon_correction_init", 0.0)),
+        horizon_query_time_features=bool(
+            cfg["model"].get("horizon_query_time_features", False)
+        ),
+        horizon_daily_period=int(cfg["model"].get("horizon_daily_period", 96)),
+        horizon_weekly_period=int(cfg["model"].get("horizon_weekly_period", 672)),
     ).to(device)
 
 
@@ -2742,6 +2747,15 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             ),
             "horizon_correction_init": float(
                 cfg["model"].get("horizon_correction_init", 0.0)
+            ),
+            "horizon_query_time_features": bool(
+                cfg["model"].get("horizon_query_time_features", False)
+            ),
+            "horizon_daily_period": int(
+                cfg["model"].get("horizon_daily_period", 96)
+            ),
+            "horizon_weekly_period": int(
+                cfg["model"].get("horizon_weekly_period", 672)
             ),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
