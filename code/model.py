@@ -470,11 +470,60 @@ class StaticFunctionalGraph(nn.Module):
         return torch.nn.functional.gelu(output), relation
 
 
-class TemporalEncoder(nn.Module):
-    """沿每个节点的历史维度执行带因果掩码的 Transformer 编码。"""
+class CausalTCNBranch(nn.Module):
+    """轻量因果 TCN：dilation=1,2，左侧补零，不读取未来时间点。"""
 
-    def __init__(self, history: int, hidden_dim: int, layers: int, heads: int, dropout: float) -> None:
+    def __init__(self, hidden_dim: int, dropout: float, kernel_size: int = 3) -> None:
         super().__init__()
+        if kernel_size < 1 or kernel_size % 2 == 0:
+            raise ValueError("TCN kernel_size must be a positive odd integer")
+        self.kernel_size = int(kernel_size)
+        self.dilations = (1, 2)
+        self.convs = nn.ModuleList(
+            [
+                nn.Conv1d(
+                    hidden_dim,
+                    hidden_dim,
+                    kernel_size=self.kernel_size,
+                    dilation=dilation,
+                )
+                for dilation in self.dilations
+            ]
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, sequence: Tensor) -> Tensor:
+        # sequence: [batch*nodes, history, hidden]
+        hidden = sequence.transpose(1, 2)
+        for convolution in self.convs:
+            residual = hidden
+            left_padding = (self.kernel_size - 1) * convolution.dilation[0]
+            hidden = torch.nn.functional.pad(hidden, (left_padding, 0))
+            hidden = torch.nn.functional.gelu(convolution(hidden))
+            hidden = self.dropout(hidden)
+            hidden = hidden + residual
+        return hidden.transpose(1, 2)
+
+
+class TemporalEncoder(nn.Module):
+    """因果 Transformer，可选与轻量因果 TCN 并行融合。"""
+
+    def __init__(
+        self,
+        history: int,
+        hidden_dim: int,
+        layers: int,
+        heads: int,
+        dropout: float,
+        architecture: str = "transformer",
+        tcn_kernel_size: int = 3,
+    ) -> None:
+        super().__init__()
+        architecture = str(architecture).lower()
+        if architecture not in {"transformer", "tcn_transformer"}:
+            raise ValueError(f"Unsupported temporal architecture: {architecture!r}")
+        self.architecture = architecture
+        self.tcn_kernel_size = int(tcn_kernel_size)
         self.position = nn.Parameter(torch.zeros(1, history, hidden_dim))
         nn.init.normal_(self.position, std=0.02)
         layer = nn.TransformerEncoderLayer(
@@ -487,6 +536,10 @@ class TemporalEncoder(nn.Module):
             norm_first=False,
         )
         self.encoder = nn.TransformerEncoder(layer, num_layers=layers)
+        if architecture == "tcn_transformer":
+            self.tcn = CausalTCNBranch(hidden_dim, dropout, kernel_size=tcn_kernel_size)
+            # Per-channel sigmoid gate is shared across time, nodes and batches.
+            self.temporal_fusion_gate = nn.Parameter(torch.zeros(hidden_dim))
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         batch, history, nodes, hidden = x.shape
@@ -498,7 +551,14 @@ class TemporalEncoder(nn.Module):
             torch.ones(history, history, dtype=torch.bool, device=x.device), diagonal=1
         )
         encoded = self.encoder(sequence, mask=causal_mask)
-        return encoded[:, -1].reshape(batch, nodes, hidden)
+        transformer_last = encoded[:, -1]
+        if self.architecture == "tcn_transformer":
+            tcn_last = self.tcn(sequence)[:, -1]
+            gate = torch.sigmoid(self.temporal_fusion_gate).to(dtype=transformer_last.dtype)
+            encoded_last = gate * transformer_last + (1.0 - gate) * tcn_last
+        else:
+            encoded_last = transformer_last
+        return encoded_last.reshape(batch, nodes, hidden)
 
 
 class PA_STFed(nn.Module):
@@ -521,6 +581,8 @@ class PA_STFed(nn.Module):
         use_spatial_gate: bool = True,
         use_temporal_gate: bool = True,
         use_residual_anchor: bool = False,
+        temporal_architecture: str = "transformer",
+        tcn_kernel_size: int = 3,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -539,7 +601,17 @@ class PA_STFed(nn.Module):
         self.physical = EdgeAwareSpatialGAT(hidden_dim, heads=spatial_heads)
         self.functional = StaticFunctionalGraph(node_count, hidden_dim, functional_dim)
         self.spatial_gate = nn.Linear(2 * hidden_dim, hidden_dim)
-        self.temporal = TemporalEncoder(history, hidden_dim, transformer_layers, transformer_heads, dropout)
+        self.temporal_architecture = str(temporal_architecture).lower()
+        self.tcn_kernel_size = int(tcn_kernel_size)
+        self.temporal = TemporalEncoder(
+            history,
+            hidden_dim,
+            transformer_layers,
+            transformer_heads,
+            dropout,
+            architecture=self.temporal_architecture,
+            tcn_kernel_size=self.tcn_kernel_size,
+        )
         self.temporal_gate = nn.Linear(2 * hidden_dim, hidden_dim)
         self.dropout = nn.Dropout(dropout)
         self.head = nn.Sequential(

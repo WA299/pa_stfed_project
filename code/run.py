@@ -344,6 +344,8 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         use_spatial_gate=bool(cfg["model"].get("use_spatial_gate", True)),
         use_temporal_gate=bool(cfg["model"].get("use_temporal_gate", True)),
         use_residual_anchor=bool(cfg["model"].get("use_residual_anchor", False)),
+        temporal_architecture=str(cfg["model"].get("temporal_architecture", "transformer")),
+        tcn_kernel_size=int(cfg["model"].get("tcn_kernel_size", 3)),
     ).to(device)
 
 
@@ -1435,6 +1437,12 @@ def centralized(cfg: dict, device: torch.device) -> dict:
             "total": int(bounds.total),
         },
         "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
+        "temporal_architecture": str(cfg["model"].get("temporal_architecture", "transformer")),
+        "tcn_config": (
+            {"layers": 2, "kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)), "dilations": [1, 2], "causal": True, "residual": True}
+            if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
+            else None
+        ),
         "loss_mode": loss_mode,
         "scale_source": scale_source,
         "feeder_loss_weight": feeder_loss_weight,
@@ -2649,6 +2657,13 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "spatial_heads": int(cfg["model"]["spatial_heads"]),
             "transformer_layers": int(cfg["model"]["transformer_layers"]),
             "transformer_heads": int(cfg["model"]["transformer_heads"]),
+            "temporal_architecture": str(cfg["model"].get("temporal_architecture", "transformer")),
+            "tcn_kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)),
+            "tcn_config": (
+                {"layers": 2, "kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)), "dilations": [1, 2], "causal": True, "residual": True}
+                if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
+                else None
+            ),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
             **{
