@@ -10,6 +10,7 @@
     "modulelocal_dev",
     "pa_dynamic_functional_scale_dev",
     "pa_multilevel_tcn_transformer_dev",
+    "pa_multiscale_patch_scale_dev",
     "pa_residual_anchor_dev",
     "pa_residual_multilevel_l002_dev",
     "pa_residual_multilevel_l005_dev",
@@ -22,13 +23,14 @@
     "modulelocal_dev": 1,
     "pa_dynamic_functional_scale_dev": 1,
     "pa_multilevel_tcn_transformer_dev": 1,
+    "pa_multiscale_patch_scale_dev": 1,
     "pa_residual_anchor_dev": 1,
     "pa_residual_multilevel_l002_dev": 1,
     "pa_residual_multilevel_l005_dev": 1,
     "pa_residual_multilevel_loss_dev": 1,
     "pa_residual_scale_loss_dev": 1
   },
-  "resume": false,
+  "resume": true,
   "skip_dp": false,
   "dry_run": false,
   "items": [
@@ -342,8 +344,37 @@
         "best_epoch": 9,
         "selection_metric": "wape"
       }
+    },
+    {
+      "experiment": "pa_multiscale_patch_scale_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_multiscale_patch_scale_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_multiscale_patch_scale_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3394094705581665,
+          "rmse": 0.7170392870903015,
+          "wape": 28.943994522094727,
+          "smape": 29.116498947143555,
+          "mape": 32.06095886230469,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32396817207336426,
+          "rmse": 0.718151867389679,
+          "wape": 20.998291015625,
+          "smape": 22.470006942749023,
+          "mape": 23.411266326904297,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 8,
+        "selection_metric": "wape"
+      }
     }
   ],
-  "failed_count": 0,
-  "summary_path": "E:\\pa_stfed_project\\results\\development_summary.json"
+  "summary_path": "E:\\pa_stfed_project\\results\\development_summary.json",
+  "failed_count": 0
 }

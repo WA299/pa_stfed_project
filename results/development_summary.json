@@ -395,5 +395,45 @@
         "n": 1
       }
     }
+  },
+  "pa_multiscale_patch_scale_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3394094705581665,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 32.06095886230469,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7170392870903015,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.116498947143555,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 28.943994522094727,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
