@@ -584,6 +584,7 @@ class MultiScalePatchTemporalBranch(nn.Module):
                 raise ValueError("patch size/stride is incompatible with history")
         self.patch_transformer_layers = int(transformer_layers)
         self.patch_transformer_heads = int(transformer_heads)
+        self.patch_gain_init = float(patch_gain_init)
         self.patch_projections = nn.ModuleList(
             [nn.Linear(size * hidden_dim, hidden_dim) for size in self.patch_sizes]
         )
