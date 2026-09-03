@@ -235,5 +235,85 @@
         "n": 1
       }
     }
+  },
+  "pa_residual_multilevel_l002_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.3412645161151886,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.40191650390625,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7116377949714661,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.094161987304688,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.10218620300293,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "pa_residual_multilevel_l005_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.34055590629577637,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 33.225772857666016,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7117523550987244,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 29.13084602355957,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 29.041759490966797,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }

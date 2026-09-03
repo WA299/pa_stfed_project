@@ -1,7 +1,7 @@
 {
   "code_revision": "20260902_ala_window_cache_v1",
   "config_signature": "11f7984f9d87ce1f16669564292f592ebab33c36538a22490eab99d5eaf234fd",
-  "audit_timestamp_utc": "2026-09-02T18:10:29.703534+00:00",
+  "audit_timestamp_utc": "2026-09-02T20:50:21.577258+00:00",
   "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
   "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
   "fields": {

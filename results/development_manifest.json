@@ -9,6 +9,8 @@
     "moduleala_dev",
     "modulelocal_dev",
     "pa_residual_anchor_dev",
+    "pa_residual_multilevel_l002_dev",
+    "pa_residual_multilevel_l005_dev",
     "pa_residual_multilevel_loss_dev",
     "pa_residual_scale_loss_dev"
   ],
@@ -17,6 +19,8 @@
     "moduleala_dev": 1,
     "modulelocal_dev": 1,
     "pa_residual_anchor_dev": 1,
+    "pa_residual_multilevel_l002_dev": 1,
+    "pa_residual_multilevel_l005_dev": 1,
     "pa_residual_multilevel_loss_dev": 1,
     "pa_residual_scale_loss_dev": 1
   },
@@ -212,6 +216,64 @@
           "wape": 20.892452239990234,
           "smape": 22.27728843688965,
           "mape": 24.06386375427246,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_residual_multilevel_l002_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_residual_multilevel_l002_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_residual_multilevel_l002_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.3412645161151886,
+          "rmse": 0.7116377949714661,
+          "wape": 29.10218620300293,
+          "smape": 29.094161987304688,
+          "mape": 33.40191650390625,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.32201141119003296,
+          "rmse": 0.7093347311019897,
+          "wape": 20.871463775634766,
+          "smape": 22.197643280029297,
+          "mape": 23.776670455932617,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 9,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_residual_multilevel_l005_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_residual_multilevel_l005_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_residual_multilevel_l005_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.34055590629577637,
+          "rmse": 0.7117523550987244,
+          "wape": 29.041759490966797,
+          "smape": 29.13084602355957,
+          "mape": 33.225772857666016,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.3212490379810333,
+          "rmse": 0.7083480358123779,
+          "wape": 20.82204818725586,
+          "smape": 22.255462646484375,
+          "mape": 23.818979263305664,
           "mape_valid_ratio": 1.0
         },
         "test": null,
