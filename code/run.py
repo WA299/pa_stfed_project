@@ -374,6 +374,9 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         ),
         horizon_daily_period=int(cfg["model"].get("horizon_daily_period", 96)),
         horizon_weekly_period=int(cfg["model"].get("horizon_weekly_period", 672)),
+        horizon_specific_residual_head=bool(
+            cfg["model"].get("horizon_specific_residual_head", False)
+        ),
     ).to(device)
 
 
@@ -2756,6 +2759,9 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             ),
             "horizon_weekly_period": int(
                 cfg["model"].get("horizon_weekly_period", 672)
+            ),
+            "horizon_specific_residual_head": bool(
+                cfg["model"].get("horizon_specific_residual_head", False)
             ),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),

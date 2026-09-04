@@ -663,6 +663,7 @@ class HorizonCrossAttentionDecoder(nn.Module):
         query_time_features: bool = False,
         daily_period: int = 96,
         weekly_period: int = 672,
+        horizon_specific_residual_head: bool = False,
     ) -> None:
         super().__init__()
         if horizon < 1 or hidden_dim < 1 or heads < 1 or layers != 1:
@@ -681,6 +682,7 @@ class HorizonCrossAttentionDecoder(nn.Module):
         self.query_time_features = bool(query_time_features)
         self.daily_period = int(daily_period)
         self.weekly_period = int(weekly_period)
+        self.horizon_specific_residual_head = bool(horizon_specific_residual_head)
         # Keep the original horizon decoder initialization sequence intact.
         # The optional time-query projection is deliberately created only
         # after every original decoder parameter has been initialized.
@@ -705,6 +707,26 @@ class HorizonCrossAttentionDecoder(nn.Module):
         nn.init.zeros_(self.correction.bias)
         if self.query_time_features:
             self.time_query = nn.Linear(4, self.hidden_dim)
+        # Optional horizon-specific residual parameters are created only after
+        # every original decoder parameter (and optional time-query projection)
+        # has been initialized, preserving legacy seeded initialization.
+        if self.horizon_specific_residual_head:
+            self.specific_weight = nn.Parameter(
+                torch.zeros(self.horizon, self.hidden_dim)
+            )
+            self.specific_bias = nn.Parameter(torch.zeros(self.horizon))
+
+    def correction_output(self, decoded: Tensor) -> Tensor:
+        """Return shared correction plus optional per-horizon correction."""
+
+        correction = self.correction(decoded)
+        if self.horizon_specific_residual_head:
+            specific = (
+                decoded * self.specific_weight.unsqueeze(0)
+            ).sum(dim=-1, keepdim=True)
+            specific = specific + self.specific_bias.view(1, self.horizon, 1)
+            correction = correction + specific
+        return correction
 
     def forward(
         self,
@@ -867,6 +889,7 @@ class PA_STFed(nn.Module):
         horizon_query_time_features: bool = False,
         horizon_daily_period: int = 96,
         horizon_weekly_period: int = 672,
+        horizon_specific_residual_head: bool = False,
     ) -> None:
         super().__init__()
         if hidden_dim % transformer_heads != 0:
@@ -947,6 +970,7 @@ class PA_STFed(nn.Module):
         self.horizon_query_time_features = bool(horizon_query_time_features)
         self.horizon_daily_period = int(horizon_daily_period)
         self.horizon_weekly_period = int(horizon_weekly_period)
+        self.horizon_specific_residual_head = bool(horizon_specific_residual_head)
         self.horizon_decoder = None
         if self.use_horizon_decoder:
             self.horizon_decoder = HorizonCrossAttentionDecoder(
@@ -959,6 +983,7 @@ class PA_STFed(nn.Module):
                 query_time_features=self.horizon_query_time_features,
                 daily_period=self.horizon_daily_period,
                 weekly_period=self.horizon_weekly_period,
+                horizon_specific_residual_head=self.horizon_specific_residual_head,
             )
 
     def forward(self, x: Tensor, adjacency: Tensor, edge_features: Tensor) -> dict[str, Tensor]:
@@ -1037,7 +1062,7 @@ class PA_STFed(nn.Module):
                 temporal_memory,
                 last_cyclic_features=last_cyclic,
             )
-            correction = self.horizon_decoder.correction(decoder_hidden).squeeze(-1).permute(0, 2, 1)
+            correction = self.horizon_decoder.correction_output(decoder_hidden).squeeze(-1).permute(0, 2, 1)
             prediction = prediction + correction
         if self.use_residual_anchor:
             # 输入与目标均处于同一节点级归一化空间，最后观测值可直接作为
@@ -1085,17 +1110,31 @@ def horizon_decoder_metadata(model: nn.Module) -> dict | None:
     decoder = getattr(model, "horizon_decoder", None)
     if decoder is None:
         return None
-    return {
+    metadata = {
         "enabled": True,
         "heads": int(decoder.heads),
         "layers": int(decoder.layers),
         "horizon": int(decoder.horizon),
         "correction_head_init": float(decoder.correction_init),
+        "horizon_specific_residual_head": bool(decoder.horizon_specific_residual_head),
         "horizon_query_time_features": bool(decoder.query_time_features),
         "daily_period": int(decoder.daily_period),
         "weekly_period": int(decoder.weekly_period),
         "causal_source": "historical temporal memory only",
     }
+    if decoder.horizon_specific_residual_head:
+        with torch.no_grad():
+            metadata["specific_head_weight_norm_by_horizon"] = [
+                float(value)
+                for value in decoder.specific_weight.detach().norm(dim=1).cpu().tolist()
+            ]
+            metadata["specific_head_bias_by_horizon"] = [
+                float(value) for value in decoder.specific_bias.detach().cpu().tolist()
+            ]
+    else:
+        metadata["specific_head_weight_norm_by_horizon"] = []
+        metadata["specific_head_bias_by_horizon"] = []
+    return metadata
 
 
 def check_horizon_decoder_initialization_consistency(seed: int = 2026) -> dict[str, object]:
@@ -1108,6 +1147,15 @@ def check_horizon_decoder_initialization_consistency(seed: int = 2026) -> dict[s
     torch.manual_seed(int(seed))
     conditioned = HorizonCrossAttentionDecoder(
         horizon=12, hidden_dim=64, heads=4, layers=1, query_time_features=True
+    )
+    torch.manual_seed(int(seed))
+    specialized = HorizonCrossAttentionDecoder(
+        horizon=12,
+        hidden_dim=64,
+        heads=4,
+        layers=1,
+        query_time_features=False,
+        horizon_specific_residual_head=True,
     )
     legacy_state = legacy.state_dict()
     conditioned_state = conditioned.state_dict()
@@ -1124,7 +1172,23 @@ def check_horizon_decoder_initialization_consistency(seed: int = 2026) -> dict[s
         raise AssertionError("horizon correction weight is not zero initialized")
     if not torch.equal(conditioned.correction.bias, torch.zeros_like(conditioned.correction.bias)):
         raise AssertionError("horizon correction bias is not zero initialized")
-    return {"common_parameter_count": len(common_names), "added_parameters": added_names}
+    specialized_state = specialized.state_dict()
+    specialized_common = sorted(set(legacy_state).intersection(specialized_state))
+    if set(legacy_state) != set(specialized_common):
+        raise AssertionError("specific horizon head changed legacy parameter names")
+    for name in specialized_common:
+        if not torch.equal(legacy_state[name], specialized_state[name]):
+            raise AssertionError(f"specific-head initialization mismatch: {name}")
+    if not torch.equal(specialized.specific_weight, torch.zeros_like(specialized.specific_weight)):
+        raise AssertionError("specific horizon weight is not zero initialized")
+    if not torch.equal(specialized.specific_bias, torch.zeros_like(specialized.specific_bias)):
+        raise AssertionError("specific horizon bias is not zero initialized")
+    return {
+        "common_parameter_count": len(common_names),
+        "added_parameters": added_names,
+        "specific_common_parameter_count": len(specialized_common),
+        "specific_added_parameters": sorted(set(specialized_state) - set(legacy_state)),
+    }
 
 
 def shared_state_dict(model: PA_STFed, personalized_head: bool = False) -> dict[str, Tensor]:

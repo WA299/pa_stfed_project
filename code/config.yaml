@@ -85,6 +85,7 @@ model:
   horizon_query_time_features: false
   horizon_daily_period: 96
   horizon_weekly_period: 672
+  horizon_specific_residual_head: false
 
 baselines:
   # LSTM 负荷预测基线使用两层编码器；输入同样为 historical load 与 4 维
