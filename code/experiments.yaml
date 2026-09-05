@@ -691,6 +691,39 @@ experiments:
         evaluate_test: false
       privacy: {enabled: false}
 
+  # Development-only loss-alignment screen.  This uses training-IQR weighted
+  # absolute error, matching the WAPE numerator form; no Charbonnier/kappa or
+  # batch target-magnitude denominator is used.
+  pa_horizon_decoder_wl1_dev:
+    task: centralized
+    tag: pa_horizon_decoder_wl1_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6}
+      model:
+        architecture: pa_stfed
+        use_physical: true
+        use_functional: true
+        functional_graph_mode: static
+        temporal_architecture: transformer
+        use_residual_anchor: true
+        use_multiscale_patch_branch: false
+        use_horizon_decoder: true
+        horizon_decoder_heads: 4
+        horizon_decoder_layers: 1
+        horizon_correction_init: 0.0
+        horizon_query_time_features: false
+        horizon_specific_residual_head: false
+      training:
+        <<: *formal_centralized_training
+        loss_mode: scale_aware_l1
+        scale_source: train_iqr
+        feeder_loss_weight: 0.0
+        evaluate_test: false
+      privacy: {enabled: false}
+
   # Development-only horizon decoder query screen.  Future phase is generated
   # deterministically from the final historical daily/weekly cyclic features;
   # no future observations or targets are used.  The base horizon decoder

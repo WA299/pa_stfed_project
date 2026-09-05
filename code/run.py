@@ -42,6 +42,7 @@ from federated import (
     aggregate_private_updates,
     build_client_model,
     charbonnier_loss,
+    scale_aware_l1_loss,
     scale_aware_charbonnier_loss,
     metric_summary,
     train_local,
@@ -1246,14 +1247,14 @@ def centralized(cfg: dict, device: torch.device) -> dict:
     train_set = make_dataset(data, nodes, "train", cfg)
     val_set = make_dataset(data, nodes, "val", cfg)
     loss_mode = str(cfg["training"].get("loss_mode", "charbonnier")).lower()
-    if loss_mode not in {"charbonnier", "scale_aware", "multilevel"}:
+    if loss_mode not in {"charbonnier", "scale_aware", "scale_aware_l1", "multilevel"}:
         raise ValueError(f"Unsupported training.loss_mode={loss_mode!r}")
     configured_scale_source = cfg["training"].get("scale_source", "train_iqr")
-    if loss_mode in {"scale_aware", "multilevel"} and configured_scale_source != "train_iqr":
+    if loss_mode in {"scale_aware", "scale_aware_l1", "multilevel"} and configured_scale_source != "train_iqr":
         raise ValueError(
             "scale-aware losses require training.loss scale_source='train_iqr'"
         )
-    scale_source = "train_iqr" if loss_mode in {"scale_aware", "multilevel"} else None
+    scale_source = "train_iqr" if loss_mode in {"scale_aware", "scale_aware_l1", "multilevel"} else None
     feeder_loss_weight = float(
         cfg["training"].get("feeder_loss_weight", 0.1 if loss_mode == "multilevel" else 0.0)
     )
@@ -1321,6 +1322,12 @@ def centralized(cfg: dict, device: torch.device) -> dict:
                         prediction,
                         target_device,
                         float(cfg["model"]["robust_kappa"]),
+                    )
+                elif loss_mode == "scale_aware_l1":
+                    loss = scale_aware_l1_loss(
+                        prediction,
+                        target_device,
+                        train_set.scale,
                     )
                 else:
                     loss = scale_aware_charbonnier_loss(
@@ -1501,6 +1508,9 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         "horizon_decoder": horizon_decoder_metadata(model),
         "loss_mode": loss_mode,
         "scale_source": scale_source,
+        "metric_alignment": (
+            "raw_absolute_error_numerator" if loss_mode == "scale_aware_l1" else None
+        ),
         "feeder_loss_weight": feeder_loss_weight,
         "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
         "target_knn_k": int(cfg["data"].get("target_knn_k", 6)),
@@ -2693,6 +2703,12 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "evaluate_test": bool(cfg["training"].get("evaluate_test", False)),
             "loss_mode": str(cfg["training"].get("loss_mode", "charbonnier")),
             "scale_source": cfg["training"].get("scale_source"),
+            "metric_alignment": (
+                "raw_absolute_error_numerator"
+                if str(cfg["training"].get("loss_mode", "charbonnier")).lower()
+                == "scale_aware_l1"
+                else None
+            ),
             "feeder_loss_weight": float(cfg["training"].get("feeder_loss_weight", 0.0)),
             "scheduler": deepcopy(cfg["training"].get("scheduler", {})),
             "early_stop_min_delta": float(

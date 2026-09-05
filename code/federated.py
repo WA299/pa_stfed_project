@@ -75,6 +75,34 @@ def scale_aware_charbonnier_loss(
     return total
 
 
+def scale_aware_l1_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    scale: torch.Tensor,
+) -> torch.Tensor:
+    """按训练集节点 IQR 加权的绝对误差 numerator 对齐损失。
+
+    ``prediction``/``target`` 的形状为 ``[batch, horizon, nodes]``。分母
+    只使用同一组训练集 IQR 节点权重之和，不使用 batch target magnitude，
+    因而对应 WAPE 的原始负荷绝对误差 numerator 的训练域形式。
+    """
+
+    if prediction.shape != target.shape or prediction.ndim < 1:
+        raise ValueError("prediction and target must have identical non-empty shapes")
+    scale = torch.as_tensor(scale, dtype=prediction.dtype, device=prediction.device)
+    if scale.ndim != 1 or scale.numel() != prediction.shape[-1]:
+        raise ValueError(
+            f"scale must have one value per node; got shape={tuple(scale.shape)}, "
+            f"nodes={prediction.shape[-1]}"
+        )
+    if not torch.isfinite(scale).all() or (scale <= 0).any():
+        raise ValueError("training IQR scale must be finite and strictly positive")
+    denominator = scale.sum().clamp_min(torch.finfo(scale.dtype).eps)
+    node_weights = scale.reshape(*([1] * (prediction.ndim - 1)), -1)
+    weighted_abs_error = (torch.abs(prediction - target) * node_weights).sum(dim=-1)
+    return (weighted_abs_error / denominator).mean()
+
+
 def metric_summary(
     prediction: torch.Tensor,
     target: torch.Tensor,
