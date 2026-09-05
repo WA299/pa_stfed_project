@@ -10,6 +10,7 @@
     "modulelocal_dev",
     "pa_dynamic_functional_scale_dev",
     "pa_horizon_decoder_scale_dev",
+    "pa_horizon_specific_head_scale_dev",
     "pa_horizon_timequery_scale_dev",
     "pa_multilevel_tcn_transformer_dev",
     "pa_multiscale_patch_scale_dev",
@@ -25,6 +26,7 @@
     "modulelocal_dev": 1,
     "pa_dynamic_functional_scale_dev": 1,
     "pa_horizon_decoder_scale_dev": 1,
+    "pa_horizon_specific_head_scale_dev": 1,
     "pa_horizon_timequery_scale_dev": 1,
     "pa_multilevel_tcn_transformer_dev": 1,
     "pa_multiscale_patch_scale_dev": 1,
@@ -429,6 +431,35 @@
           "wape": 20.643457412719727,
           "smape": 22.045183181762695,
           "mape": 22.78476333618164,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 10,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "pa_horizon_specific_head_scale_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "pa_horizon_specific_head_scale_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\pa_horizon_specific_head_scale_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.33786165714263916,
+          "rmse": 0.7184314131736755,
+          "wape": 28.812002182006836,
+          "smape": 28.838762283325195,
+          "mape": 30.99055290222168,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.31039461493492126,
+          "rmse": 0.7043681740760803,
+          "wape": 20.11850929260254,
+          "smape": 21.763837814331055,
+          "mape": 22.057519912719727,
           "mape_valid_ratio": 1.0
         },
         "test": null,

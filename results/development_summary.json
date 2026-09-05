@@ -515,5 +515,45 @@
         "n": 1
       }
     }
+  },
+  "pa_horizon_specific_head_scale_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.33786165714263916,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 30.99055290222168,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7184314131736755,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 28.838762283325195,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 28.812002182006836,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
