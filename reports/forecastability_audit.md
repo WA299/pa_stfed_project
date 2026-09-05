@@ -12,6 +12,7 @@ Validation-only; no training, no test loader, and no existing result JSON was mo
 - PA-STFed residual-multilevel-lambda0.02: recomputed WAPE/MAE/RMSE = {'wape': 29.10218620300293, 'mae': 0.3412645161151886, 'rmse': 0.7116377353668213}; max difference = 0.00000006 (PASS)
 - PA-STFed residual-multilevel-lambda0.05: recomputed WAPE/MAE/RMSE = {'wape': 29.041759490966797, 'mae': 0.34055590629577637, 'rmse': 0.7117523550987244}; max difference = 0.00000000 (PASS)
 - PA-STFed horizon-decoder: recomputed WAPE/MAE/RMSE = {'wape': 28.769895553588867, 'mae': 0.3373679220676422, 'rmse': 0.7180845737457275}; max difference = 0.00000006 (PASS)
+- PA-STFed horizon-specific-head: recomputed WAPE/MAE/RMSE = {'wape': 28.812002182006836, 'mae': 0.33786165714263916, 'rmse': 0.7184314131736755}; max difference = 0.00000000 (PASS)
 
 ## Horizon-wise Metrics
 
@@ -55,6 +56,15 @@ prefix_h* are cumulative prefix metrics; step* are exact forecast steps.
 | PA-STFed horizon-decoder | step6 | 29.6745 | 0.347955 | 0.742792 |
 | PA-STFed horizon-decoder | step12 | 32.5367 | 0.381859 | 0.774510 |
 | PA-STFed horizon-decoder | overall_12step | 28.7699 | 0.337368 | 0.718085 |
+| PA-STFed horizon-specific-head | prefix_h1 | 17.6433 | 0.206723 | 0.455648 |
+| PA-STFed horizon-specific-head | prefix_h3 | 23.3683 | 0.273841 | 0.599374 |
+| PA-STFed horizon-specific-head | prefix_h6 | 26.2109 | 0.307223 | 0.670158 |
+| PA-STFed horizon-specific-head | prefix_h12 | 28.8120 | 0.337862 | 0.718431 |
+| PA-STFed horizon-specific-head | step1 | 17.6433 | 0.206723 | 0.455648 |
+| PA-STFed horizon-specific-head | step3 | 27.3338 | 0.320355 | 0.692502 |
+| PA-STFed horizon-specific-head | step6 | 29.7092 | 0.348361 | 0.742976 |
+| PA-STFed horizon-specific-head | step12 | 32.5491 | 0.382005 | 0.775643 |
+| PA-STFed horizon-specific-head | overall_12step | 28.8120 | 0.337862 | 0.718431 |
 | PA-STFed residual-multilevel-loss | prefix_h1 | 17.8854 | 0.209560 | 0.463564 |
 | PA-STFed residual-multilevel-loss | prefix_h3 | 23.5162 | 0.275574 | 0.600269 |
 | PA-STFed residual-multilevel-loss | prefix_h6 | 26.5371 | 0.311047 | 0.666213 |
@@ -206,6 +216,15 @@ Prefix and exact-step feeder aggregate WAPE are both reported.
 | PA-STFed horizon-decoder | step6 | 29.6745 | 10.5915 |
 | PA-STFed horizon-decoder | step12 | 32.5367 | 11.7497 |
 | PA-STFed horizon-decoder | overall_12step | 28.7699 | 10.1183 |
+| PA-STFed horizon-specific-head | prefix_h1 | 17.6433 | 4.9598 |
+| PA-STFed horizon-specific-head | prefix_h3 | 23.3683 | 7.1414 |
+| PA-STFed horizon-specific-head | prefix_h6 | 26.2109 | 8.7239 |
+| PA-STFed horizon-specific-head | prefix_h12 | 28.8120 | 10.2264 |
+| PA-STFed horizon-specific-head | step1 | 17.6433 | 4.9598 |
+| PA-STFed horizon-specific-head | step3 | 27.3338 | 8.9808 |
+| PA-STFed horizon-specific-head | step6 | 29.7092 | 10.5434 |
+| PA-STFed horizon-specific-head | step12 | 32.5491 | 12.3856 |
+| PA-STFed horizon-specific-head | overall_12step | 28.8120 | 10.2264 |
 | PA-STFed residual-multilevel-loss | prefix_h1 | 17.8854 | 4.8553 |
 | PA-STFed residual-multilevel-loss | prefix_h3 | 23.5162 | 6.7189 |
 | PA-STFed residual-multilevel-loss | prefix_h6 | 26.5371 | 7.6390 |
@@ -390,6 +409,16 @@ Differences are horizon-decoder minus comparison; negative values favor the hori
 | decoder - gwn | step6 | -0.3899 | -0.004572 | 0.002540 | 1.2250 |
 | decoder - gwn | step12 | -0.3619 | -0.004247 | 0.009438 | 2.0345 |
 | decoder - gwn | overall_12step | -0.2355 | -0.002762 | 0.005079 | 1.3506 |
+| decoder - horizon_specific_head_minus_horizon_decoder | step1 | -0.1075 | -0.001260 | -0.003709 | -0.4301 |
+| decoder - horizon_specific_head_minus_horizon_decoder | step3 | 0.1985 | 0.002326 | -0.000438 | -0.2699 |
+| decoder - horizon_specific_head_minus_horizon_decoder | step6 | 0.0347 | 0.000407 | 0.000185 | -0.0481 |
+| decoder - horizon_specific_head_minus_horizon_decoder | step12 | 0.0124 | 0.000145 | 0.001132 | 0.6358 |
+| decoder - horizon_specific_head_minus_horizon_decoder | overall_12step | 0.0421 | 0.000494 | 0.000347 | 0.1082 |
+| decoder - horizon_specific_head_minus_gwn | step1 | 0.2539 | 0.002975 | -0.001673 | -0.0484 |
+| decoder - horizon_specific_head_minus_gwn | step3 | -0.0218 | -0.000256 | 0.000359 | 0.6654 |
+| decoder - horizon_specific_head_minus_gwn | step6 | -0.3553 | -0.004166 | 0.002725 | 1.1768 |
+| decoder - horizon_specific_head_minus_gwn | step12 | -0.3495 | -0.004102 | 0.010571 | 2.6704 |
+| decoder - horizon_specific_head_minus_gwn | overall_12step | -0.1934 | -0.002268 | 0.005426 | 1.4588 |
 
 ## Horizon Decoder Attention
 
@@ -752,6 +781,7 @@ Node deltas are left method minus right method in percentage points; negative va
 - PA-STFed residual-anchor: {'min': 3.107927083969116, 'p10': 12.687405586242676, 'p25': 24.962587356567383, 'median': 29.210411071777344, 'p75': 40.534996032714844, 'p90': 46.20293045043945, 'max': 51.57440948486328}; counts={'lt10': 8, 'lt20': 12, 'lt30': 49, 'ge40': 27}
 - PA-STFed residual-scale-loss: {'min': 2.966158390045166, 'p10': 12.760388374328613, 'p25': 25.166942596435547, 'median': 30.08745574951172, 'p75': 40.65315628051758, 'p90': 47.164737701416016, 'max': 56.314857482910156}; counts={'lt10': 5, 'lt20': 12, 'lt30': 44, 'ge40': 27}
 - PA-STFed horizon-decoder: {'min': 2.405085563659668, 'p10': 12.59729290008545, 'p25': 24.291702270507812, 'median': 29.544418334960938, 'p75': 40.58838653564453, 'p90': 46.32661819458008, 'max': 53.45528793334961}; counts={'lt10': 5, 'lt20': 12, 'lt30': 48, 'ge40': 28}
+- PA-STFed horizon-specific-head: {'min': 2.484064817428589, 'p10': 11.932197570800781, 'p25': 24.73508071899414, 'median': 28.849849700927734, 'p75': 40.53908920288086, 'p90': 46.609291076660156, 'max': 54.89970016479492}; counts={'lt10': 5, 'lt20': 12, 'lt30': 50, 'ge40': 27}
 - PA-STFed residual-multilevel-loss: {'min': 2.9211020469665527, 'p10': 12.846092224121094, 'p25': 25.29302215576172, 'median': 29.420238494873047, 'p75': 41.36602020263672, 'p90': 47.111663818359375, 'max': 56.19011688232422}; counts={'lt10': 5, 'lt20': 12, 'lt30': 49, 'ge40': 29}
 - PA-STFed residual-multilevel-lambda0.02: {'min': 3.2899539470672607, 'p10': 13.094197273254395, 'p25': 25.393531799316406, 'median': 29.494644165039062, 'p75': 40.71490478515625, 'p90': 47.05120086669922, 'max': 55.75004959106445}; counts={'lt10': 5, 'lt20': 12, 'lt30': 50, 'ge40': 29}
 - PA-STFed residual-multilevel-lambda0.05: {'min': 2.977898359298706, 'p10': 12.520881652832031, 'p25': 25.3557071685791, 'median': 29.725997924804688, 'p75': 40.629051208496094, 'p90': 47.267295837402344, 'max': 56.28422546386719}; counts={'lt10': 5, 'lt20': 12, 'lt30': 49, 'ge40': 29}
@@ -778,6 +808,7 @@ Node deltas are left method minus right method in percentage points; negative va
 - PA-STFed residual-anchor: {'train_cv': 0.461432936920985, 'lag96_autocorr': -0.6224387894474926, 'lag672_autocorr': -0.6433604539000897, 'mean_shift': -0.3186044185062032}
 - PA-STFed residual-scale-loss: {'train_cv': 0.46554943243229185, 'lag96_autocorr': -0.622654635654078, 'lag672_autocorr': -0.6425279042461175, 'mean_shift': -0.3155209012692692}
 - PA-STFed horizon-decoder: {'train_cv': 0.4467014333215329, 'lag96_autocorr': -0.6346109737402895, 'lag672_autocorr': -0.6546846709527296, 'mean_shift': -0.3227902931553411}
+- PA-STFed horizon-specific-head: {'train_cv': 0.445252180220174, 'lag96_autocorr': -0.636646095116666, 'lag672_autocorr': -0.6581382102580957, 'mean_shift': -0.3183346107479714}
 - PA-STFed residual-multilevel-loss: {'train_cv': 0.4367339638531439, 'lag96_autocorr': -0.6449330476909261, 'lag672_autocorr': -0.6593793259459616, 'mean_shift': -0.3144725054087117}
 - PA-STFed residual-multilevel-lambda0.02: {'train_cv': 0.4533232865878487, 'lag96_autocorr': -0.6272644939232943, 'lag672_autocorr': -0.6470452569982257, 'mean_shift': -0.31251447196325854}
 - PA-STFed residual-multilevel-lambda0.05: {'train_cv': 0.45875027692485243, 'lag96_autocorr': -0.6234255149633114, 'lag672_autocorr': -0.642265805280978, 'mean_shift': -0.30978555920857204}

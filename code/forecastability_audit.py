@@ -224,6 +224,12 @@ def main() -> None:
         base_cfg,
         device,
     )
+    horizon_specific = _load_and_predict(
+        "pa_horizon_specific_head_scale_dev",
+        "pa_horizon_specific_head_scale_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
     residual_multilevel = _load_and_predict(
         "pa_residual_multilevel_loss_dev",
         "pa_residual_multilevel_loss_dev_seed2026_centralized_model.pt",
@@ -249,6 +255,7 @@ def main() -> None:
         "PA-STFed residual-anchor": residual["predictions"],
         "PA-STFed residual-scale-loss": residual_scale["predictions"],
         "PA-STFed horizon-decoder": horizon_decoder["predictions"],
+        "PA-STFed horizon-specific-head": horizon_specific["predictions"],
         "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
         "PA-STFed residual-multilevel-lambda0.02": residual_multilevel_l002["predictions"],
         "PA-STFed residual-multilevel-lambda0.05": residual_multilevel_l005["predictions"],
@@ -382,6 +389,12 @@ def main() -> None:
         ),
         "horizon_decoder_minus_gwn": _metric_deltas(
             "PA-STFed horizon-decoder", "GWN"
+        ),
+        "horizon_specific_head_minus_horizon_decoder": _metric_deltas(
+            "PA-STFed horizon-specific-head", "PA-STFed horizon-decoder"
+        ),
+        "horizon_specific_head_minus_gwn": _metric_deltas(
+            "PA-STFed horizon-specific-head", "GWN"
         ),
     }
 
@@ -526,6 +539,7 @@ def main() -> None:
                 ("PA-STFed residual-multilevel-lambda0.02", residual_multilevel_l002),
                 ("PA-STFed residual-multilevel-lambda0.05", residual_multilevel_l005),
                 ("PA-STFed horizon-decoder", horizon_decoder),
+                ("PA-STFed horizon-specific-head", horizon_specific),
             )
         },
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
@@ -534,6 +548,13 @@ def main() -> None:
         "loss_deltas": loss_deltas,
         "horizon_decoder_deltas": horizon_decoder_deltas,
         "horizon_decoder_attention": horizon_decoder["attention_entropy"],
+        "horizon_specific_head": horizon_specific["cfg"]["model"].get(
+            "horizon_specific_residual_head", False
+        ),
+        "horizon_specific_head_metadata": json.loads(
+            (RESULTS / "pa_horizon_specific_head_scale_dev_seed2026_centralized_result.json")
+            .read_text(encoding="utf-8")
+        ).get("horizon_decoder"),
         "multilevel_weight_deltas": weight_deltas,
         "multilevel_lambda_table": lambda_table,
         "node_wape_deltas": node_wape_deltas,
