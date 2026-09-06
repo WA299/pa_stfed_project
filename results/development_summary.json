@@ -555,5 +555,45 @@
         "n": 1
       }
     }
+  },
+  "pa_horizon_decoder_wl1_dev": {
+    "task": "centralized",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {},
+    "validation_metrics": {
+      "mae": {
+        "mean": 0.32832077145576477,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 27.88153839111328,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.7299470901489258,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 26.76818084716797,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 27.99837875366211,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
