@@ -111,6 +111,44 @@ def _spearman(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.corrcoef(x, y)[0, 1])
 
 
+def _paired_block_difference(left: dict, right: dict) -> dict[str, object]:
+    """Summarize paired validation block WAPE differences (left minus right)."""
+
+    for key in (
+        "source_sha256",
+        "origin_sha256",
+        "n_windows",
+        "block_windows",
+        "block_n_windows",
+    ):
+        if left.get(key) != right.get(key):
+            raise RuntimeError(f"validation WAPE block alignment mismatch: {key}")
+    left_wape = np.asarray(left.get("wape", []), dtype=np.float64)
+    right_wape = np.asarray(right.get("wape", []), dtype=np.float64)
+    if left_wape.ndim != 1 or right_wape.shape != left_wape.shape or left_wape.size == 0:
+        raise RuntimeError("paired validation WAPE blocks are empty or shape-mismatched")
+    delta = left_wape - right_wape
+    quantiles = {
+        label: float(np.quantile(delta, quantile))
+        for label, quantile in (
+            ("min", 0.0),
+            ("p10", 0.10),
+            ("p25", 0.25),
+            ("median", 0.50),
+            ("p75", 0.75),
+            ("p90", 0.90),
+            ("max", 1.0),
+        )
+    }
+    return {
+        "n_blocks": int(delta.size),
+        "block_windows": int(left["block_windows"]),
+        "difference_definition": "left block WAPE minus right block WAPE (percentage points)",
+        "mean_difference": float(delta.mean()),
+        "quantiles": quantiles,
+    }
+
+
 def _autocorr(series: np.ndarray, lag: int) -> float:
     if len(series) <= lag:
         return float("nan")
@@ -194,6 +232,7 @@ def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: t
         "recomputed_metrics": recomputed,
         "existing_metrics": {key: float(expected[key]) for key in ("wape", "mae", "rmse")},
         "metric_diffs": diffs,
+        "validation_wape_blocks": existing.get("validation_wape_blocks"),
         "dataset": data,
         "cfg": cfg,
         "attention_entropy": entropy_summary,
@@ -221,6 +260,12 @@ def main() -> None:
     horizon_decoder = _load_and_predict(
         "pa_horizon_decoder_scale_dev",
         "pa_horizon_decoder_scale_dev_seed2026_centralized_model.pt",
+        base_cfg,
+        device,
+    )
+    horizon_wl1 = _load_and_predict(
+        "pa_horizon_decoder_wl1_dev",
+        "pa_horizon_decoder_wl1_dev_seed2026_centralized_model.pt",
         base_cfg,
         device,
     )
@@ -255,6 +300,7 @@ def main() -> None:
         "PA-STFed residual-anchor": residual["predictions"],
         "PA-STFed residual-scale-loss": residual_scale["predictions"],
         "PA-STFed horizon-decoder": horizon_decoder["predictions"],
+        "PA-STFed horizon-decoder-wl1": horizon_wl1["predictions"],
         "PA-STFed horizon-specific-head": horizon_specific["predictions"],
         "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
         "PA-STFed residual-multilevel-lambda0.02": residual_multilevel_l002["predictions"],
@@ -395,6 +441,28 @@ def main() -> None:
         ),
         "horizon_specific_head_minus_gwn": _metric_deltas(
             "PA-STFed horizon-specific-head", "GWN"
+        ),
+    }
+
+    wape_aligned_deltas = {
+        "wl1_minus_horizon_decoder": _metric_deltas(
+            "PA-STFed horizon-decoder-wl1", "PA-STFed horizon-decoder"
+        ),
+        "wl1_minus_gwn": _metric_deltas(
+            "PA-STFed horizon-decoder-wl1", "GWN"
+        ),
+        "wl1_minus_residual_scale": _metric_deltas(
+            "PA-STFed horizon-decoder-wl1", "PA-STFed residual-scale-loss"
+        ),
+    }
+    paired_block_differences = {
+        "wl1_minus_horizon_decoder": _paired_block_difference(
+            horizon_wl1["validation_wape_blocks"],
+            horizon_decoder["validation_wape_blocks"],
+        ),
+        "wl1_minus_gwn": _paired_block_difference(
+            horizon_wl1["validation_wape_blocks"],
+            gwn["validation_wape_blocks"],
         ),
     }
 
@@ -539,6 +607,7 @@ def main() -> None:
                 ("PA-STFed residual-multilevel-lambda0.02", residual_multilevel_l002),
                 ("PA-STFed residual-multilevel-lambda0.05", residual_multilevel_l005),
                 ("PA-STFed horizon-decoder", horizon_decoder),
+                ("PA-STFed horizon-decoder-wl1", horizon_wl1),
                 ("PA-STFed horizon-specific-head", horizon_specific),
             )
         },
@@ -547,6 +616,8 @@ def main() -> None:
         "model_deltas": model_deltas,
         "loss_deltas": loss_deltas,
         "horizon_decoder_deltas": horizon_decoder_deltas,
+        "wape_aligned_deltas": wape_aligned_deltas,
+        "paired_validation_wape_block_differences": paired_block_differences,
         "horizon_decoder_attention": horizon_decoder["attention_entropy"],
         "horizon_specific_head": horizon_specific["cfg"]["model"].get(
             "horizon_specific_residual_head", False
@@ -599,6 +670,14 @@ def main() -> None:
         label = comparison.replace("horizon_decoder_minus_", "")
         for horizon, metrics in values.items():
             lines.append(f"| decoder - {label} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## WAPE-aligned Horizon Decoder Differences", "", "Differences are WL1 minus the named comparison; negative values favor WL1.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
+    for comparison, values in wape_aligned_deltas.items():
+        for horizon, metrics in values.items():
+            lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
+    lines += ["", "## Paired Validation WAPE Block Differences", "", "Block differences use the existing validation_wape_blocks with identical origins and 96-window blocks. Values are descriptive only; no significance claim is made.", "", "| Comparison | Blocks | Mean dWAPE | P10 | P25 | Median | P75 | P90 |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    for comparison, summary in paired_block_differences.items():
+        q = summary["quantiles"]
+        lines.append(f"| {comparison} | {summary['n_blocks']} | {summary['mean_difference']:.4f} | {q['p10']:.4f} | {q['p25']:.4f} | {q['median']:.4f} | {q['p75']:.4f} | {q['p90']:.4f} |")
     attention = payload.get("horizon_decoder_attention")
     if attention:
         lines += ["", "## Horizon Decoder Attention", "", f"- overall entropy: {attention['overall']:.6f}"]
