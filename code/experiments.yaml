@@ -524,6 +524,7 @@ experiments:
         evaluate_test: false
       privacy: {enabled: false}
 
+  # Historical multilevel result artifacts are retained in results/; configs are not active.
   pa_residual_multilevel_loss_dev:
     task: centralized
     tag: pa_residual_multilevel_loss_dev_seed{seed}
@@ -581,85 +582,6 @@ experiments:
         evaluate_test: false
       privacy: {enabled: false}
 
-  # Development-only temporal screen: causal two-layer TCN in parallel with the
-  # unchanged causal Transformer, fused by a learnable sigmoid gate.
-  pa_multilevel_tcn_transformer_dev:
-    task: centralized
-    tag: pa_multilevel_tcn_transformer_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        temporal_architecture: tcn_transformer
-        tcn_kernel_size: 3
-        use_residual_anchor: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: multilevel
-        scale_source: train_iqr
-        feeder_loss_weight: 0.1
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  # Development-only dynamic residual functional graph screen. Static functional
-  # graph behavior remains the default and is unchanged for all existing jobs.
-  pa_dynamic_functional_scale_dev:
-    task: centralized
-    tag: pa_dynamic_functional_scale_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        functional_graph_mode: dynamic_residual
-        dynamic_context_steps: 12
-        dynamic_gain_init: 0.0
-        temporal_architecture: transformer
-        use_residual_anchor: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: scale_aware
-        scale_source: train_iqr
-        feeder_loss_weight: 0.0
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  # Development-only multiscale patch temporal screen.  The original causal
-  # Transformer remains active; the patch branch is added with zero initial gain.
-  pa_multiscale_patch_scale_dev:
-    task: centralized
-    tag: pa_multiscale_patch_scale_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_physical: true
-        use_functional: true
-        functional_graph_mode: static
-        temporal_architecture: transformer
-        use_residual_anchor: true
-        use_multiscale_patch_branch: true
-        patch_sizes: [4, 12, 24]
-        patch_strides: [2, 6, 12]
-        patch_transformer_layers: 1
-        patch_transformer_heads: 4
-        patch_gain_init: 0.0
-      training:
-        <<: *formal_centralized_training
-        loss_mode: scale_aware
-        scale_source: train_iqr
-        feeder_loss_weight: 0.0
-        evaluate_test: false
-      privacy: {enabled: false}
-
   # Development-only horizon cross-attention decoder screen.  It keeps the
   # standard Transformer and static functional graph; no patch/TCN/dynamic graph
   # or multilevel loss is enabled.
@@ -678,7 +600,6 @@ experiments:
         functional_graph_mode: static
         temporal_architecture: transformer
         use_residual_anchor: true
-        use_multiscale_patch_branch: false
         use_horizon_decoder: true
         horizon_decoder_heads: 4
         horizon_decoder_layers: 1
@@ -709,84 +630,13 @@ experiments:
         functional_graph_mode: static
         temporal_architecture: transformer
         use_residual_anchor: true
-        use_multiscale_patch_branch: false
         use_horizon_decoder: true
         horizon_decoder_heads: 4
         horizon_decoder_layers: 1
         horizon_correction_init: 0.0
-        horizon_query_time_features: false
-        horizon_specific_residual_head: false
       training:
         <<: *formal_centralized_training
         loss_mode: scale_aware_l1
-        scale_source: train_iqr
-        feeder_loss_weight: 0.0
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  # Development-only horizon decoder query screen.  Future phase is generated
-  # deterministically from the final historical daily/weekly cyclic features;
-  # no future observations or targets are used.  The base horizon decoder
-  # behavior remains unchanged when horizon_query_time_features is false.
-  pa_horizon_timequery_scale_dev:
-    task: centralized
-    tag: pa_horizon_timequery_scale_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_physical: true
-        use_functional: true
-        functional_graph_mode: static
-        temporal_architecture: transformer
-        use_residual_anchor: true
-        use_multiscale_patch_branch: false
-        use_horizon_decoder: true
-        horizon_decoder_heads: 4
-        horizon_decoder_layers: 1
-        horizon_correction_init: 0.0
-        horizon_query_time_features: true
-        horizon_daily_period: 96
-        horizon_weekly_period: 672
-      training:
-        <<: *formal_centralized_training
-        loss_mode: scale_aware
-        scale_source: train_iqr
-        feeder_loss_weight: 0.0
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  # Development-only horizon-specific residual head screen.  It inherits the
-  # standard horizon decoder and adds only zero-initialized per-horizon output
-  # parameters; no future phase, TCN, patch, dynamic graph, or multilevel loss.
-  pa_horizon_specific_head_scale_dev:
-    task: centralized
-    tag: pa_horizon_specific_head_scale_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_physical: true
-        use_functional: true
-        functional_graph_mode: static
-        temporal_architecture: transformer
-        use_residual_anchor: true
-        use_multiscale_patch_branch: false
-        use_horizon_decoder: true
-        horizon_decoder_heads: 4
-        horizon_decoder_layers: 1
-        horizon_correction_init: 0.0
-        horizon_query_time_features: false
-        horizon_specific_residual_head: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: scale_aware
         scale_source: train_iqr
         feeder_loss_weight: 0.0
         evaluate_test: false

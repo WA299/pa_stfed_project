@@ -27,6 +27,7 @@ from experiment_runtime import (  # noqa: E402
     experiment_config,
     graph_tensors,
     load_project_config,
+    load_smartds,
     make_data_loader,
     make_dataset,
     make_model,
@@ -162,7 +163,7 @@ def _autocorr(series: np.ndarray, lag: int) -> float:
 
 def _load_and_predict(name: str, checkpoint_name: str, base_cfg: dict, device: torch.device) -> dict:
     cfg, _ = experiment_config(base_cfg, name, 2026)
-    data = __import__("run", fromlist=["load_smartds"]).load_smartds(cfg)
+    data = load_smartds(cfg)
     bounds = data.split_bounds(cfg["data"]["train_ratio"], cfg["data"]["val_ratio"])
     dataset = make_dataset(data, data.active_indices, "val", cfg)
     assert all(int(origin) + int(dataset.horizon) + 1 <= bounds.val_end for origin in dataset.origins)
@@ -270,30 +271,6 @@ def main() -> None:
         base_cfg,
         device,
     )
-    horizon_specific = _load_and_predict(
-        "pa_horizon_specific_head_scale_dev",
-        "pa_horizon_specific_head_scale_dev_seed2026_centralized_model.pt",
-        base_cfg,
-        device,
-    )
-    residual_multilevel = _load_and_predict(
-        "pa_residual_multilevel_loss_dev",
-        "pa_residual_multilevel_loss_dev_seed2026_centralized_model.pt",
-        base_cfg,
-        device,
-    )
-    residual_multilevel_l002 = _load_and_predict(
-        "pa_residual_multilevel_l002_dev",
-        "pa_residual_multilevel_l002_dev_seed2026_centralized_model.pt",
-        base_cfg,
-        device,
-    )
-    residual_multilevel_l005 = _load_and_predict(
-        "pa_residual_multilevel_l005_dev",
-        "pa_residual_multilevel_l005_dev_seed2026_centralized_model.pt",
-        base_cfg,
-        device,
-    )
     data = pa["dataset"]
     target = pa["target"]
     methods = {
@@ -302,10 +279,6 @@ def main() -> None:
         "PA-STFed residual-scale-loss": residual_scale["predictions"],
         "PA-STFed horizon-decoder": horizon_decoder["predictions"],
         "PA-STFed horizon-decoder-wl1": horizon_wl1["predictions"],
-        "PA-STFed horizon-specific-head": horizon_specific["predictions"],
-        "PA-STFed residual-multilevel-loss": residual_multilevel["predictions"],
-        "PA-STFed residual-multilevel-lambda0.02": residual_multilevel_l002["predictions"],
-        "PA-STFed residual-multilevel-lambda0.05": residual_multilevel_l005["predictions"],
         "GWN": gwn["predictions"],
         "Persistence": pa["persistence"],
         "Daily-lag naive": pa["daily_naive"],
@@ -375,38 +348,6 @@ def main() -> None:
             }
             for key in comparison_methods
         },
-        "multilevel_minus_scale": {
-            key: {
-                metric: float(
-                    horizons["PA-STFed residual-multilevel-loss"][key][metric]
-                    - horizons["PA-STFed residual-scale-loss"][key][metric]
-                )
-                for metric in ("wape", "mae", "rmse")
-            }
-            | {
-                "feeder_aggregate_wape": float(
-                    aggregation["PA-STFed residual-multilevel-loss"][key]["feeder_aggregate_wape"]
-                    - aggregation["PA-STFed residual-scale-loss"][key]["feeder_aggregate_wape"]
-                )
-            }
-            for key in comparison_methods
-        },
-        "multilevel_minus_gwn": {
-            key: {
-                metric: float(
-                    horizons["PA-STFed residual-multilevel-loss"][key][metric]
-                    - horizons["GWN"][key][metric]
-                )
-                for metric in ("wape", "mae", "rmse")
-            }
-            | {
-                "feeder_aggregate_wape": float(
-                    aggregation["PA-STFed residual-multilevel-loss"][key]["feeder_aggregate_wape"]
-                    - aggregation["GWN"][key]["feeder_aggregate_wape"]
-                )
-            }
-            for key in comparison_methods
-        },
     }
     exact_horizons = ("step1", "step3", "step6", "step12", "overall_12step")
 
@@ -437,12 +378,6 @@ def main() -> None:
         "horizon_decoder_minus_gwn": _metric_deltas(
             "PA-STFed horizon-decoder", "GWN"
         ),
-        "horizon_specific_head_minus_horizon_decoder": _metric_deltas(
-            "PA-STFed horizon-specific-head", "PA-STFed horizon-decoder"
-        ),
-        "horizon_specific_head_minus_gwn": _metric_deltas(
-            "PA-STFed horizon-specific-head", "GWN"
-        ),
     }
 
     wape_aligned_deltas = {
@@ -467,48 +402,8 @@ def main() -> None:
         ),
     }
 
-    weight_deltas = {
-        "lambda0.02_minus_scale_aware_lambda0": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.02",
-            "PA-STFed residual-scale-loss",
-        ),
-        "lambda0.02_minus_lambda0.1": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.02",
-            "PA-STFed residual-multilevel-loss",
-        ),
-        "lambda0.02_minus_gwn": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.02", "GWN"
-        ),
-        "lambda0.05_minus_scale_aware_lambda0": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.05",
-            "PA-STFed residual-scale-loss",
-        ),
-        "lambda0.05_minus_lambda0.1": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.05",
-            "PA-STFed residual-multilevel-loss",
-        ),
-        "lambda0.05_minus_gwn": _metric_deltas(
-            "PA-STFed residual-multilevel-lambda0.05", "GWN"
-        ),
-    }
-    lambda_methods = {
-        "lambda_0.00": "PA-STFed residual-scale-loss",
-        "lambda_0.02": "PA-STFed residual-multilevel-lambda0.02",
-        "lambda_0.05": "PA-STFed residual-multilevel-lambda0.05",
-        "lambda_0.10": "PA-STFed residual-multilevel-loss",
-    }
-    lambda_table = {
-        lambda_name: {
-            key: {
-                "node_micro_wape": float(horizons[method][key]["wape"]),
-                "feeder_aggregate_wape": float(
-                    aggregation[method][key]["feeder_aggregate_wape"]
-                ),
-            }
-            for key in exact_horizons
-        }
-        for lambda_name, method in lambda_methods.items()
-    }
+    weight_deltas = {}
+    lambda_table = {}
     node_ids = [str(x) for x in data.node_ids[data.active_indices]]
     node_difficulty = {}
     for name, prediction in methods.items():
@@ -524,8 +419,6 @@ def main() -> None:
     node_wape_deltas = {}
     for key, left_name, right_name in (
         ("scale_minus_residual", "PA-STFed residual-scale-loss", "PA-STFed residual-anchor"),
-        ("multilevel_minus_scale", "PA-STFed residual-multilevel-loss", "PA-STFed residual-scale-loss"),
-        ("multilevel_minus_gwn", "PA-STFed residual-multilevel-loss", "GWN"),
     ):
         by_node = {
             node: float(
@@ -604,12 +497,8 @@ def main() -> None:
                 ("GWN", gwn),
                 ("PA-STFed residual-anchor", residual),
                 ("PA-STFed residual-scale-loss", residual_scale),
-                ("PA-STFed residual-multilevel-loss", residual_multilevel),
-                ("PA-STFed residual-multilevel-lambda0.02", residual_multilevel_l002),
-                ("PA-STFed residual-multilevel-lambda0.05", residual_multilevel_l005),
                 ("PA-STFed horizon-decoder", horizon_decoder),
                 ("PA-STFed horizon-decoder-wl1", horizon_wl1),
-                ("PA-STFed horizon-specific-head", horizon_specific),
             )
         },
         "horizon_metrics": {name: {key: {metric: float(value) for metric, value in metrics.items()} for key, metrics in values.items()} for name, values in horizons.items()},
@@ -620,13 +509,6 @@ def main() -> None:
         "wape_aligned_deltas": wape_aligned_deltas,
         "paired_validation_wape_block_differences": paired_block_differences,
         "horizon_decoder_attention": horizon_decoder["attention_entropy"],
-        "horizon_specific_head": horizon_specific["cfg"]["model"].get(
-            "horizon_specific_residual_head", False
-        ),
-        "horizon_specific_head_metadata": json.loads(
-            (RESULTS / "pa_horizon_specific_head_scale_dev_seed2026_centralized_result.json")
-            .read_text(encoding="utf-8")
-        ).get("horizon_decoder"),
         "multilevel_weight_deltas": weight_deltas,
         "multilevel_lambda_table": lambda_table,
         "node_wape_deltas": node_wape_deltas,
@@ -662,8 +544,6 @@ def main() -> None:
     lines += ["", "## Scale-aware and Multilevel Loss Differences", "", "Negative values favor the first method named in each comparison; node WAPE and feeder-aggregate WAPE are shown together.", "", "| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |", "|---|---:|---:|---:|---:|---:|"]
     for comparison, values in (
         ("scale-aware - residual", loss_deltas["scale_minus_residual"]),
-        ("multilevel - scale-aware", loss_deltas["multilevel_minus_scale"]),
-        ("multilevel - GWN", loss_deltas["multilevel_minus_gwn"]),
     ):
         for horizon, metrics in values.items():
             lines.append(f"| {comparison} | {horizon} | {metrics['wape']:.4f} | {metrics['mae']:.6f} | {metrics['rmse']:.6f} | {metrics['feeder_aggregate_wape']:.4f} |")
@@ -685,7 +565,7 @@ def main() -> None:
         lines += ["", "## Horizon Decoder Attention", "", f"- overall entropy: {attention['overall']:.6f}"]
         if attention.get("by_horizon") is not None:
             lines.append("- exact horizon entropy: " + ", ".join(f"h{i + 1}={value:.6f}" for i, value in enumerate(attention["by_horizon"])))
-    lines += ["", "## Multilevel Lambda Table", "", "Exact forecast steps and overall 12-step; lambda=0 is the scale-aware node loss without the feeder term.", "", "| Lambda | Horizon | Node-micro WAPE | Feeder aggregate WAPE |", "|---:|---:|---:|---:|"]
+    lines += ["", "## Historical rejected loss screens", "", "Historical multilevel artifacts remain in the repository but are not reloaded by the active audit."]
     for lambda_name, values in lambda_table.items():
         lambda_label = lambda_name.replace("lambda_", "lambda=", 1)
         if lambda_name == "lambda_0.00":

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from experiment_runtime import *  # noqa: F401,F403
+import numpy as np
+import torch
+
+from config import autocast_context, make_grad_scaler
+from federated import charbonnier_loss, scale_aware_charbonnier_loss, scale_aware_l1_loss
+from data import archive_sha256
 from experiment_runtime import (
     _assert_active_nodes_train_stable,
     _batch_size,
@@ -22,7 +27,8 @@ from experiment_runtime import (
     output_path,
     load_smartds,
     config_signature,
- )
+    load_project_config,
+)
 
 def centralized(cfg: dict, device: torch.device) -> dict:
     """训练集中式对照模型，并按预先声明的验证指标保存最佳参数。"""
@@ -284,15 +290,7 @@ def centralized(cfg: dict, device: torch.device) -> dict:
         },
         "architecture": str(cfg["model"].get("architecture", "pa_stfed")),
         "temporal_architecture": str(cfg["model"].get("temporal_architecture", "transformer")),
-        "tcn_config": (
-            {"layers": 2, "kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)), "dilations": [1, 2], "causal": True, "residual": True}
-            if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
-            else None
-        ),
         "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
-        "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
-        "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
-        "multiscale_patch_config": multiscale_patch_metadata(model),
         "horizon_decoder": horizon_decoder_metadata(model),
         "loss_mode": loss_mode,
         "scale_source": scale_source,

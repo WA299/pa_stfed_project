@@ -60,6 +60,9 @@ def main() -> None:
         "pa_horizon_decoder_scale_dev": "PA-STFed horizon-decoder",
         "pa_horizon_decoder_wl1_dev": "PA-STFed horizon-decoder-wl1",
         "pa_horizon_specific_head_scale_dev": "PA-STFed horizon-specific-head",
+        "pa_multilevel_tcn_transformer_dev": "PA-STFed TCN screen",
+        "pa_dynamic_functional_scale_dev": "PA-STFed dynamic-functional screen",
+        "pa_multiscale_patch_scale_dev": "PA-STFed multiscale-patch screen",
     }
 
     spatial_ablation = [
@@ -76,12 +79,7 @@ def main() -> None:
 
     required_dev = [
         "pa_residual_anchor_dev", "pa_residual_scale_loss_dev",
-        "pa_residual_multilevel_loss_dev", "pa_residual_multilevel_l002_dev",
-        "pa_residual_multilevel_l005_dev", "pa_multilevel_tcn_transformer_dev",
-        "pa_dynamic_functional_scale_dev", "pa_multiscale_patch_scale_dev",
-        "pa_horizon_decoder_scale_dev", "pa_horizon_timequery_scale_dev",
-        "pa_horizon_specific_head_scale_dev", "pa_horizon_decoder_wl1_dev",
-        "calendar_pa_screen", "calendar_gwnet_screen", "calendar_lstm_screen",
+        "pa_horizon_decoder_scale_dev", "pa_horizon_decoder_wl1_dev",
     ]
     for experiment in required_dev:
         if experiment not in yaml_text:
@@ -132,11 +130,7 @@ def main() -> None:
         ("pa_residual_multilevel_loss_dev", "loss exploration", "Tests lambda=0.1 feeder-level term.", "Multilevel loss lambda=0.1", "Overall node WAPE 29.182411; higher than scale-aware 28.945082."),
         ("pa_residual_multilevel_l002_dev", "loss exploration", "Tests lambda=0.02 feeder-level term.", "Multilevel loss lambda=0.02", "Overall node WAPE 29.102186; no node-level gain over scale-aware."),
         ("pa_residual_multilevel_l005_dev", "loss exploration", "Tests lambda=0.05 feeder-level term.", "Multilevel loss lambda=0.05", "Overall node WAPE 29.041759; no node-level gain over scale-aware."),
-        ("pa_multilevel_tcn_transformer_dev", "temporal architecture", "Adds a causal two-layer TCN branch parallel to Transformer.", "TCN screen", "Matched against `pa_residual_multilevel_loss_dev`: delta WAPE approximately -0.005934 percentage points; no meaningful isolated gain."),
-        ("pa_dynamic_functional_scale_dev", "functional graph", "Adds input-conditioned residual functional relation.", "Dynamic functional graph", "Overall node WAPE 29.360912; no gain over static dual reference."),
-        ("pa_multiscale_patch_scale_dev", "temporal architecture", "Adds multi-scale causal patch temporal branch.", "Multi-scale patch", "Overall node WAPE 28.943995, effectively unchanged from scale-aware 28.945082; no isolated evidence of benefit."),
         ("pa_horizon_timequery_scale_dev", "decoder variation", "Conditions horizon queries on deterministic future phase features.", "Future-phase query", "Overall node WAPE 28.899345, worse than plain horizon decoder 28.769896."),
-        ("pa_horizon_specific_head_scale_dev", "decoder variation", "Adds zero-initialized horizon-specific correction heads.", "Horizon-specific head", "Overall node WAPE 28.812002, slightly worse than plain horizon decoder 28.769896."),
     ]
     for experiment, role, change, paper_use, reject_reason in reject_specs:
         reference = "pa_residual_multilevel_loss_dev" if experiment == "pa_multilevel_tcn_transformer_dev" else ("pa_residual_scale_loss_dev" if ("multilevel" in experiment or experiment in {"pa_dynamic_functional_scale_dev", "pa_multiscale_patch_scale_dev"}) else "pa_horizon_decoder_scale_dev")

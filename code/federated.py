@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from config import autocast_context, make_grad_scaler
 from data import GraphView, LoadWindowDataset, make_data_loader
 from metrics import mae, mape, rmse, smape, wape
-from model import (
+from models import (
     PA_STFed,
     load_shared_state,
     local_parameter_prefixes,

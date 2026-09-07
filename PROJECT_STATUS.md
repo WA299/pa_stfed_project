@@ -22,4 +22,4 @@ The node-level candidate `pa_horizon_decoder_wl1_dev` has a validation WAPE near
 
 # Latest Commit
 
-Repository cleanup Phase 2A runner split completed.
+Repository cleanup Phase 2B rejected model branches removed; active runtime retained.

@@ -49,7 +49,7 @@ from federated import (
     weighted_average,
 )
 from metrics import gate_diagnostics, linear_cka
-from model import (
+from models import (
     AGCRNBaseline,
     GraphWaveNetBaseline,
     ITransformerBaseline,
@@ -59,7 +59,6 @@ from model import (
     load_shared_state,
     local_parameter_prefixes,
     horizon_decoder_metadata,
-    multiscale_patch_metadata,
     shared_state_dict,
     vanilla_ala_parameter_names,
 )
@@ -237,9 +236,9 @@ def _federated_parameter_audit(cfg: dict, node_count: int) -> dict[str, object]:
     shared_personalized = tuple(name for name in shared_fedavg if name not in head)
     return {
         "code_locations": {
-            "prefix_definition": "model.py:17-23",
-            "state_extraction": "model.py:603-612",
-            "state_loading": "model.py:615-621",
+            "prefix_definition": "models/pa_stfed.py:LOCAL_PARAMETER_PREFIXES",
+            "state_extraction": "models/pa_stfed.py:shared_state_dict",
+            "state_loading": "models/pa_stfed.py:load_shared_state",
             "local_training": "federated.py:81-156",
             "aggregation": "federated.py:159-219",
             "server_loop": "run.py:1275-1650",
@@ -350,36 +349,11 @@ def make_model(cfg: dict, node_count: int, device: torch.device) -> torch.nn.Mod
         use_temporal_gate=bool(cfg["model"].get("use_temporal_gate", True)),
         use_residual_anchor=bool(cfg["model"].get("use_residual_anchor", False)),
         temporal_architecture=str(cfg["model"].get("temporal_architecture", "transformer")),
-        tcn_kernel_size=int(cfg["model"].get("tcn_kernel_size", 3)),
         functional_graph_mode=str(cfg["model"].get("functional_graph_mode", "static")),
-        dynamic_context_steps=int(cfg["model"].get("dynamic_context_steps", 12)),
-        dynamic_gain_init=float(cfg["model"].get("dynamic_gain_init", 0.0)),
-        use_multiscale_patch_branch=bool(
-            cfg["model"].get("use_multiscale_patch_branch", False)
-        ),
-        patch_sizes=tuple(
-            int(value) for value in cfg["model"].get("patch_sizes", [4, 12, 24])
-        ),
-        patch_strides=tuple(
-            int(value) for value in cfg["model"].get("patch_strides", [2, 6, 12])
-        ),
-        patch_transformer_layers=int(
-            cfg["model"].get("patch_transformer_layers", 1)
-        ),
-        patch_transformer_heads=int(cfg["model"].get("patch_transformer_heads", 4)),
-        patch_gain_init=float(cfg["model"].get("patch_gain_init", 0.0)),
         use_horizon_decoder=bool(cfg["model"].get("use_horizon_decoder", False)),
         horizon_decoder_heads=int(cfg["model"].get("horizon_decoder_heads", 4)),
         horizon_decoder_layers=int(cfg["model"].get("horizon_decoder_layers", 1)),
         horizon_correction_init=float(cfg["model"].get("horizon_correction_init", 0.0)),
-        horizon_query_time_features=bool(
-            cfg["model"].get("horizon_query_time_features", False)
-        ),
-        horizon_daily_period=int(cfg["model"].get("horizon_daily_period", 96)),
-        horizon_weekly_period=int(cfg["model"].get("horizon_weekly_period", 672)),
-        horizon_specific_residual_head=bool(
-            cfg["model"].get("horizon_specific_residual_head", False)
-        ),
     ).to(device)
 
 
@@ -1468,31 +1442,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "transformer_layers": int(cfg["model"]["transformer_layers"]),
             "transformer_heads": int(cfg["model"]["transformer_heads"]),
             "temporal_architecture": str(cfg["model"].get("temporal_architecture", "transformer")),
-            "tcn_kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)),
-            "tcn_config": (
-                {"layers": 2, "kernel_size": int(cfg["model"].get("tcn_kernel_size", 3)), "dilations": [1, 2], "causal": True, "residual": True}
-                if str(cfg["model"].get("temporal_architecture", "transformer")).lower() == "tcn_transformer"
-                else None
-            ),
             "functional_graph_mode": str(cfg["model"].get("functional_graph_mode", "static")),
-            "dynamic_context_steps": int(cfg["model"].get("dynamic_context_steps", 12)),
-            "dynamic_gain_init": float(cfg["model"].get("dynamic_gain_init", 0.0)),
-            "use_multiscale_patch_branch": bool(
-                cfg["model"].get("use_multiscale_patch_branch", False)
-            ),
-            "patch_sizes": [
-                int(value) for value in cfg["model"].get("patch_sizes", [4, 12, 24])
-            ],
-            "patch_strides": [
-                int(value) for value in cfg["model"].get("patch_strides", [2, 6, 12])
-            ],
-            "patch_transformer_layers": int(
-                cfg["model"].get("patch_transformer_layers", 1)
-            ),
-            "patch_transformer_heads": int(
-                cfg["model"].get("patch_transformer_heads", 4)
-            ),
-            "patch_gain_init": float(cfg["model"].get("patch_gain_init", 0.0)),
             "use_horizon_decoder": bool(
                 cfg["model"].get("use_horizon_decoder", False)
             ),
@@ -1504,18 +1454,6 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             ),
             "horizon_correction_init": float(
                 cfg["model"].get("horizon_correction_init", 0.0)
-            ),
-            "horizon_query_time_features": bool(
-                cfg["model"].get("horizon_query_time_features", False)
-            ),
-            "horizon_daily_period": int(
-                cfg["model"].get("horizon_daily_period", 96)
-            ),
-            "horizon_weekly_period": int(
-                cfg["model"].get("horizon_weekly_period", 672)
-            ),
-            "horizon_specific_residual_head": bool(
-                cfg["model"].get("horizon_specific_residual_head", False)
             ),
             "dropout": float(cfg["model"]["dropout"]),
             "robust_kappa": float(cfg["model"]["robust_kappa"]),
