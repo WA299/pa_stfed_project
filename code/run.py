@@ -71,6 +71,8 @@ ROOT = CODE_DIR.parent
 CONFIG = CODE_DIR / "config.yaml"
 EXPERIMENTS_CONFIG = CODE_DIR / "experiments.yaml"
 OUTPUTS = ROOT / "results"
+REPORTS = ROOT / "reports"
+SUPPORTING = REPORTS / "supporting"
 
 
 def load_project_config() -> dict:
@@ -617,7 +619,8 @@ def audit(cfg: dict) -> dict:
     parameter_audit = _federated_parameter_audit(
         cfg, node_count=int(len(partitions[0]))
     )
-    parameter_csv = OUTPUTS / "federated_parameter_groups.csv"
+    SUPPORTING.mkdir(parents=True, exist_ok=True)
+    parameter_csv = SUPPORTING / "federated_parameter_groups.csv"
     with parameter_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["group", "state_name", "FedAvg/FedProx", "Personalized"])
@@ -685,11 +688,6 @@ def audit(cfg: dict) -> dict:
             "零负荷中继投影图后仅在有效节点之间执行MST",
         ),
     ]
-    with (OUTPUTS / "topology_comparison.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(topology_comparison[0]))
-        writer.writeheader()
-        writer.writerows(topology_comparison)
-
     legacy_bridge_endpoint_types = {
         "active_active": int(
             sum(int(source in active_node_set and target in active_node_set) for source, target in legacy_bridges)
@@ -718,18 +716,6 @@ def audit(cfg: dict) -> dict:
             "p01": float(np.percentile(values, 1.0)),
             "p99": float(np.percentile(values, 99.0)),
         }
-
-    OUTPUTS.mkdir(exist_ok=True)
-    with (OUTPUTS / "bridge_edges.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["bridge_index", "source_index", "target_index", "scheme"])
-        for index, (source, target) in enumerate(corrected_bridges):
-            writer.writerow([index, source, target, "projected_active_mst"])
-    with (OUTPUTS / "legacy_bridge_edges.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["bridge_index", "source_index", "target_index", "scheme"])
-        for index, (source, target) in enumerate(legacy_bridges):
-            writer.writerow([index, source, target, "legacy_all_node_mst"])
 
     report = {
         "code_revision": cfg.get("code_revision"),

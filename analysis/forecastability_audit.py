@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODE = ROOT / "code"
 RESULTS = ROOT / "results"
 REPORTS = ROOT / "reports"
+SUPPORTING = REPORTS / "supporting"
 sys.path.insert(0, str(CODE))
 
 from federated import metric_summary  # noqa: E402
@@ -641,7 +642,8 @@ def main() -> None:
         "naive_sanity": {"recomputed": naive_recomputed, "existing_baseline_centralized": naive_existing, "comparison": naive_comparison, "same_definition": True, "daily_lag_definition": "prediction at future step h uses the input load at origin+h-96; this matches the existing baseline implementation.", "weekly_lag_definition": "prediction at future step h uses raw load at origin+h-672.", "blend_definition": "alpha * raw load(origin+h-96) + (1-alpha) * raw load(origin+h-672), with alpha in {0, 0.25, 0.5, 0.75, 1}."},
     }
     REPORTS.mkdir(exist_ok=True)
-    (RESULTS / "forecastability_audit.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_value), encoding="utf-8")
+    SUPPORTING.mkdir(parents=True, exist_ok=True)
+    (SUPPORTING / "forecastability_audit.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_value), encoding="utf-8")
     lines = ["# Forecastability Audit", "", "Validation-only; no training, no test loader, and no existing result JSON was modified.", "", "## Metric Sanity", ""]
     for name, details in payload["metric_sanity"].items():
         lines.append(f"- {name}: recomputed WAPE/MAE/RMSE = {details['recomputed_metrics']}; max difference = {max(details['metric_diffs'].values()):.8f} (PASS)")

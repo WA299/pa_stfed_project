@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 REPORTS = ROOT / "reports"
+SUPPORTING = REPORTS / "supporting"
 
 
 def result_for(experiment: str, seed: int = 2026) -> tuple[dict, str]:
@@ -45,7 +46,7 @@ def feeder_metric(audit: dict, label: str, horizon: str = "overall_12step") -> f
 
 
 def main() -> None:
-    audit = json.loads((RESULTS / "forecastability_audit.json").read_text(encoding="utf-8"))
+    audit = json.loads((SUPPORTING / "forecastability_audit.json").read_text(encoding="utf-8"))
     yaml_text = (ROOT / "code" / "experiments.yaml").read_text(encoding="utf-8")
 
     labels = {
@@ -61,10 +62,12 @@ def main() -> None:
         "pa_horizon_specific_head_scale_dev": "PA-STFed horizon-specific-head",
     }
 
+    spatial_ablation = [
+        ("spatial_physical_only", "KEEP", "spatial ablation", "", "Physical topology branch only; target relation graph is not a physical Line graph.", "Physical-only", "Parallel spatial ablation; not an incremental predecessor."),
+        ("spatial_functional_only", "KEEP", "spatial ablation", "", "Functional relation branch only; no physical branch.", "Functional-only", "Parallel spatial ablation; not an incremental predecessor."),
+        ("centralized", "KEEP", "spatial ablation base", "", "Physical + static functional PA-STFed dual base.", "Dual physical+functional", "Parallel dual-graph reference and base for the incremental chain."),
+    ]
     main_chain = [
-        ("spatial_physical_only", "KEEP", "ablation", "", "Physical topology branch only; target relation graph is not a physical Line graph.", "Physical-only", "Physical-only ablation reference."),
-        ("spatial_functional_only", "KEEP", "ablation", "spatial_physical_only", "Functional relation branch only; no physical branch.", "Functional-only", "Functional-only ablation reference."),
-        ("centralized", "KEEP", "main dual base", "spatial_functional_only", "Physical + static functional PA-STFed dual base.", "Dual physical+functional", "Dual graph base for subsequent controlled screens."),
         ("pa_residual_anchor_dev", "KEEP", "incremental", "centralized", "Adds persistence residual anchor: last observed load plus learned correction.", "Residual Anchor", "Residual anchor lowers node WAPE in this development screen."),
         ("pa_residual_scale_loss_dev", "KEEP", "incremental", "pa_residual_anchor_dev", "Uses training-IQR scale-aware node loss.", "Scale-aware loss", "Scale-aware loss gives a small node-level change and remains a controlled objective variant."),
         ("pa_horizon_decoder_scale_dev", "KEEP", "incremental", "pa_residual_scale_loss_dev", "Adds one-layer horizon cross-attention decoder with zero-initialized correction head.", "Horizon Decoder", "Horizon decoder improves node WAPE over residual-scale in this screen."),
@@ -99,6 +102,7 @@ def main() -> None:
                 paper_use: str, notes: str, feeder: float | None = None) -> None:
         metrics, filename, _ = metrics_for(experiment)
         reference_wape = metrics_for(reference)[0]["wape"] if reference else None
+        feeder_note = "" if feeder is not None else " Feeder WAPE unavailable: no matching aggregation entry in the existing audit artifact."
         rows.append({
             "experiment": experiment,
             "status": status,
@@ -112,9 +116,12 @@ def main() -> None:
             "reference_experiment": reference,
             "delta_wape_pp": None if reference_wape is None else metrics["wape"] - reference_wape,
             "paper_use": paper_use,
-            "notes": f"{notes} Source={filename}; seed=2026; test_evaluated=false.",
+            "notes": f"{notes}{feeder_note} Source={filename}; seed=2026; test_evaluated=false.",
         })
 
+    for experiment, status, role, reference, change, paper_use, _ in spatial_ablation:
+        add_row(experiment, status, role, reference, paper_use, change,
+                feeder_metric(audit, labels[experiment]) if experiment in labels else None)
     for experiment, status, role, reference, change, paper_use, _ in main_chain:
         add_row(experiment, status, role, reference, paper_use, change,
                 feeder_metric(audit, labels[experiment]) if experiment in labels else None)
@@ -125,14 +132,14 @@ def main() -> None:
         ("pa_residual_multilevel_loss_dev", "loss exploration", "Tests lambda=0.1 feeder-level term.", "Multilevel loss lambda=0.1", "Overall node WAPE 29.182411; higher than scale-aware 28.945082."),
         ("pa_residual_multilevel_l002_dev", "loss exploration", "Tests lambda=0.02 feeder-level term.", "Multilevel loss lambda=0.02", "Overall node WAPE 29.102186; no node-level gain over scale-aware."),
         ("pa_residual_multilevel_l005_dev", "loss exploration", "Tests lambda=0.05 feeder-level term.", "Multilevel loss lambda=0.05", "Overall node WAPE 29.041759; no node-level gain over scale-aware."),
-        ("pa_multilevel_tcn_transformer_dev", "temporal architecture", "Adds a causal two-layer TCN branch parallel to Transformer.", "TCN screen", "Overall node WAPE 29.176477; no isolated gain and the screen also changes loss to multilevel."),
+        ("pa_multilevel_tcn_transformer_dev", "temporal architecture", "Adds a causal two-layer TCN branch parallel to Transformer.", "TCN screen", "Matched against `pa_residual_multilevel_loss_dev`: delta WAPE approximately -0.005934 percentage points; no meaningful isolated gain."),
         ("pa_dynamic_functional_scale_dev", "functional graph", "Adds input-conditioned residual functional relation.", "Dynamic functional graph", "Overall node WAPE 29.360912; no gain over static dual reference."),
         ("pa_multiscale_patch_scale_dev", "temporal architecture", "Adds multi-scale causal patch temporal branch.", "Multi-scale patch", "Overall node WAPE 28.943995, effectively unchanged from scale-aware 28.945082; no isolated evidence of benefit."),
         ("pa_horizon_timequery_scale_dev", "decoder variation", "Conditions horizon queries on deterministic future phase features.", "Future-phase query", "Overall node WAPE 28.899345, worse than plain horizon decoder 28.769896."),
         ("pa_horizon_specific_head_scale_dev", "decoder variation", "Adds zero-initialized horizon-specific correction heads.", "Horizon-specific head", "Overall node WAPE 28.812002, slightly worse than plain horizon decoder 28.769896."),
     ]
     for experiment, role, change, paper_use, reject_reason in reject_specs:
-        reference = "pa_residual_scale_loss_dev" if ("multilevel" in experiment or experiment in {"pa_dynamic_functional_scale_dev", "pa_multiscale_patch_scale_dev"}) else "pa_horizon_decoder_scale_dev"
+        reference = "pa_residual_multilevel_loss_dev" if experiment == "pa_multilevel_tcn_transformer_dev" else ("pa_residual_scale_loss_dev" if ("multilevel" in experiment or experiment in {"pa_dynamic_functional_scale_dev", "pa_multiscale_patch_scale_dev"}) else "pa_horizon_decoder_scale_dev")
         add_row(experiment, "REJECT", role, reference, paper_use, change,
                 feeder_metric(audit, labels[experiment]) if experiment in labels else None)
 
@@ -162,7 +169,7 @@ def main() -> None:
         "| Stage | Experiment | Change | WAPE | MAE | RMSE | sMAPE | MAPE | Delta WAPE (pp) | Decision |",
         "|---|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
-    for experiment, status, _, reference, change, paper_use, conclusion in main_chain:
+    for experiment, status, _, reference, change, paper_use, conclusion in spatial_ablation + main_chain:
         metrics, _, _ = metrics_for(experiment)
         delta = "" if not reference else fmt(metrics["wape"] - metrics_for(reference)[0]["wape"])
         main_table.append(f"| {paper_use} | `{experiment}` | {change} | {fmt(metrics['wape'])} | {fmt(metrics['mae'])} | {fmt(metrics['rmse'])} | {fmt(metrics['smape'])} | {fmt(metrics['mape'])} | {delta} | {status} |")
@@ -211,14 +218,14 @@ This ledger consolidates existing centralized development and validation artifac
 
 ## 2. Innovation 1 Mainline Evolution
 
-Values in this table are direct fields from each seed-2026 result JSON. Delta is current WAPE minus the immediately preceding row in percentage points.
+Values in this table are direct fields from each seed-2026 result JSON. Physical-only, Functional-only, and Dual are parallel spatial ablations; deltas begin with the incremental chain from Dual and are current WAPE minus the reference row in percentage points.
 
 {chr(10).join(main_table)}
 
 Interpretation by step:
 
-- Physical-only and functional-only are retained as controlled ablations.
-- Dual Physical+Functional is the base configuration for incremental screens.
+- Physical-only, Functional-only, and Dual Physical+Functional are parallel spatial ablations.
+- The incremental chain starts at Dual: Residual Anchor -> Scale-aware Charbonnier -> Horizon Decoder -> WAPE-numerator-aligned WL1.
 - Residual Anchor changes the output to last observed load plus learned correction and is a development-only increment.
 - Scale-aware loss weights normalized residuals by the training-split IQR; it is an objective change, not a graph change.
 - Horizon Decoder adds horizon cross-attention while retaining the existing temporal representation and head path.
@@ -232,7 +239,7 @@ The calendar screens are recorded in the CSV as `OUT_OF_SCOPE`: they used auxili
 
 ## 4. Current Key Comparisons
 
-The following values are absolute validation metrics from `results/forecastability_audit.json`; they include exact steps 1/3/6/12 and overall 12-step. A-B WAPE is in percentage points; negative means A has lower node WAPE. Feeder WAPE is an auxiliary aggregation-level metric.
+The following values are absolute validation metrics from `reports/supporting/forecastability_audit.json`; they include exact steps 1/3/6/12 and overall 12-step. A-B WAPE is in percentage points; negative means A has lower node WAPE. Feeder WAPE is an auxiliary aggregation-level metric.
 
 {chr(10).join(comparison_table)}
 
@@ -246,7 +253,7 @@ The following values are absolute validation metrics from `results/forecastabili
 
 ## 6. Candidate Paper Ablation Chain
 
-`Physical-only -> Functional-only -> Dual -> +Residual Anchor -> +Horizon Decoder -> +WAPE-aligned WL1`
+`Physical-only || Functional-only || Dual -> +Residual Anchor -> +Scale-aware Charbonnier -> +Horizon Decoder -> +WAPE-numerator-aligned WL1`
 
 This is a candidate ablation chain, not a claim that every intermediate component is independently publishable.
 
@@ -258,7 +265,7 @@ This is a candidate ablation chain, not a claim that every intermediate componen
 - Horizon and feeder comparison values are copied from the existing forecastability audit artifact, not recomputed or inferred here.
 - No training or test loader was run by this consolidation task.
 
-Source files used: `results/*.json`, `results/forecastability_audit.json`, `reports/forecastability_audit.md`, and `code/experiments.yaml`.
+Source files used: `results/*.json`, `reports/supporting/forecastability_audit.json`, `reports/forecastability_audit.md`, and `code/experiments.yaml`.
 """
 
     (REPORTS / "innovation1_experiment_ledger.md").write_text(markdown.rstrip() + "\n", encoding="utf-8")
