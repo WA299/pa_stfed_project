@@ -25,7 +25,7 @@ Values in this table are direct fields from each seed-2026 result JSON. Physical
 | Residual Anchor | `pa_residual_anchor_dev` | Adds persistence residual anchor: last observed load plus learned correction. | 28.996521 | 0.340025 | 0.720468 | 28.597759 | 31.308863 | -0.377165 | KEEP |
 | Scale-aware loss | `pa_residual_scale_loss_dev` | Uses training-IQR scale-aware node loss. | 28.945082 | 0.339422 | 0.712346 | 28.842655 | 32.687969 | -0.051439 | KEEP |
 | Horizon Decoder | `pa_horizon_decoder_scale_dev` | Adds one-layer horizon cross-attention decoder with zero-initialized correction head. | 28.769896 | 0.337368 | 0.718085 | 28.528690 | 30.896641 | -0.175186 | KEEP |
-| WAPE-aligned WL1 | `pa_horizon_decoder_wl1_dev` | Uses WAPE-aligned scale-aware L1 objective. | 27.998379 | 0.328321 | 0.729947 | 26.768181 | 27.881538 | -0.771517 | CURRENT BEST |
+| WAPE-numerator-aligned WL1 | `pa_horizon_decoder_wl1_dev` | Uses WAPE-numerator-aligned scale-aware L1 objective. | 27.998379 | 0.328321 | 0.729947 | 26.768181 | 27.881538 | -0.771517 | CURRENT BEST |
 
 Interpretation by step:
 
@@ -34,7 +34,7 @@ Interpretation by step:
 - Residual Anchor changes the output to last observed load plus learned correction and is a development-only increment.
 - Scale-aware loss weights normalized residuals by the training-split IQR; it is an objective change, not a graph change.
 - Horizon Decoder adds horizon cross-attention while retaining the existing temporal representation and head path.
-- WAPE-aligned WL1 changes the training loss to a scale-weighted absolute-error numerator; it is the current node-level development candidate.
+- WAPE-numerator-aligned WL1 changes the training loss to a scale-weighted absolute-error numerator; it is the current node-level development candidate.
 
 ## 3. Rejected Explorations
 

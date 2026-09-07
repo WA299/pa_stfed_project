@@ -71,7 +71,7 @@ def main() -> None:
         ("pa_residual_anchor_dev", "KEEP", "incremental", "centralized", "Adds persistence residual anchor: last observed load plus learned correction.", "Residual Anchor", "Residual anchor lowers node WAPE in this development screen."),
         ("pa_residual_scale_loss_dev", "KEEP", "incremental", "pa_residual_anchor_dev", "Uses training-IQR scale-aware node loss.", "Scale-aware loss", "Scale-aware loss gives a small node-level change and remains a controlled objective variant."),
         ("pa_horizon_decoder_scale_dev", "KEEP", "incremental", "pa_residual_scale_loss_dev", "Adds one-layer horizon cross-attention decoder with zero-initialized correction head.", "Horizon Decoder", "Horizon decoder improves node WAPE over residual-scale in this screen."),
-        ("pa_horizon_decoder_wl1_dev", "CURRENT BEST", "candidate", "pa_horizon_decoder_scale_dev", "Uses WAPE-aligned scale-aware L1 objective.", "WAPE-aligned WL1", "Lowest node-level WAPE among current development candidates; not final evidence."),
+        ("pa_horizon_decoder_wl1_dev", "CURRENT BEST", "candidate", "pa_horizon_decoder_scale_dev", "Uses WAPE-numerator-aligned scale-aware L1 objective.", "WAPE-numerator-aligned WL1", "Lowest node-level WAPE among current development candidates; not final evidence."),
     ]
 
     required_dev = [
@@ -229,7 +229,7 @@ Interpretation by step:
 - Residual Anchor changes the output to last observed load plus learned correction and is a development-only increment.
 - Scale-aware loss weights normalized residuals by the training-split IQR; it is an objective change, not a graph change.
 - Horizon Decoder adds horizon cross-attention while retaining the existing temporal representation and head path.
-- WAPE-aligned WL1 changes the training loss to a scale-weighted absolute-error numerator; it is the current node-level development candidate.
+- WAPE-numerator-aligned WL1 changes the training loss to a scale-weighted absolute-error numerator; it is the current node-level development candidate.
 
 ## 3. Rejected Explorations
 

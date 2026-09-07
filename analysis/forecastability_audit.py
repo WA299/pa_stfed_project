@@ -1,7 +1,7 @@
 """只读的 validation forecastability audit。
 
 本脚本不训练模型、不创建 test loader，也不改写已有结果。模型推理、数据
-窗口、归一化和总体指标均复用 ``run.py``/``federated.py`` 的现有实现；其余
+窗口、归一化和总体指标均复用 ``experiment_runtime.py``/``federated.py`` 的现有实现；其余
 统计只在已经生成的 validation 预测数组上计算。
 """
 
@@ -23,7 +23,7 @@ sys.path.insert(0, str(CODE))
 
 from federated import metric_summary  # noqa: E402
 from metrics import mae, rmse, wape  # noqa: E402
-from run import (  # noqa: E402
+from experiment_runtime import (  # noqa: E402
     experiment_config,
     graph_tensors,
     load_project_config,
