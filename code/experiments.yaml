@@ -524,64 +524,6 @@ experiments:
         evaluate_test: false
       privacy: {enabled: false}
 
-  # Historical multilevel result artifacts are retained in results/; configs are not active.
-  pa_residual_multilevel_loss_dev:
-    task: centralized
-    tag: pa_residual_multilevel_loss_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_residual_anchor: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: multilevel
-        scale_source: train_iqr
-        feeder_loss_weight: 0.1
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  pa_residual_multilevel_l002_dev:
-    task: centralized
-    tag: pa_residual_multilevel_l002_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_residual_anchor: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: multilevel
-        scale_source: train_iqr
-        feeder_loss_weight: 0.02
-        evaluate_test: false
-      privacy: {enabled: false}
-
-  pa_residual_multilevel_l005_dev:
-    task: centralized
-    tag: pa_residual_multilevel_l005_dev_seed{seed}
-    seed_count: 1
-    include_in_all: false
-    result_scope: development
-    overrides:
-      data: {graph: topology_knn, target_knn_k: 6}
-      model:
-        architecture: pa_stfed
-        use_residual_anchor: true
-      training:
-        <<: *formal_centralized_training
-        loss_mode: multilevel
-        scale_source: train_iqr
-        feeder_loss_weight: 0.05
-        evaluate_test: false
-      privacy: {enabled: false}
-
   # Development-only horizon cross-attention decoder screen.  It keeps the
   # standard Transformer and static functional graph; no patch/TCN/dynamic graph
   # or multilevel loss is enabled.

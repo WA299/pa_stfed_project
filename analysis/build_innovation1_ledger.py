@@ -41,8 +41,10 @@ def audit_metric(audit: dict, label: str, horizon: str = "overall_12step") -> di
     return audit["horizon_metrics"][label][horizon]
 
 
-def feeder_metric(audit: dict, label: str, horizon: str = "overall_12step") -> float:
-    return audit["aggregation_effect"][label][horizon]["feeder_aggregate_wape"]
+def feeder_metric(audit: dict, label: str, horizon: str = "overall_12step") -> float | None:
+    entry = audit.get("aggregation_effect", {}).get(label, {}).get(horizon, {})
+    value = entry.get("feeder_aggregate_wape")
+    return None if value is None else float(value)
 
 
 def main() -> None:
@@ -130,7 +132,11 @@ def main() -> None:
         ("pa_residual_multilevel_loss_dev", "loss exploration", "Tests lambda=0.1 feeder-level term.", "Multilevel loss lambda=0.1", "Overall node WAPE 29.182411; higher than scale-aware 28.945082."),
         ("pa_residual_multilevel_l002_dev", "loss exploration", "Tests lambda=0.02 feeder-level term.", "Multilevel loss lambda=0.02", "Overall node WAPE 29.102186; no node-level gain over scale-aware."),
         ("pa_residual_multilevel_l005_dev", "loss exploration", "Tests lambda=0.05 feeder-level term.", "Multilevel loss lambda=0.05", "Overall node WAPE 29.041759; no node-level gain over scale-aware."),
+        ("pa_multilevel_tcn_transformer_dev", "temporal architecture", "Adds a causal two-layer TCN branch parallel to Transformer.", "TCN screen", "No isolated gain over the matched multilevel reference."),
+        ("pa_dynamic_functional_scale_dev", "functional graph", "Adds input-conditioned residual functional relation.", "Dynamic functional graph", "No gain over the static dual reference."),
+        ("pa_multiscale_patch_scale_dev", "temporal architecture", "Adds a multi-scale causal patch temporal branch.", "Multi-scale patch", "No isolated evidence of benefit."),
         ("pa_horizon_timequery_scale_dev", "decoder variation", "Conditions horizon queries on deterministic future phase features.", "Future-phase query", "Overall node WAPE 28.899345, worse than plain horizon decoder 28.769896."),
+        ("pa_horizon_specific_head_scale_dev", "decoder variation", "Adds zero-initialized horizon-specific correction heads.", "Horizon-specific head", "No isolated gain over the plain horizon decoder."),
     ]
     for experiment, role, change, paper_use, reject_reason in reject_specs:
         reference = "pa_residual_multilevel_loss_dev" if experiment == "pa_multilevel_tcn_transformer_dev" else ("pa_residual_scale_loss_dev" if ("multilevel" in experiment or experiment in {"pa_dynamic_functional_scale_dev", "pa_multiscale_patch_scale_dev"}) else "pa_horizon_decoder_scale_dev")

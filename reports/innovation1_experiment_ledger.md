@@ -44,11 +44,11 @@ Interpretation by step:
 | `pa_residual_multilevel_loss_dev` | loss exploration | Tests lambda=0.1 feeder-level term. | WAPE 29.182411; MAE 0.342205; RMSE 0.710936 | Overall node WAPE 29.182411; higher than scale-aware 28.945082. |
 | `pa_residual_multilevel_l002_dev` | loss exploration | Tests lambda=0.02 feeder-level term. | WAPE 29.102186; MAE 0.341265; RMSE 0.711638 | Overall node WAPE 29.102186; no node-level gain over scale-aware. |
 | `pa_residual_multilevel_l005_dev` | loss exploration | Tests lambda=0.05 feeder-level term. | WAPE 29.041759; MAE 0.340556; RMSE 0.711752 | Overall node WAPE 29.041759; no node-level gain over scale-aware. |
-| `pa_multilevel_tcn_transformer_dev` | temporal architecture | Adds a causal two-layer TCN branch parallel to Transformer. | WAPE 29.176477; MAE 0.342136; RMSE 0.712230 | Matched against `pa_residual_multilevel_loss_dev`: delta WAPE approximately -0.005934 percentage points; no meaningful isolated gain. |
-| `pa_dynamic_functional_scale_dev` | functional graph | Adds input-conditioned residual functional relation. | WAPE 29.360912; MAE 0.344298; RMSE 0.719380 | Overall node WAPE 29.360912; no gain over static dual reference. |
-| `pa_multiscale_patch_scale_dev` | temporal architecture | Adds multi-scale causal patch temporal branch. | WAPE 28.943995; MAE 0.339409; RMSE 0.717039 | Overall node WAPE 28.943995, effectively unchanged from scale-aware 28.945082; no isolated evidence of benefit. |
+| `pa_multilevel_tcn_transformer_dev` | temporal architecture | Adds a causal two-layer TCN branch parallel to Transformer. | WAPE 29.176477; MAE 0.342136; RMSE 0.712230 | No isolated gain over the matched multilevel reference. |
+| `pa_dynamic_functional_scale_dev` | functional graph | Adds input-conditioned residual functional relation. | WAPE 29.360912; MAE 0.344298; RMSE 0.719380 | No gain over the static dual reference. |
+| `pa_multiscale_patch_scale_dev` | temporal architecture | Adds a multi-scale causal patch temporal branch. | WAPE 28.943995; MAE 0.339409; RMSE 0.717039 | No isolated evidence of benefit. |
 | `pa_horizon_timequery_scale_dev` | decoder variation | Conditions horizon queries on deterministic future phase features. | WAPE 28.899345; MAE 0.338886; RMSE 0.716711 | Overall node WAPE 28.899345, worse than plain horizon decoder 28.769896. |
-| `pa_horizon_specific_head_scale_dev` | decoder variation | Adds zero-initialized horizon-specific correction heads. | WAPE 28.812002; MAE 0.337862; RMSE 0.718431 | Overall node WAPE 28.812002, slightly worse than plain horizon decoder 28.769896. |
+| `pa_horizon_specific_head_scale_dev` | decoder variation | Adds zero-initialized horizon-specific correction heads. | WAPE 28.812002; MAE 0.337862; RMSE 0.718431 | No isolated gain over the plain horizon decoder. |
 
 The calendar screens are recorded in the CSV as `OUT_OF_SCOPE`: they used auxiliary 8D calendar input and do not enter the final 5D main-model claim. None of the rejected screens is presented as a contribution.
 
@@ -97,19 +97,8 @@ This is a candidate ablation chain, not a claim that every intermediate componen
 
 - `pa_residual_anchor_dev`: `pa_residual_anchor_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
 - `pa_residual_scale_loss_dev`: `pa_residual_scale_loss_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_residual_multilevel_loss_dev`: `pa_residual_multilevel_loss_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_residual_multilevel_l002_dev`: `pa_residual_multilevel_l002_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_residual_multilevel_l005_dev`: `pa_residual_multilevel_l005_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_multilevel_tcn_transformer_dev`: `pa_multilevel_tcn_transformer_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_dynamic_functional_scale_dev`: `pa_dynamic_functional_scale_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_multiscale_patch_scale_dev`: `pa_multiscale_patch_scale_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
 - `pa_horizon_decoder_scale_dev`: `pa_horizon_decoder_scale_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_horizon_timequery_scale_dev`: `pa_horizon_timequery_scale_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `pa_horizon_specific_head_scale_dev`: `pa_horizon_specific_head_scale_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
 - `pa_horizon_decoder_wl1_dev`: `pa_horizon_decoder_wl1_dev_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `calendar_pa_screen`: `calendar_pa_screen_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `calendar_gwnet_screen`: `calendar_gwnet_screen_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
-- `calendar_lstm_screen`: `calendar_lstm_screen_seed2026_centralized_result.json`, `test_evaluated=false`, `test=null` (PASS)
 - No table treats the 352 topology-kNN target relation edges as physical Line elements.
 - Mainline and exploration metric columns in the CSV are generated from the corresponding result JSON `best_validation` objects; unavailable feeder/sMAPE/MAPE values remain blank with a note.
 - Horizon and feeder comparison values are copied from the existing forecastability audit artifact, not recomputed or inferred here.
