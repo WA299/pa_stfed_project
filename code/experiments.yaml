@@ -296,6 +296,25 @@ experiments:
       training: {<<: *formal_centralized_training}
       privacy: {enabled: false}
 
+  # Fairness control: GWN with the same training-IQR WAPE-numerator-aligned
+  # loss used by the PA horizon-decoder candidate. All other settings inherit
+  # the existing gwnet configuration unchanged.
+  gwnet_wl1_dev:
+    task: centralized
+    tag: gwnet_wl1_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      model: {architecture: gwnet, hidden_dim: 64}
+      training:
+        <<: *formal_centralized_training
+        loss_mode: scale_aware_l1
+        scale_source: train_iqr
+        feeder_loss_weight: 0.0
+        evaluate_test: false
+      privacy: {enabled: false}
+
   # Auxiliary validation：8D calendar screening，不纳入最终 5D 主模型矩阵。
   calendar_pa_screen:
     task: centralized
