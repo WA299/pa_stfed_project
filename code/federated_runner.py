@@ -240,7 +240,7 @@ def _learn_moduleala_weights(
     initial_adaptation: bool = False,
     eligible_prefixes: tuple[str, ...] | None = None,
     eligible_names: tuple[str, ...] | None = None,
-) -> dict[str, float | str | None]:
+) -> dict[str, object]:
     """用本地训练的同一目标在 train 窗口学习 alpha，再写回客户端。"""
 
     device = next(model.parameters()).device
@@ -258,6 +258,10 @@ def _learn_moduleala_weights(
             alpha_state[name].to(device=device, dtype=torch.float32).clone().clamp(0.0, 1.0)
         )
         for name in ala_names
+    }
+    previous_alpha = {
+        name: parameter.detach().clone()
+        for name, parameter in alpha_parameters.items()
     }
     optimizer = torch.optim.Adam(alpha_parameters.values(), lr=float(config["federated"].get("ala_weight_lr", 1.0)))
     for parameter in model.parameters():
@@ -292,12 +296,34 @@ def _learn_moduleala_weights(
     steps = 0
     ala_started = time.perf_counter()
     last_loss = torch.zeros((), device=device)
-    max_epochs = int(
-        config["federated"].get(
-            "ala_initial_epochs" if initial_adaptation else "ala_adapt_epochs", 1
+    federated_config = config["federated"]
+    convergence_protocol = initial_adaptation and "ala_initial_max_epochs" in federated_config
+    if convergence_protocol:
+        max_epochs = int(federated_config.get("ala_initial_max_epochs", 10))
+        min_epochs = int(federated_config.get("ala_initial_min_epochs", 2))
+        convergence_patience = int(federated_config.get("ala_initial_patience", 2))
+        min_delta = float(federated_config.get("ala_initial_min_delta", 1e-4))
+        if max_epochs < 1 or min_epochs < 1 or convergence_patience < 1:
+            raise ValueError("ModuleALA initial convergence limits must be positive")
+        if min_epochs > max_epochs:
+            raise ValueError("ala_initial_min_epochs cannot exceed ala_initial_max_epochs")
+        if min_delta < 0:
+            raise ValueError("ala_initial_min_delta must be non-negative")
+    else:
+        max_epochs = int(
+            federated_config.get(
+                "ala_initial_epochs" if initial_adaptation else "ala_adapt_epochs", 1
+            )
         )
-    )
+        min_epochs = max_epochs
+        convergence_patience = 0
+        min_delta = 0.0
+    epoch_losses: list[float] = []
+    stale_epochs = 0
+    converged = False
     for _ in range(max_epochs):
+        epoch_loss_total = 0.0
+        epoch_batches = 0
         for inputs, targets in loader:
             inputs = inputs.to(device, non_blocking=device.type == "cuda")
             targets = targets.to(device, non_blocking=device.type == "cuda")
@@ -328,7 +354,23 @@ def _learn_moduleala_weights(
                 for parameter in alpha_parameters.values():
                     parameter.clamp_(0.0, 1.0)
             last_loss = loss.detach()
+            epoch_loss_total += float(last_loss.cpu())
+            epoch_batches += 1
             steps += 1
+        if epoch_batches == 0:
+            raise RuntimeError("ModuleALA alpha learning received an empty adaptation loader")
+        epoch_mean_loss = epoch_loss_total / epoch_batches
+        epoch_losses.append(epoch_mean_loss)
+        if convergence_protocol and len(epoch_losses) >= min_epochs:
+            if len(epoch_losses) >= 2:
+                improvement = epoch_losses[-2] - epoch_losses[-1]
+                if improvement < min_delta:
+                    stale_epochs += 1
+                else:
+                    stale_epochs = 0
+            if stale_epochs >= convergence_patience:
+                converged = True
+                break
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     for parameter in model.parameters():
@@ -343,6 +385,15 @@ def _learn_moduleala_weights(
     stats.update({
         "loss": float(last_loss.cpu()),
         "steps": float(steps),
+        "ala_epochs_executed": int(len(epoch_losses)),
+        "ala_epoch_losses": epoch_losses,
+        "ala_converged": bool(converged),
+        "alpha_change_from_previous_round": float(
+            torch.cat([
+                (learned[name] - previous_alpha[name].cpu()).abs().reshape(-1)
+                for name in learned
+            ]).mean()
+        ),
         "ala_batches": float(steps),
         "ala_seconds": float(time.perf_counter() - ala_started),
         "alpha_non_one": float((all_alpha - 1.0).abs().gt(1e-7).sum().item()),
@@ -519,7 +570,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         local_states: list[dict[str, torch.Tensor]] = []
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
-        ala_round_stats: list[dict[str, float | str | None]] = []
+        ala_round_stats: list[dict[str, object]] = []
         global_ala_before = {
             name: value.detach().clone()
             for name, value in global_state.items()
@@ -547,7 +598,11 @@ def federated(cfg: dict, device: torch.device) -> dict:
                         "alpha_min": 1.0,
                         "alpha_max": 1.0,
                         "alpha_mean": 1.0,
+                        "alpha_change_from_previous_round": 0.0,
                         "nonzero_initialization": 0.0,
+                        "ala_epochs_executed": 0,
+                        "ala_epoch_losses": [],
+                        "ala_converged": False,
                         "ala_windows": float(ala_window_counts[client_index]),
                         "ala_batches": 0.0,
                         "ala_seconds": 0.0,
@@ -1035,6 +1090,10 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "eligible_names": list(ala_eligible_names) if is_vanilla_ala else [],
             "sample_ratio": float(cfg["federated"].get("ala_sample_ratio", 0.0)) if is_ala else None,
             "weight_lr": float(cfg["federated"].get("ala_weight_lr", 0.0)) if is_ala else None,
+            "initial_max_epochs": cfg["federated"].get("ala_initial_max_epochs") if is_ala else None,
+            "initial_min_epochs": cfg["federated"].get("ala_initial_min_epochs") if is_ala else None,
+            "initial_patience": cfg["federated"].get("ala_initial_patience") if is_ala else None,
+            "initial_min_delta": cfg["federated"].get("ala_initial_min_delta") if is_ala else None,
             "statistics": [
                 _alpha_module_statistics(weights, ala_prefixes, ala_eligible_names)
                 for weights in (best_ala_weights if is_ala and best_ala_weights is not None else [])

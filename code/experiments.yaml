@@ -638,6 +638,29 @@ experiments:
         rounds: 6
         patience: 6
 
+  # Matched ModuleALA screen with FedALA-style convergence-aware round-2
+  # initialization.  Rounds after the initial stage retain one adaptation epoch.
+  stattn_moduleala_converged_wl1_screen:
+    <<: *stattn_moduleala_wl1_dev_job
+    tag: stattn_moduleala_converged_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_moduleala_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+        max_train_windows: 4096
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: ModuleALA
+        rounds: 6
+        patience: 6
+        ala_initial_max_epochs: 10
+        ala_initial_min_epochs: 2
+        ala_initial_patience: 2
+        ala_initial_min_delta: 1.0e-4
+
   # Development-only screening：在当前 centralized PA-STFed 上启用持久性残差锚定。
   # 输出语义为最后观测负荷加网络学习的修正量，不纳入 formal 主账本。
   pa_residual_anchor_dev:
