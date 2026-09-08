@@ -14,8 +14,8 @@ from torch.utils.data import DataLoader, Subset
 from config import autocast_context, make_grad_scaler
 from data import GraphView, LoadWindowDataset, archive_sha256, make_data_loader
 from federated import (
-    aggregate_private_updates, build_client_model, charbonnier_loss,
-    train_local, weighted_average,
+    aggregate_private_updates, build_client_model,
+    local_training_loss, scale_aware_l1_loss, train_local, weighted_average,
 )
 from privacy import gaussian_rdp_epsilon
 from models import (
@@ -240,8 +240,8 @@ def _learn_moduleala_weights(
     initial_adaptation: bool = False,
     eligible_prefixes: tuple[str, ...] | None = None,
     eligible_names: tuple[str, ...] | None = None,
-) -> dict[str, float]:
-    """只用 train 窗口学习 ModuleALA alpha，再写回客户端模型。"""
+) -> dict[str, float | str | None]:
+    """用本地训练的同一目标在 train 窗口学习 alpha，再写回客户端。"""
 
     device = next(model.parameters()).device
     training_config = config["training"]
@@ -312,7 +312,13 @@ def _learn_moduleala_weights(
                 state[name] = mixed_fp32.to(dtype=current_state[name].dtype)
             with autocast_context(training_config, device):
                 output = functional_call(model, state, (inputs, adjacency, edge_features))["prediction"]
-                loss = charbonnier_loss(output, targets, float(config["model"]["robust_kappa"]))
+                loss = local_training_loss(
+                    output,
+                    targets,
+                    training_config,
+                    config["model"],
+                    dataset.scale,
+                )
             if not torch.isfinite(loss):
                 raise RuntimeError("ModuleALA alpha learning produced NaN/Inf loss")
             optimizer.zero_grad(set_to_none=True)
@@ -340,6 +346,12 @@ def _learn_moduleala_weights(
         "ala_batches": float(steps),
         "ala_seconds": float(time.perf_counter() - ala_started),
         "alpha_non_one": float((all_alpha - 1.0).abs().gt(1e-7).sum().item()),
+        "ala_loss_mode": str(training_config.get("loss_mode", "charbonnier")).lower(),
+        "ala_scale_source": (
+            training_config.get("scale_source")
+            if str(training_config.get("loss_mode", "charbonnier")).lower() == "scale_aware_l1"
+            else None
+        ),
     })
     return stats
 
@@ -504,7 +516,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         local_states: list[dict[str, torch.Tensor]] = []
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
-        ala_round_stats: list[dict[str, float]] = []
+        ala_round_stats: list[dict[str, float | str | None]] = []
         global_ala_before = {
             name: value.detach().clone()
             for name, value in global_state.items()
@@ -527,7 +539,18 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 if round_index == 1:
                     # 第一轮严格按 FedAvg 初始化，ALA 从第二轮才启用。
                     load_shared_state(model, global_state)
-                    ala_round_stats.append({"executed": 0.0, "alpha_min": 1.0, "alpha_max": 1.0, "alpha_mean": 1.0, "nonzero_initialization": 0.0, "ala_windows": float(ala_window_counts[client_index]), "ala_batches": 0.0, "ala_seconds": 0.0})
+                    ala_round_stats.append({
+                        "executed": 0.0,
+                        "alpha_min": 1.0,
+                        "alpha_max": 1.0,
+                        "alpha_mean": 1.0,
+                        "nonzero_initialization": 0.0,
+                        "ala_windows": float(ala_window_counts[client_index]),
+                        "ala_batches": 0.0,
+                        "ala_seconds": 0.0,
+                        "ala_loss_mode": loss_mode,
+                        "ala_scale_source": scale_source,
+                    })
                 else:
                     stats = _learn_moduleala_weights(
                         model,
@@ -664,6 +687,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "aggregation": aggregation_audit,
             "ala": {
                 "executed": bool(is_ala and round_index >= 2),
+                "ala_loss_mode": loss_mode,
+                "ala_scale_source": scale_source,
                 "clients": ala_round_stats,
                 "alpha_min": float(min((item.get("alpha_min", 1.0) for item in ala_round_stats), default=1.0)),
                 "alpha_max": float(max((item.get("alpha_max", 1.0) for item in ala_round_stats), default=1.0)),
@@ -956,6 +981,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "ala": {
             "enabled": is_ala,
             "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else None)),
+            "ala_loss_mode": loss_mode if is_ala else None,
+            "ala_scale_source": scale_source if is_ala else None,
             "eligible_prefixes": list(ala_prefixes) if is_moduleala else [],
             "eligible_names": list(ala_eligible_names) if is_vanilla_ala else [],
             "sample_ratio": float(cfg["federated"].get("ala_sample_ratio", 0.0)) if is_ala else None,
