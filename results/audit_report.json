@@ -1,7 +1,7 @@
 {
   "code_revision": "20260902_ala_window_cache_v1",
-  "config_signature": "11f7984f9d87ce1f16669564292f592ebab33c36538a22490eab99d5eaf234fd",
-  "audit_timestamp_utc": "2026-09-03T11:39:17.184830+00:00",
+  "config_signature": "501fbac49ffc525374edf6647f134934c3549412a05ce940b8d87079ad0da609",
+  "audit_timestamp_utc": "2026-09-07T19:11:18.352437+00:00",
   "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
   "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
   "fields": {
@@ -269,9 +269,9 @@
   },
   "federated_parameter_audit": {
     "code_locations": {
-      "prefix_definition": "model.py:17-23",
-      "state_extraction": "model.py:603-612",
-      "state_loading": "model.py:615-621",
+      "prefix_definition": "models/pa_stfed.py:LOCAL_PARAMETER_PREFIXES",
+      "state_extraction": "models/pa_stfed.py:shared_state_dict",
+      "state_loading": "models/pa_stfed.py:load_shared_state",
       "local_training": "federated.py:81-156",
       "aggregation": "federated.py:159-219",
       "server_loop": "run.py:1275-1650"
@@ -390,7 +390,7 @@
     ],
     "interpretation": "FedAvg/FedProx 聚合共享编码器、物理图层、功能图 value、门控、Transformer 和默认预测头；功能图节点嵌入因客户端节点数不同始终本地保留；personalized_head=true 时额外把 head.* 保留在客户端。"
   },
-  "federated_parameter_groups_csv": "E:\\pa_stfed_project\\results\\federated_parameter_groups.csv",
+  "federated_parameter_groups_csv": "E:\\pa_stfed_project\\reports\\supporting\\federated_parameter_groups.csv",
   "legacy_bridge_endpoint_types": {
     "active_active": 0,
     "active_zero": 0,

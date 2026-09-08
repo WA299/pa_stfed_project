@@ -5,6 +5,7 @@
     2026
   ],
   "experiments": [
+    "gwnet_wl1_dev",
     "layerala_dev",
     "moduleala_dev",
     "modulelocal_dev",
@@ -22,6 +23,7 @@
     "pa_residual_scale_loss_dev"
   ],
   "seed_count_by_experiment": {
+    "gwnet_wl1_dev": 1,
     "layerala_dev": 1,
     "moduleala_dev": 1,
     "modulelocal_dev": 1,
@@ -495,6 +497,35 @@
         },
         "test": null,
         "best_epoch": 10,
+        "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "gwnet_wl1_dev",
+      "seed": 2026,
+      "task": "centralized",
+      "tag": "gwnet_wl1_dev_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\gwnet_wl1_dev_seed2026_centralized_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.32179495692253113,
+          "rmse": 0.7192963361740112,
+          "wape": 27.441871643066406,
+          "smape": 26.12805938720703,
+          "mape": 27.006933212280273,
+          "mape_valid_ratio": 1.0
+        },
+        "train": {
+          "mae": 0.2947158217430115,
+          "rmse": 0.7161280512809753,
+          "wape": 19.10227394104004,
+          "smape": 19.467182159423828,
+          "mape": 18.722305297851562,
+          "mape_valid_ratio": 1.0
+        },
+        "test": null,
+        "best_epoch": 22,
         "selection_metric": "wape"
       }
     }
