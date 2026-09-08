@@ -545,44 +545,95 @@ experiments:
 
   # Matched federated study for the active dual-relation PA-STFed backbone.
   # These are development-only validation experiments; test access is disabled.
-  stattn_localonly_wl1_dev:
+  stattn_localonly_wl1_dev: &stattn_localonly_wl1_dev_job
     task: federated
     tag: stattn_localonly_wl1_dev_seed{seed}
     seed_count: 1
     include_in_all: false
     result_scope: development
-    overrides:
+    overrides: &stattn_localonly_wl1_dev_overrides
       data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
       model: {<<: *stattn_wl1_model}
       training: {<<: *stattn_wl1_training}
       federated: {<<: *stattn_wl1_federated, algorithm: LocalOnly}
       privacy: {enabled: false}
 
-  stattn_fedavg_wl1_dev:
+  stattn_fedavg_wl1_dev: &stattn_fedavg_wl1_dev_job
     task: federated
     tag: stattn_fedavg_wl1_dev_seed{seed}
     seed_count: 1
     include_in_all: false
     result_scope: development
-    overrides:
+    overrides: &stattn_fedavg_wl1_dev_overrides
       data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
       model: {<<: *stattn_wl1_model}
       training: {<<: *stattn_wl1_training}
       federated: {<<: *stattn_wl1_federated, algorithm: FedAvg}
       privacy: {enabled: false}
 
-  stattn_moduleala_wl1_dev:
+  stattn_moduleala_wl1_dev: &stattn_moduleala_wl1_dev_job
     task: federated
     tag: stattn_moduleala_wl1_dev_seed{seed}
     seed_count: 1
     include_in_all: false
     result_scope: development
-    overrides:
+    overrides: &stattn_moduleala_wl1_dev_overrides
       data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
       model: {<<: *stattn_wl1_model}
       training: {<<: *stattn_wl1_training}
       federated: {<<: *stattn_wl1_federated, algorithm: ModuleALA}
       privacy: {enabled: false}
+
+  # Fast development screen: inherits each matched *_dev job and only shortens
+  # the communication audit plus validation batch size. No training windows,
+  # model, optimizer, loss, or test protocol are changed.
+  stattn_localonly_wl1_screen:
+    <<: *stattn_localonly_wl1_dev_job
+    tag: stattn_localonly_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_localonly_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: LocalOnly
+        rounds: 6
+        patience: 6
+
+  stattn_fedavg_wl1_screen:
+    <<: *stattn_fedavg_wl1_dev_job
+    tag: stattn_fedavg_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_fedavg_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: FedAvg
+        rounds: 6
+        patience: 6
+
+  stattn_moduleala_wl1_screen:
+    <<: *stattn_moduleala_wl1_dev_job
+    tag: stattn_moduleala_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_moduleala_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: ModuleALA
+        rounds: 6
+        patience: 6
 
   # Development-only screening：在当前 centralized PA-STFed 上启用持久性残差锚定。
   # 输出语义为最后观测负荷加网络学习的修正量，不纳入 formal 主账本。

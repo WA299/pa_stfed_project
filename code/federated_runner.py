@@ -513,6 +513,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
             raise ValueError("federated.ala_max_windows must be positive")
 
     for round_index in range(1, int(cfg["federated"]["rounds"]) + 1):
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        round_started = time.perf_counter()
         local_states: list[dict[str, torch.Tensor]] = []
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
@@ -606,9 +609,19 @@ def federated(cfg: dict, device: torch.device) -> dict:
             train_metrics.append(metrics)
             sample_weights.append(metrics["samples"])
 
+        local_training_seconds_total = float(
+            sum(metrics.get("local_train_seconds", 0.0) for metrics in train_metrics)
+        )
+        ala_seconds_total = float(
+            sum(item.get("ala_seconds", 0.0) for item in ala_round_stats)
+        )
+
         # 只有 functional embeddings 永久不在 global_state；ModuleALA/VanillaFedALA
         # 的 ALA 参数和 ModuleLocal 的 gate/head 均参与 shape-compatible 聚合。
         server_names = tuple(global_state)
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        aggregation_started = time.perf_counter()
         if local_only:
             aggregation_audit = {
                 "privacy_enabled": False,
@@ -635,6 +648,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
             }
         if not local_only:
             global_state.update(aggregated)
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        aggregation_seconds = float(time.perf_counter() - aggregation_started)
         global_ala_delta = float(max(
             [
                 (global_state[name].float() - value.float()).abs().max().item()
@@ -645,6 +661,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
 
         # ModuleALA 评估 global shared + client-local ALA/functional 状态，不能整体回载 global。
         validation_clients: list[dict[str, float]] = []
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        validation_started = time.perf_counter()
         for client_index, (model, val_set, graph) in enumerate(
             zip(models, val_sets, graphs)
         ):
@@ -670,12 +689,16 @@ def federated(cfg: dict, device: torch.device) -> dict:
                     val_loaders[client_index],
                 )
             )
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        validation_seconds = float(time.perf_counter() - validation_started)
 
         validation_macro = _macro_average(validation_clients)
         client_rmses = np.asarray(
             [metrics["rmse"] for metrics in validation_clients],
             dtype=np.float64,
         )
+        round_seconds = float(time.perf_counter() - round_started)
         record = {
             "round": round_index,
             "train_clients": train_metrics,
@@ -685,6 +708,13 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "validation_rmse_p90": float(np.quantile(client_rmses, 0.90)),
             "worst_client": int(np.argmax(client_rmses)),
             "aggregation": aggregation_audit,
+            "timing": {
+                "local_training_seconds_total": local_training_seconds_total,
+                "ala_seconds_total": ala_seconds_total,
+                "validation_seconds": validation_seconds,
+                "aggregation_seconds": aggregation_seconds,
+                "round_seconds": round_seconds,
+            },
             "ala": {
                 "executed": bool(is_ala and round_index >= 2),
                 "ala_loss_mode": loss_mode,
@@ -837,6 +867,20 @@ def federated(cfg: dict, device: torch.device) -> dict:
         else None
     )
     rounds_executed = len(history)
+    timing_totals = {
+        key: float(sum(record["timing"][key] for record in history))
+        for key in (
+            "local_training_seconds_total",
+            "ala_seconds_total",
+            "validation_seconds",
+            "aggregation_seconds",
+            "round_seconds",
+        )
+    }
+    timing_average_per_round = {
+        key: float(value / max(rounds_executed, 1))
+        for key, value in timing_totals.items()
+    }
     if privacy_enabled:
         epsilon = gaussian_rdp_epsilon(
             noise_multiplier=float(privacy_cfg["noise_multiplier"]),
@@ -978,6 +1022,10 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "diagnostics": diagnostics,
         "privacy": privacy_report,
         "history": history,
+        "timing": {
+            "cumulative": timing_totals,
+            "average_per_round": timing_average_per_round,
+        },
         "ala": {
             "enabled": is_ala,
             "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else None)),
