@@ -35,6 +35,45 @@ formal_federated_training: &formal_federated_training
   early_stop_min_delta: 0.01
   evaluate_test: false
 
+# Matched spatiotemporal-attention federated development protocol. The three
+# experiments below share every resolved data/model/training/federated field
+# except federated.algorithm; ALA-only fields remain inert in the other modes.
+stattn_wl1_model: &stattn_wl1_model
+  architecture: pa_stfed
+  input_dim: 5
+  use_physical: true
+  use_functional: true
+  use_spatial_gate: true
+  use_temporal_gate: true
+  functional_graph_mode: static
+  temporal_architecture: transformer
+  use_residual_anchor: true
+  use_horizon_decoder: true
+  horizon_decoder_heads: 4
+  horizon_decoder_layers: 1
+  horizon_correction_init: 0.0
+
+stattn_wl1_training: &stattn_wl1_training
+  <<: *formal_federated_training
+  max_train_windows: null
+  max_val_windows: null
+  loss_mode: scale_aware_l1
+  scale_source: train_iqr
+  feeder_loss_weight: 0.0
+  evaluate_test: false
+
+stattn_wl1_federated: &stattn_wl1_federated
+  mu: 0.0
+  rounds: 20
+  local_epochs: 1
+  patience: 5
+  personalized_head: false
+  ala_sample_ratio: 0.80
+  ala_max_windows: 2048
+  ala_weight_lr: 1.0
+  ala_initial_epochs: 1
+  ala_adapt_epochs: 1
+
 experiments:
   # Stage 1 本地烟测：仅验证数值与训练流程，不进入正式结果汇总或论文表格。
   stage1_smoke_centralized:
@@ -502,6 +541,47 @@ experiments:
         ala_initial_epochs: 1
         ala_adapt_epochs: 1
         personalized_head: false
+      privacy: {enabled: false}
+
+  # Matched federated study for the active dual-relation PA-STFed backbone.
+  # These are development-only validation experiments; test access is disabled.
+  stattn_localonly_wl1_dev:
+    task: federated
+    tag: stattn_localonly_wl1_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
+      model: {<<: *stattn_wl1_model}
+      training: {<<: *stattn_wl1_training}
+      federated: {<<: *stattn_wl1_federated, algorithm: LocalOnly}
+      privacy: {enabled: false}
+
+  stattn_fedavg_wl1_dev:
+    task: federated
+    tag: stattn_fedavg_wl1_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
+      model: {<<: *stattn_wl1_model}
+      training: {<<: *stattn_wl1_training}
+      federated: {<<: *stattn_wl1_federated, algorithm: FedAvg}
+      privacy: {enabled: false}
+
+  stattn_moduleala_wl1_dev:
+    task: federated
+    tag: stattn_moduleala_wl1_dev_seed{seed}
+    seed_count: 1
+    include_in_all: false
+    result_scope: development
+    overrides:
+      data: {graph: topology_knn, target_knn_k: 6, history: 96, horizon: 12}
+      model: {<<: *stattn_wl1_model}
+      training: {<<: *stattn_wl1_training}
+      federated: {<<: *stattn_wl1_federated, algorithm: ModuleALA}
       privacy: {enabled: false}
 
   # Development-only screening：在当前 centralized PA-STFed 上启用持久性残差锚定。

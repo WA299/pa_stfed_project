@@ -195,6 +195,17 @@ def train_local(
             f"proximal mu must be 0 for algorithm={config['federated'].get('algorithm')}; got {mu}"
         )
     personalized_head = bool(config["federated"].get("personalized_head", False))
+    loss_mode = str(training_config.get("loss_mode", "charbonnier")).lower()
+    if loss_mode not in {"charbonnier", "scale_aware_l1"}:
+        raise ValueError(
+            "federated local training supports loss_mode=charbonnier or "
+            f"scale_aware_l1; got {loss_mode!r}"
+        )
+    if loss_mode == "scale_aware_l1":
+        if training_config.get("scale_source", "train_iqr") != "train_iqr":
+            raise ValueError("scale_aware_l1 requires training.scale_source=train_iqr")
+        if float(training_config.get("feeder_loss_weight", 0.0)) != 0.0:
+            raise ValueError("scale_aware_l1 requires feeder_loss_weight=0")
     proximal_state = (
         {name: value.to(device=device) for name, value in global_state.items()}
         if algorithm == "fedprox" and global_state is not None and mu > 0
@@ -212,9 +223,12 @@ def train_local(
             targets = targets.to(device, non_blocking=transfer_non_blocking)
             with autocast_context(training_config, device):
                 output = model(inputs, adjacency, edge_features)["prediction"]
-                loss = charbonnier_loss(
-                    output, targets, float(config["model"]["robust_kappa"])
-                )
+                if loss_mode == "scale_aware_l1":
+                    loss = scale_aware_l1_loss(output, targets, dataset.scale)
+                else:
+                    loss = charbonnier_loss(
+                        output, targets, float(config["model"]["robust_kappa"])
+                    )
             if bool(training_config.get("smoke_checks", False)):
                 if output.shape != targets.shape:
                     raise RuntimeError(

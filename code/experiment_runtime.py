@@ -1311,15 +1311,70 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
     module_names: list[str] = []
     preview_model = None
     algorithm_name = str(cfg["federated"].get("algorithm", "")).lower() if federated_used else ""
-    if federated_used and algorithm_name in {"vanillafedala", "moduleala", "modulelocal"}:
+    if (
+        federated_used
+        and str(cfg["model"].get("architecture", "pa_stfed")).lower() == "pa_stfed"
+    ):
         preview_model = make_model(cfg, 12, torch.device("cpu"))
         if algorithm_name == "vanillafedala":
             vanilla_names = list(vanilla_ala_parameter_names(
                 preview_model, int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
             ))
-        else:
+        elif algorithm_name in {"moduleala", "modulelocal"}:
             module_names = [name for name, _ in preview_model.named_parameters() if name.startswith(ala_parameter_prefixes())]
     eligible_names = vanilla_names if algorithm_name == "vanillafedala" else module_names
+    parameter_groups: dict[str, object] | None = None
+    if preview_model is not None:
+        local_prefixes = local_parameter_prefixes(False)
+        ala_prefixes = ala_parameter_prefixes()
+        grouped_names = {
+            "local": [
+                parameter_name
+                for parameter_name, _ in preview_model.named_parameters()
+                if parameter_name.startswith(local_prefixes)
+            ],
+            "module_ala": [
+                parameter_name
+                for parameter_name, _ in preview_model.named_parameters()
+                if parameter_name.startswith(ala_prefixes)
+            ],
+            "shared": [
+                parameter_name
+                for parameter_name, _ in preview_model.named_parameters()
+                if not parameter_name.startswith((*local_prefixes, *ala_prefixes))
+            ],
+        }
+        named_parameters = dict(preview_model.named_parameters())
+        total_numel = int(sum(parameter.numel() for parameter in named_parameters.values()))
+        flat_names = [item for names in grouped_names.values() for item in names]
+        if len(flat_names) != len(set(flat_names)) or set(flat_names) != set(named_parameters):
+            raise AssertionError("federated parameter groups must be disjoint and exhaustive")
+        horizon_names = [
+            parameter_name
+            for parameter_name in named_parameters
+            if parameter_name.startswith("horizon_decoder.")
+        ]
+        if horizon_names and not set(horizon_names).issubset(grouped_names["shared"]):
+            raise AssertionError("all horizon_decoder parameters must belong to shared")
+        group_numel = {
+            group_name: int(sum(named_parameters[item].numel() for item in names))
+            for group_name, names in grouped_names.items()
+        }
+        parameter_groups = {
+            "representative_client_nodes": 12,
+            "total_numel": total_numel,
+            "groups": {
+                group_name: {
+                    "names": names,
+                    "numel": group_numel[group_name],
+                    "fraction": float(group_numel[group_name] / total_numel),
+                    "percent": float(100.0 * group_numel[group_name] / total_numel),
+                }
+                for group_name, names in grouped_names.items()
+            },
+            "horizon_decoder_shared": bool(horizon_names),
+            "horizon_decoder_names": horizon_names,
+        }
     federated_config = (
         {
             "clients": int(cfg["federated"]["clients"]),
@@ -1340,6 +1395,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "eligible_numel": int(sum(preview_model.state_dict()[name].numel() for name in eligible_names)) if eligible_names and preview_model is not None else 0,
             "eligible_names": eligible_names,
             "eligible_prefixes": list(ala_parameter_prefixes()) if algorithm_name in {"moduleala", "modulelocal"} else [],
+            "parameter_groups": parameter_groups,
         }
         if federated_used
         else {"used": False}

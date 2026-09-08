@@ -349,6 +349,11 @@ def federated(cfg: dict, device: torch.device) -> dict:
 
     if str(cfg["model"].get("architecture", "pa_stfed")).lower() != "pa_stfed":
         raise ValueError("federated training currently supports architecture=pa_stfed only")
+    loss_mode = str(cfg["training"].get("loss_mode", "charbonnier")).lower()
+    scale_source = (
+        "train_iqr" if loss_mode == "scale_aware_l1" else None
+    )
+    feeder_loss_weight = float(cfg["training"].get("feeder_loss_weight", 0.0))
     data = load_smartds(cfg)
     source_sha256 = archive_sha256(data.source)
     bounds = data.split_bounds(cfg["data"]["train_ratio"], cfg["data"]["val_ratio"])
@@ -881,6 +886,14 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "graph_mode": str(cfg["data"].get("graph", "topology_knn")),
         "target_knn_k": int(cfg["data"].get("target_knn_k", 6)),
         "global_target_graph_edges": global_target_graph_edges,
+        "loss_mode": loss_mode,
+        "scale_source": scale_source,
+        "metric_alignment": (
+            "raw_absolute_error_numerator"
+            if loss_mode == "scale_aware_l1"
+            else None
+        ),
+        "feeder_loss_weight": feeder_loss_weight,
         "graph_client_effective_undirected_edges": [
             int(np.count_nonzero(np.triu(graph.adjacency > 0, k=1))) for graph in graphs
         ],
