@@ -20,7 +20,10 @@
     "pa_residual_multilevel_l002_dev",
     "pa_residual_multilevel_l005_dev",
     "pa_residual_multilevel_loss_dev",
-    "pa_residual_scale_loss_dev"
+    "pa_residual_scale_loss_dev",
+    "stattn_fedavg_wl1_screen",
+    "stattn_localonly_wl1_screen",
+    "stattn_moduleala_wl1_screen"
   ],
   "seed_count_by_experiment": {
     "gwnet_wl1_dev": 1,
@@ -38,7 +41,10 @@
     "pa_residual_multilevel_l002_dev": 1,
     "pa_residual_multilevel_l005_dev": 1,
     "pa_residual_multilevel_loss_dev": 1,
-    "pa_residual_scale_loss_dev": 1
+    "pa_residual_scale_loss_dev": 1,
+    "stattn_fedavg_wl1_screen": 1,
+    "stattn_localonly_wl1_screen": 1,
+    "stattn_moduleala_wl1_screen": 1
   },
   "resume": false,
   "skip_dp": false,
@@ -527,6 +533,114 @@
         "test": null,
         "best_epoch": 22,
         "selection_metric": "wape"
+      }
+    },
+    {
+      "experiment": "stattn_localonly_wl1_screen",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "stattn_localonly_wl1_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\stattn_localonly_wl1_screen_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.4393462557345629,
+          "rmse": 0.8766301013529301,
+          "wape": 38.22779977321625,
+          "smape": 36.64305400848389,
+          "mape": 50.38374185562134,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 6,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 6
+      }
+    },
+    {
+      "experiment": "stattn_fedavg_wl1_screen",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "stattn_fedavg_wl1_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\stattn_fedavg_wl1_screen_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.4611057583242655,
+          "rmse": 0.9324794448912144,
+          "wape": 39.99894666671753,
+          "smape": 36.92129445075989,
+          "mape": 52.96306610107422,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 6,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 6
+      }
+    },
+    {
+      "experiment": "stattn_moduleala_wl1_screen",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "stattn_moduleala_wl1_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\stattn_moduleala_wl1_screen_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.4600094873458147,
+          "rmse": 0.9294975772500038,
+          "wape": 39.926586747169495,
+          "smape": 36.60846018791199,
+          "mape": 53.29189968109131,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 6,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 6
       }
     }
   ],

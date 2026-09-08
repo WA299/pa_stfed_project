@@ -635,5 +635,122 @@
         "n": 1
       }
     }
+  },
+  "stattn_localonly_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4393462557345629,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 50.38374185562134,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.8766301013529301,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.64305400848389,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 38.22779977321625,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "stattn_fedavg_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4611057583242655,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 52.96306610107422,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9324794448912144,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.92129445075989,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 39.99894666671753,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "stattn_moduleala_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4600094873458147,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 53.29189968109131,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9294975772500038,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.60846018791199,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 39.926586747169495,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
