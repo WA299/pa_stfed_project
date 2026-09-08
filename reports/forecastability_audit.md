@@ -880,3 +880,62 @@ Node deltas are left method minus right method in percentage points; negative va
 2. PA-STFed overall prefix WAPE minus exact step1 WAPE is 11.02 percentage points, so horizon degradation is present.
 3. The reported Spearman correlations quantify whether high error tracks CV, autocorrelation, or mean shift; no causal claim is made.
 4. PA-STFed versus GWN overall-12-step WAPE gap is 0.37 percentage points; horizon-wise and node-level tables above show where it concentrates.
+
+<!-- GWN_WL1_FAIRNESS_START -->
+## GWN+WL1 Fairness Control
+
+Validation-only descriptive comparison; no training or test loader was used.
+
+| Method | Horizon | WAPE | MAE | RMSE | Feeder WAPE |
+|---|---|---:|---:|---:|---:|
+| GWN WL1 | step1 | 16.1258 | 0.188943 | 0.451810 | 5.3088 |
+| GWN WL1 | step3 | 25.8160 | 0.302566 | 0.702039 | 11.8122 |
+| GWN WL1 | step6 | 28.4600 | 0.333714 | 0.746491 | 12.2061 |
+| GWN WL1 | step12 | 31.2744 | 0.367045 | 0.769803 | 12.1369 |
+| GWN WL1 | overall_12step | 27.4417 | 0.321793 | 0.719296 | 11.4004 |
+| GWN | step1 | 17.3890 | 0.203744 | 0.457309 | 5.0088 |
+| GWN | step3 | 27.3556 | 0.320610 | 0.692153 | 8.3154 |
+| GWN | step6 | 30.0645 | 0.352528 | 0.740247 | 9.3664 |
+| GWN | step12 | 32.8979 | 0.386099 | 0.765067 | 9.7155 |
+| GWN | overall_12step | 29.0054 | 0.340129 | 0.713004 | 8.7676 |
+| PA-STFed horizon-decoder-wl1 | step1 | 16.8171 | 0.197042 | 0.469155 | 5.7294 |
+| PA-STFed horizon-decoder-wl1 | step3 | 26.2665 | 0.307846 | 0.708994 | 12.4339 |
+| PA-STFed horizon-decoder-wl1 | step6 | 29.0054 | 0.340109 | 0.755823 | 12.9709 |
+| PA-STFed horizon-decoder-wl1 | step12 | 31.8358 | 0.373633 | 0.782380 | 13.3704 |
+| PA-STFed horizon-decoder-wl1 | overall_12step | 27.9984 | 0.328321 | 0.729947 | 12.3120 |
+
+Differences are left minus right; negative values favor the left method.
+
+| Comparison | Horizon | dWAPE | dMAE | dRMSE | dFeeder WAPE |
+|---|---|---:|---:|---:|---:|
+| GWN+WL1 - original GWN | step1 | -1.2632 | -0.014801 | -0.005499 | 0.3000 |
+| GWN+WL1 - original GWN | step3 | -1.5396 | -0.018044 | 0.009886 | 3.4968 |
+| GWN+WL1 - original GWN | step6 | -1.6045 | -0.018814 | 0.006243 | 2.8397 |
+| GWN+WL1 - original GWN | step12 | -1.6236 | -0.019054 | 0.004736 | 2.4215 |
+| GWN+WL1 - original GWN | overall_12step | -1.5637 | -0.018337 | 0.006292 | 2.6328 |
+| GWN+WL1 - PA+WL1 | step1 | -0.6913 | -0.008100 | -0.017345 | -0.4206 |
+| GWN+WL1 - PA+WL1 | step3 | -0.4506 | -0.005281 | -0.006955 | -0.6217 |
+| GWN+WL1 - PA+WL1 | step6 | -0.5454 | -0.006395 | -0.009332 | -0.7648 |
+| GWN+WL1 - PA+WL1 | step12 | -0.5614 | -0.006588 | -0.012577 | -1.2335 |
+| GWN+WL1 - PA+WL1 | overall_12step | -0.5567 | -0.006528 | -0.010652 | -0.9116 |
+| PA+WL1 - original GWN | step1 | -0.5720 | -0.006701 | 0.011846 | 0.7206 |
+| PA+WL1 - original GWN | step3 | -1.0890 | -0.012764 | 0.016841 | 4.1184 |
+| PA+WL1 - original GWN | step6 | -1.0592 | -0.012420 | 0.015575 | 3.6045 |
+| PA+WL1 - original GWN | step12 | -1.0622 | -0.012466 | 0.017313 | 3.6549 |
+| PA+WL1 - original GWN | overall_12step | -1.0070 | -0.011808 | 0.016944 | 3.5444 |
+
+### Paired validation blocks
+
+- gwn_wl1_minus_original_gwn: n=37, mean=-1.6184 pp, quantiles={'min': -2.4632498562575833, 'p10': -2.2385913533708135, 'p25': -1.9227745809592207, 'median': -1.4848260608413533, 'p75': -1.2914575713148793, 'p90': -1.1849857802601491, 'max': -0.9179190737851144}.
+- gwn_wl1_minus_pa_wl1: n=37, mean=-0.5385 pp, quantiles={'min': -2.1276969249334243, 'p10': -1.5849970242429854, 'p25': -0.9958245112901984, 'median': -0.4210803240026664, 'p75': -0.04172713190180133, 'p90': 0.31726850671136475, 'max': 0.7084263340103369}.
+- wl1_minus_gwn: n=37, mean=-1.0799 pp, quantiles={'min': -2.681579197516484, 'p10': -1.9857571593250072, 'p25': -1.6229922979875866, 'median': -1.0762891464041182, 'p75': -0.773466108957841, 'p90': -0.289738795266444, 'max': 0.9944748148302267}.
+
+### Node-level comparison
+
+- GWN+WL1 better: 74 / 92 nodes.
+- PA+WL1 better: 18 / 92 nodes.
+- GWN+WL1 median/P90/worst WAPE: 26.9920% / 45.1572% / p10rlv18002 (53.7825%).
+- PA+WL1 median/P90/worst WAPE: 27.7780% / 45.9336% / p10rlv18002 (57.6577%).
+
+These block and node comparisons are descriptive; no significance claim is made.
+<!-- GWN_WL1_FAIRNESS_END -->
