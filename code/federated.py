@@ -362,4 +362,10 @@ def build_client_model(template: PA_STFed, node_count: int) -> PA_STFed:
         use_spatial_gate=template.use_spatial_gate,
         use_temporal_gate=template.use_temporal_gate,
         use_residual_anchor=template.use_residual_anchor,
+        temporal_architecture=template.temporal_architecture,
+        functional_graph_mode=template.functional_graph_mode,
+        use_horizon_decoder=template.use_horizon_decoder,
+        horizon_decoder_heads=template.horizon_decoder_heads,
+        horizon_decoder_layers=template.horizon_decoder_layers,
+        horizon_correction_init=template.horizon_correction_init,
     )

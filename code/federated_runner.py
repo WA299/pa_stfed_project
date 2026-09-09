@@ -49,6 +49,19 @@ from experiment_runtime import (
     OUTPUTS,
 )
 
+
+def _effective_moduleala_prefixes(config: dict) -> tuple[str, ...]:
+    """Return base ModuleALA modules plus experiment-scoped extra prefixes."""
+
+    base = ala_parameter_prefixes()
+    extras = tuple(
+        str(prefix)
+        for prefix in config.get("federated", {}).get("ala_extra_prefixes", [])
+    )
+    if any(not prefix.endswith(".") for prefix in extras):
+        raise ValueError("federated.ala_extra_prefixes entries must end with '.'")
+    return tuple(dict.fromkeys((*base, *extras)))
+
 def _client_metric_stats(client_metrics: list[dict[str, float]]) -> dict[str, dict[str, float]]:
     """汇总每个客户端的均值、标准差和尾部误差分位数。
 
@@ -394,6 +407,9 @@ def _learn_moduleala_weights(
                 for name in learned
             ]).mean()
         ),
+        "alpha_module_statistics": _alpha_module_statistics(
+            alpha_state, ala_prefixes, eligible_names
+        ),
         "ala_batches": float(steps),
         "ala_seconds": float(time.perf_counter() - ala_started),
         "alpha_non_one": float((all_alpha - 1.0).abs().gt(1e-7).sum().item()),
@@ -439,7 +455,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
     mu = float(cfg["federated"].get("mu", 0.0))
     if algorithm != "fedprox" and abs(mu) > 0.0:
         raise ValueError(f"proximal mu must be 0 for algorithm={cfg['federated'].get('algorithm')}; got {mu}")
-    ala_prefixes = ala_parameter_prefixes()
+    ala_prefixes = _effective_moduleala_prefixes(cfg) if is_moduleala else ala_parameter_prefixes()
     vanilla_eligible_names: tuple[str, ...] = ()
     if is_vanilla_ala:
         layer_idx = int(cfg["federated"].get("vanilla_ala_layer_idx", 2))
@@ -1033,6 +1049,11 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "personalized_head": personalized_head,
         },
         "federated_algorithm": str(cfg["federated"].get("algorithm", "FedAvg")),
+        "personalization_scope": (
+            "gates_head_horizon_decoder"
+            if is_moduleala and "horizon_decoder." in ala_prefixes
+            else ("gates_head" if is_moduleala else None)
+        ),
         "fedprox_mu": float(cfg["federated"].get("mu", 0.0)),
         "effective_mu": float(mu if algorithm == "fedprox" else 0.0),
         "proximal_enabled": bool(algorithm == "fedprox" and mu > 0.0),
@@ -1087,7 +1108,14 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "ala_loss_mode": loss_mode if is_ala else None,
             "ala_scale_source": scale_source if is_ala else None,
             "eligible_prefixes": list(ala_prefixes) if is_moduleala else [],
+            "base_eligible_prefixes": list(ala_parameter_prefixes()) if is_moduleala else [],
+            "extra_eligible_prefixes": list(cfg["federated"].get("ala_extra_prefixes", [])) if is_moduleala else [],
             "eligible_names": list(ala_eligible_names) if is_vanilla_ala else [],
+            "personalization_scope": (
+                "gates_head_horizon_decoder"
+                if is_moduleala and "horizon_decoder." in ala_prefixes
+                else ("gates_head" if is_moduleala else None)
+            ),
             "sample_ratio": float(cfg["federated"].get("ala_sample_ratio", 0.0)) if is_ala else None,
             "weight_lr": float(cfg["federated"].get("ala_weight_lr", 0.0)) if is_ala else None,
             "initial_max_epochs": cfg["federated"].get("ala_initial_max_epochs") if is_ala else None,

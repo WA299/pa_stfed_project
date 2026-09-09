@@ -1323,10 +1323,20 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         elif algorithm_name in {"moduleala", "modulelocal"}:
             module_names = [name for name, _ in preview_model.named_parameters() if name.startswith(ala_parameter_prefixes())]
     eligible_names = vanilla_names if algorithm_name == "vanillafedala" else module_names
+    extra_ala_prefixes = tuple(
+        str(prefix) for prefix in cfg["federated"].get("ala_extra_prefixes", [])
+    ) if algorithm_name == "moduleala" else ()
+    effective_ala_prefixes = tuple(dict.fromkeys((*ala_parameter_prefixes(), *extra_ala_prefixes)))
+    if algorithm_name == "moduleala":
+        module_names = [
+            name for name, _ in preview_model.named_parameters()
+            if name.startswith(effective_ala_prefixes)
+        ] if preview_model is not None else []
+        eligible_names = module_names
     parameter_groups: dict[str, object] | None = None
     if preview_model is not None:
         local_prefixes = local_parameter_prefixes(False)
-        ala_prefixes = ala_parameter_prefixes()
+        ala_prefixes = effective_ala_prefixes if algorithm_name == "moduleala" else ala_parameter_prefixes()
         grouped_names = {
             "local": [
                 parameter_name
@@ -1354,7 +1364,10 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             for parameter_name in named_parameters
             if parameter_name.startswith("horizon_decoder.")
         ]
-        if horizon_names and not set(horizon_names).issubset(grouped_names["shared"]):
+        horizon_in_ala = set(horizon_names).issubset(set(grouped_names["module_ala"]))
+        if horizon_names and not horizon_in_ala and algorithm_name == "moduleala" and extra_ala_prefixes:
+            raise AssertionError("configured horizon_decoder extra prefix did not cover all decoder parameters")
+        if horizon_names and algorithm_name in {"moduleala", "modulelocal"} and not extra_ala_prefixes and not set(horizon_names).issubset(grouped_names["shared"]):
             raise AssertionError("all horizon_decoder parameters must belong to shared")
         group_numel = {
             group_name: int(sum(named_parameters[item].numel() for item in names))
@@ -1372,8 +1385,12 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
                 }
                 for group_name, names in grouped_names.items()
             },
-            "horizon_decoder_shared": bool(horizon_names),
+            "horizon_decoder_shared": bool(horizon_names) and not bool(extra_ala_prefixes),
+            "horizon_decoder_in_effective_ala": bool(horizon_in_ala),
             "horizon_decoder_names": horizon_names,
+            "base_ala_numel": int(sum(named_parameters[item].numel() for item in grouped_names["module_ala"] if item.startswith(ala_parameter_prefixes()))),
+            "added_horizon_decoder_numel": int(sum(named_parameters[item].numel() for item in grouped_names["module_ala"] if item.startswith("horizon_decoder."))),
+            "effective_ala_numel": group_numel["module_ala"],
         }
     federated_config = (
         {
@@ -1399,6 +1416,9 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "eligible_numel": int(sum(preview_model.state_dict()[name].numel() for name in eligible_names)) if eligible_names and preview_model is not None else 0,
             "eligible_names": eligible_names,
             "eligible_prefixes": list(ala_parameter_prefixes()) if algorithm_name in {"moduleala", "modulelocal"} else [],
+            "effective_ala_prefixes": list(effective_ala_prefixes) if algorithm_name == "moduleala" else [],
+            "ala_extra_prefixes": list(extra_ala_prefixes),
+            "personalization_scope": "gates_head_horizon_decoder" if algorithm_name == "moduleala" and extra_ala_prefixes else ("gates_head" if algorithm_name == "moduleala" else None),
             "parameter_groups": parameter_groups,
         }
         if federated_used
