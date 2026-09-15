@@ -659,6 +659,32 @@ experiments:
         rounds: 6
         patience: 6
 
+  # Development-only structural screen: spatial representation is shared while
+  # temporal, gates, horizon decoder, head, and functional embeddings stay local.
+  stattn_spatialshared_temporallocal_wl1_screen:
+    <<: *stattn_fedavg_wl1_dev_job
+    tag: stattn_spatialshared_temporallocal_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_fedavg_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+        max_train_windows: 4096
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: ModuleLocal
+        rounds: 6
+        patience: 6
+        optimizer_state_mode: reset
+        local_extra_prefixes:
+          - spatial_gate.
+          - temporal.
+          - temporal_gate.
+          - horizon_decoder.
+          - head.
+
   # Matched ModuleALA screen with FedALA-style convergence-aware round-2
   # initialization.  Rounds after the initial stage retain one adaptation epoch.
   stattn_moduleala_converged_wl1_screen: &stattn_moduleala_converged_wl1_screen_job

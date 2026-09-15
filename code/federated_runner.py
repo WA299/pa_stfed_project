@@ -63,6 +63,15 @@ def _effective_moduleala_prefixes(config: dict) -> tuple[str, ...]:
     return tuple(dict.fromkeys((*base, *extras)))
 
 
+def _modulelocal_prefixes(config: dict, algorithm: str) -> tuple[str, ...]:
+    """Resolve experiment-scoped ModuleLocal personalization prefixes."""
+    base = local_parameter_prefixes(False)
+    extras = tuple(str(prefix) for prefix in config.get("federated", {}).get("local_extra_prefixes", []))
+    if any(not prefix.endswith(".") for prefix in extras):
+        raise ValueError("federated.local_extra_prefixes entries must end with '.'")
+    return tuple(dict.fromkeys((*base, *extras)))
+
+
 _RELATION_MODULE_PREFIXES = {
     "physical": ("physical.",),
     "temporal": ("temporal.",),
@@ -252,10 +261,11 @@ def _load_modulelocal_state(
     global_state: dict[str, torch.Tensor],
     eligible_prefixes: tuple[str, ...],
     eligible_names: tuple[str, ...] | None = None,
+    local_prefixes: tuple[str, ...] | None = None,
 ) -> None:
     """ModuleLocal 初始化：functional 与指定高层模块本地，其余参数取 global。"""
 
-    local_prefixes = local_parameter_prefixes(False)
+    local_prefixes = local_prefixes or local_parameter_prefixes(False)
     current = model.state_dict()
     adapted: dict[str, torch.Tensor] = {}
     ala_name_set = set(eligible_names or ())
@@ -541,6 +551,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
     is_moduleala = algorithm == "moduleala"
     is_relation_moduleadaptive = algorithm == "relationmoduleadaptive"
     is_modulelocal = algorithm == "modulelocal"
+    modulelocal_prefixes = _modulelocal_prefixes(cfg, algorithm)
+    is_spatialshared_temporallocal = is_modulelocal and modulelocal_prefixes != local_parameter_prefixes(False)
     is_vanilla_ala = algorithm in {"vanillafedala", "fedala"}
     is_ala = is_moduleala or is_vanilla_ala
     is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala or is_relation_moduleadaptive
@@ -762,8 +774,10 @@ def federated(cfg: dict, device: torch.device) -> dict:
                     )
                     stats["executed"] = 1.0
                     ala_round_stats.append(stats)
-            elif is_modulelocal and round_index > 1:
-                _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names)
+            elif (is_modulelocal or is_spatialshared_temporallocal) and round_index > 1:
+                _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names, modulelocal_prefixes)
+            elif is_spatialshared_temporallocal and round_index == 1:
+                _load_modulelocal_state(model, previous_local_states[client_index], global_state, (), None, modulelocal_prefixes)
             elif not local_only and not is_relation_moduleadaptive:
                 load_shared_state(model, global_state)
             local_started = time.perf_counter()
@@ -884,7 +898,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 current = model.state_dict()
                 for name, value in global_state.items():
                     if (name in set(ala_eligible_names or ()) or (not is_vanilla_ala and name.startswith(ala_prefixes))
-                            or name.startswith(local_parameter_prefixes(False))):
+                            or name.startswith(modulelocal_prefixes if (is_modulelocal or is_spatialshared_temporallocal) else local_parameter_prefixes(False))):
                         continue
                     if name in current:
                         current[name].copy_(value.to(device=current[name].device, dtype=current[name].dtype))
@@ -1198,6 +1212,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
         },
         "federated_algorithm": str(cfg["federated"].get("algorithm", "FedAvg")),
         "relation_moduleadaptive": bool(is_relation_moduleadaptive),
+        "effective_local_prefixes": list(modulelocal_prefixes) if is_spatialshared_temporallocal else [],
+        "effective_shared_prefixes": ["input_projection.", "physical.", "functional.value."] if is_spatialshared_temporallocal else [],
+        "effective_local_numel": int(sum(value.numel() for name, value in models[0].state_dict().items() if name.startswith(modulelocal_prefixes))) if is_spatialshared_temporallocal else 0,
         "relation_modules": {
             module: list(prefixes) for module, prefixes in _RELATION_MODULE_PREFIXES.items()
         } if is_relation_moduleadaptive else {},
@@ -1205,7 +1222,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "personalization_scope": (
             "gates_head_horizon_decoder"
             if is_moduleala and "horizon_decoder." in ala_prefixes
-            else ("gates_head" if is_moduleala else ("module_transferability_relation" if is_relation_moduleadaptive else None))
+            else ("gates_head" if is_moduleala else ("spatial_shared_temporal_local" if is_spatialshared_temporallocal else ("module_transferability_relation" if is_relation_moduleadaptive else None)))
         ),
         "fedprox_mu": float(cfg["federated"].get("mu", 0.0)),
         "effective_mu": float(mu if algorithm == "fedprox" else 0.0),
@@ -1262,7 +1279,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         },
         "ala": {
             "enabled": is_ala,
-            "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else None)),
+            "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else ("SpatialSharedTemporalLocal" if is_spatialshared_temporallocal else None))),
             "ala_loss_mode": loss_mode if is_ala else None,
             "ala_scale_source": scale_source if is_ala else None,
             "eligible_prefixes": list(ala_prefixes) if is_moduleala else [],
