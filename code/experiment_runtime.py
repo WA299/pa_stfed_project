@@ -1340,7 +1340,11 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
     parameter_groups: dict[str, object] | None = None
     if preview_model is not None:
         local_prefixes = modulelocal_prefixes if algorithm_name == "modulelocal" else local_parameter_prefixes(False)
-        ala_prefixes = effective_ala_prefixes if algorithm_name == "moduleala" else ala_parameter_prefixes()
+        ala_prefixes = (
+            effective_ala_prefixes
+            if algorithm_name == "moduleala"
+            else (() if algorithm_name == "modulelocal" and local_extra_prefixes else ala_parameter_prefixes())
+        )
         grouped_names = {
             "local": [
                 parameter_name
@@ -1371,7 +1375,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         horizon_in_ala = set(horizon_names).issubset(set(grouped_names["module_ala"]))
         if horizon_names and not horizon_in_ala and algorithm_name == "moduleala" and extra_ala_prefixes:
             raise AssertionError("configured horizon_decoder extra prefix did not cover all decoder parameters")
-        if horizon_names and algorithm_name in {"moduleala", "modulelocal"} and not extra_ala_prefixes and not set(horizon_names).issubset(grouped_names["shared"]):
+        if horizon_names and algorithm_name == "modulelocal" and not local_extra_prefixes and not set(horizon_names).issubset(grouped_names["shared"]):
             raise AssertionError("all horizon_decoder parameters must belong to shared")
         group_numel = {
             group_name: int(sum(named_parameters[item].numel() for item in names))
