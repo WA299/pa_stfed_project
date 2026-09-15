@@ -75,6 +75,25 @@ def _cosine_matrix(updates: list[np.ndarray]) -> np.ndarray:
     return matrix
 
 
+def _mean_update_cosines(updates: list[np.ndarray]) -> np.ndarray:
+    """Cosine of each client update against the uniform FedAvg mean update."""
+
+    mean_update = np.mean(np.stack(updates, axis=0), axis=0)
+    mean_norm = float(np.linalg.norm(mean_update))
+    values = []
+    for update in updates:
+        denominator = float(np.linalg.norm(update)) * mean_norm
+        values.append(float(np.dot(update, mean_update) / denominator) if denominator else 0.0)
+    return np.asarray(values, dtype=np.float64)
+
+
+def _client_pairwise_means(matrix: np.ndarray) -> list[float]:
+    return [
+        float(np.delete(matrix[client_id], client_id).mean())
+        for client_id in range(matrix.shape[0])
+    ]
+
+
 def _matrix_stats(matrix: np.ndarray, spatial_similarity: np.ndarray) -> dict[str, object]:
     pair_indices = np.triu_indices(matrix.shape[0], k=1)
     values = matrix[pair_indices]
@@ -86,8 +105,9 @@ def _matrix_stats(matrix: np.ndarray, spatial_similarity: np.ndarray) -> dict[st
         "min": float(values.min()),
         "max": float(values.max()),
         "negative_pair_count": int(np.count_nonzero(values < 0.0)),
-        "client2_mean_cosine": float(np.delete(matrix[1], 1).mean()),
-        "client6_mean_cosine": float(np.delete(matrix[5], 5).mean()),
+        "client_id_2_mean_cosine": float(np.delete(matrix[2], 2).mean()),
+        "client_id_6_mean_cosine": float(np.delete(matrix[6], 6).mean()),
+        "pairwise_mean_cosine_by_client": _client_pairwise_means(matrix),
         "spearman_spatial_similarity": _spearman(
             spatial_values.tolist(), values.tolist()
         ),
@@ -204,10 +224,20 @@ def run_diagnostic(seed: int = 2026, device_name: str = "auto") -> dict[str, obj
 
     module_results: dict[str, object] = {}
     matrices: dict[str, list[list[float]]] = {}
+    fedavg_update_results: dict[str, object] = {}
     for module, updates in module_updates.items():
         matrix = _cosine_matrix(updates)
         matrices[module] = _json_matrix(matrix)
         module_results[module] = _matrix_stats(matrix, similarity)
+        mean_cosines = _mean_update_cosines(updates)
+        fedavg_update_results[module] = {
+            "mean_delta_definition": "uniform mean across 8 client module updates",
+            "cosine_by_client": [float(value) for value in mean_cosines],
+            "mean": float(mean_cosines.mean()),
+            "min": float(mean_cosines.min()),
+            "max": float(mean_cosines.max()),
+            "negative_to_mean_client_count": int(np.count_nonzero(mean_cosines < 0.0)),
+        }
 
     output = {
         "analysis": "client_heterogeneity_diagnostic",
@@ -241,6 +271,7 @@ def run_diagnostic(seed: int = 2026, device_name: str = "auto") -> dict[str, obj
         },
         "update_definition": "local trained named_parameter tensor minus common shape-compatible initial tensor; no validation/test data",
         "update_cosine": matrices,
+        "update_vs_uniform_fedavg_mean": fedavg_update_results,
         "module_statistics": module_results,
         "module_cosine_correlations": {
             "physical_vs_temporal": _spearman(
