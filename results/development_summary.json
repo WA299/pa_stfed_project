@@ -830,5 +830,83 @@
         "n": 1
       }
     }
+  },
+  "stattn_localonly_resetopt_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4638893809169531,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 53.73230457305908,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9318955764174461,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 37.02183699607849,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 40.270946741104126,
+        "std": 0.0,
+        "n": 1
+      }
+    }
+  },
+  "stattn_fedavg_persistentopt_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4627967234700918,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 53.296616554260254,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9351937398314476,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.74041724205017,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 40.151336312294006,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
