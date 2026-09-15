@@ -908,5 +908,44 @@
         "n": 1
       }
     }
+  },
+  "stattn_relation_moduleadaptive_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4658759534358978,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 53.66012787818909,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9374387264251709,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.77050733566284,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 40.406574964523315,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
