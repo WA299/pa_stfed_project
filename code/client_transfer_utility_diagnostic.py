@@ -102,8 +102,9 @@ def run(seed=2026, device_name="auto"):
                         mixed[name] = ((1-alpha)*recipient[name] + alpha*donor[name]).to(mixed[name].dtype).to(device)
                 models[i].load_state_dict(mixed, strict=True)
                 score = _eval(models[i], base_sets[i], graphs[i], calib_loaders[i], device, cfg)
-                utility[str(alpha)][i,j] = baselines[i]["wape"] - score["wape"]
-                utility_wl1[str(alpha)][i,j] = baselines[i]["wl1"] - score["wl1"]
+                alpha_key = f"{alpha:.2f}"
+                utility[alpha_key][i,j] = baselines[i]["wape"] - score["wape"]
+                utility_wl1[alpha_key][i,j] = baselines[i]["wl1"] - score["wl1"]
         models[i].load_state_dict(recipient, strict=True)
     # Existing heterogeneity artifact supplies update-cosine and topology similarity.
     hetero_path = Path(__file__).resolve().parents[1] / "results" / f"client_heterogeneity_diagnostic_seed{seed}.json"
