@@ -1279,7 +1279,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         },
         "ala": {
             "enabled": is_ala,
-            "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("ModuleLocal" if is_modulelocal else ("SpatialSharedTemporalLocal" if is_spatialshared_temporallocal else None))),
+            "mode": "ModuleALA" if is_moduleala else ("VanillaFedALA" if is_vanilla_ala else ("SpatialSharedTemporalLocal" if is_spatialshared_temporallocal else ("ModuleLocal" if is_modulelocal else None))),
             "ala_loss_mode": loss_mode if is_ala else None,
             "ala_scale_source": scale_source if is_ala else None,
             "eligible_prefixes": list(ala_prefixes) if is_moduleala else [],

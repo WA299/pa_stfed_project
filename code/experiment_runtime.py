@@ -1327,9 +1327,10 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         str(prefix) for prefix in cfg["federated"].get("ala_extra_prefixes", [])
     ) if algorithm_name == "moduleala" else ()
     effective_ala_prefixes = tuple(dict.fromkeys((*ala_parameter_prefixes(), *extra_ala_prefixes)))
-    modulelocal_prefixes = local_parameter_prefixes(False)
-    if algorithm_name == "spatialsharedtemporallocal":
-        modulelocal_prefixes = tuple(dict.fromkeys((*modulelocal_prefixes, "spatial_gate.", "temporal.", "temporal_gate.", "horizon_decoder.", "head.")))
+    local_extra_prefixes = tuple(
+        str(prefix) for prefix in cfg["federated"].get("local_extra_prefixes", [])
+    ) if algorithm_name == "modulelocal" else ()
+    modulelocal_prefixes = tuple(dict.fromkeys((*local_parameter_prefixes(False), *local_extra_prefixes)))
     if algorithm_name == "moduleala":
         module_names = [
             name for name, _ in preview_model.named_parameters()
@@ -1338,8 +1339,8 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         eligible_names = module_names
     parameter_groups: dict[str, object] | None = None
     if preview_model is not None:
-        local_prefixes = modulelocal_prefixes if algorithm_name in {"modulelocal", "spatialsharedtemporallocal"} else local_parameter_prefixes(False)
-        ala_prefixes = effective_ala_prefixes if algorithm_name == "moduleala" else (() if algorithm_name == "spatialsharedtemporallocal" else ala_parameter_prefixes())
+        local_prefixes = modulelocal_prefixes if algorithm_name == "modulelocal" else local_parameter_prefixes(False)
+        ala_prefixes = effective_ala_prefixes if algorithm_name == "moduleala" else ala_parameter_prefixes()
         grouped_names = {
             "local": [
                 parameter_name
@@ -1458,15 +1459,23 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
                 "mean_module_update_cosine_clipped_row_normalized"
                 if algorithm_name == "relationmoduleadaptive" else None
             ),
-            "personalization_scope": "gates_head_horizon_decoder" if algorithm_name == "moduleala" and extra_ala_prefixes else ("gates_head" if algorithm_name == "moduleala" else None),
+            "personalization_scope": (
+                "gates_head_horizon_decoder" if algorithm_name == "moduleala" and extra_ala_prefixes
+                else ("spatial_shared_temporal_local" if algorithm_name == "modulelocal" and local_extra_prefixes
+                else ("gates_head" if algorithm_name == "moduleala" else None))
+            ),
             "parameter_groups": parameter_groups,
-            "effective_local_prefixes": list(modulelocal_prefixes) if algorithm_name in {"modulelocal", "spatialsharedtemporallocal"} else [],
+            "effective_local_prefixes": list(modulelocal_prefixes) if algorithm_name == "modulelocal" and local_extra_prefixes else [],
             "effective_shared_prefixes": [
                 "input_projection.", "physical.", "functional.value."
-            ] if algorithm_name == "spatialsharedtemporallocal" else [],
+            ] if algorithm_name == "modulelocal" and local_extra_prefixes else [],
             "effective_local_numel": (
                 int(sum(named_parameters[item].numel() for item in named_parameters if item.startswith(modulelocal_prefixes)))
-                if algorithm_name in {"modulelocal", "spatialsharedtemporallocal"} and preview_model is not None else 0
+                if algorithm_name == "modulelocal" and local_extra_prefixes and preview_model is not None else 0
+            ),
+            "effective_shared_numel": (
+                int(sum(named_parameters[item].numel() for item in named_parameters if not item.startswith(modulelocal_prefixes)))
+                if algorithm_name == "modulelocal" and local_extra_prefixes and preview_model is not None else 0
             ),
         }
         if federated_used
