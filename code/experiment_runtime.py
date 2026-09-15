@@ -1396,6 +1396,11 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
         {
             "clients": int(cfg["federated"]["clients"]),
             "algorithm": cfg["federated"]["algorithm"],
+            "optimizer_state_mode": cfg["federated"].get("optimizer_state_mode") or (
+                "persistent"
+                if str(cfg["federated"].get("algorithm", "FedAvg")).lower() == "localonly"
+                else "reset"
+            ),
             "mu": float(cfg["federated"]["mu"]),
             "effective_mu": float(cfg["federated"]["mu"] if str(cfg["federated"]["algorithm"]).lower() == "fedprox" else 0.0),
             "proximal_enabled": bool(str(cfg["federated"]["algorithm"]).lower() == "fedprox" and float(cfg["federated"]["mu"]) > 0),

@@ -455,6 +455,14 @@ def federated(cfg: dict, device: torch.device) -> dict:
     mu = float(cfg["federated"].get("mu", 0.0))
     if algorithm != "fedprox" and abs(mu) > 0.0:
         raise ValueError(f"proximal mu must be 0 for algorithm={cfg['federated'].get('algorithm')}; got {mu}")
+    configured_optimizer_state_mode = cfg["federated"].get("optimizer_state_mode")
+    optimizer_state_mode = (
+        str(configured_optimizer_state_mode).lower()
+        if configured_optimizer_state_mode is not None
+        else ("persistent" if local_only else "reset")
+    )
+    if optimizer_state_mode not in {"reset", "persistent"}:
+        raise ValueError("federated.optimizer_state_mode must be 'reset' or 'persistent'")
     ala_prefixes = _effective_moduleala_prefixes(cfg) if is_moduleala else ala_parameter_prefixes()
     vanilla_eligible_names: tuple[str, ...] = ()
     if is_vanilla_ala:
@@ -536,7 +544,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
     best_global_state: dict[str, torch.Tensor] | None = None
     best_client_states: list[dict[str, torch.Tensor]] | None = None
     best_ala_weights: list[dict[str, torch.Tensor]] | None = None
-    # LocalOnly 需要跨轮保留 AdamW 动量；联邦客户端则按每轮本地任务重建优化器。
+    # Default lifecycle preserves the historical behavior: LocalOnly is
+    # persistent while other federated algorithms reset optimizer state.
     local_optimizers = (
         [
             torch.optim.AdamW(
@@ -546,12 +555,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
             )
             for model in models
         ]
-        if local_only
+        if optimizer_state_mode == "persistent"
         else [None] * len(models)
     )
     local_scalers = (
         [make_grad_scaler(cfg["training"], device) for _ in models]
-        if local_only
+        if optimizer_state_mode == "persistent"
         else [None] * len(models)
     )
     # 仅 ModuleALA/VanillaFedALA 持久化逐元素 alpha；ModuleLocal 不创建该状态。
@@ -785,6 +794,14 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "validation_seconds": validation_seconds,
                 "aggregation_seconds": aggregation_seconds,
                 "round_seconds": round_seconds,
+            },
+            "optimizer_state": {
+                "mode": optimizer_state_mode,
+                "persistent": optimizer_state_mode == "persistent",
+                "client_optimizer_state_entries": [
+                    int(len(optimizer.state)) if optimizer is not None else 0
+                    for optimizer in local_optimizers
+                ],
             },
             "ala": {
                 "executed": bool(is_ala and round_index >= 2),
@@ -1049,6 +1066,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "personalized_head": personalized_head,
         },
         "federated_algorithm": str(cfg["federated"].get("algorithm", "FedAvg")),
+        "optimizer_state_mode": optimizer_state_mode,
         "personalization_scope": (
             "gates_head_horizon_decoder"
             if is_moduleala and "horizon_decoder." in ala_prefixes
