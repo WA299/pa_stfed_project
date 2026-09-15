@@ -621,6 +621,27 @@ experiments:
         rounds: 6
         patience: 6
 
+  # Development-only relation/module transferability screen.  The four module
+  # update-cosine matrices define a single client relation graph; no topology
+  # distance is used and functional embeddings remain permanently local.
+  stattn_relation_moduleadaptive_wl1_screen:
+    <<: *stattn_fedavg_wl1_dev_job
+    tag: stattn_relation_moduleadaptive_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_fedavg_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+        max_train_windows: 4096
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: RelationModuleAdaptive
+        rounds: 6
+        patience: 6
+        optimizer_state_mode: reset
+
   stattn_moduleala_wl1_screen:
     <<: *stattn_moduleala_wl1_dev_job
     tag: stattn_moduleala_wl1_screen_seed{seed}

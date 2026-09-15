@@ -1392,6 +1392,27 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "added_horizon_decoder_numel": int(sum(named_parameters[item].numel() for item in grouped_names["module_ala"] if item.startswith("horizon_decoder."))),
             "effective_ala_numel": group_numel["module_ala"],
         }
+        if algorithm_name == "relationmoduleadaptive":
+            relation_prefixes = {
+                "physical": ("physical.",),
+                "temporal": ("temporal.",),
+                "horizon_decoder": ("horizon_decoder.",),
+                "head": ("head.",),
+            }
+            relation_groups = {
+                module: [
+                    parameter_name for parameter_name in named_parameters
+                    if parameter_name.startswith(prefixes)
+                ]
+                for module, prefixes in relation_prefixes.items()
+            }
+            parameter_groups["relation_modules"] = {
+                module: {
+                    "names": names,
+                    "numel": int(sum(named_parameters[item].numel() for item in names)),
+                }
+                for module, names in relation_groups.items()
+            }
     federated_config = (
         {
             "clients": int(cfg["federated"]["clients"]),
@@ -1423,6 +1444,17 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
             "eligible_prefixes": list(ala_parameter_prefixes()) if algorithm_name in {"moduleala", "modulelocal"} else [],
             "effective_ala_prefixes": list(effective_ala_prefixes) if algorithm_name == "moduleala" else [],
             "ala_extra_prefixes": list(extra_ala_prefixes),
+            "relation_moduleadaptive": algorithm_name == "relationmoduleadaptive",
+            "relation_modules": {
+                "physical": ["physical."],
+                "temporal": ["temporal."],
+                "horizon_decoder": ["horizon_decoder."],
+                "head": ["head."],
+            } if algorithm_name == "relationmoduleadaptive" else {},
+            "relation_method": (
+                "mean_module_update_cosine_clipped_row_normalized"
+                if algorithm_name == "relationmoduleadaptive" else None
+            ),
             "personalization_scope": "gates_head_horizon_decoder" if algorithm_name == "moduleala" and extra_ala_prefixes else ("gates_head" if algorithm_name == "moduleala" else None),
             "parameter_groups": parameter_groups,
         }

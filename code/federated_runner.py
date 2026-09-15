@@ -62,6 +62,101 @@ def _effective_moduleala_prefixes(config: dict) -> tuple[str, ...]:
         raise ValueError("federated.ala_extra_prefixes entries must end with '.'")
     return tuple(dict.fromkeys((*base, *extras)))
 
+
+_RELATION_MODULE_PREFIXES = {
+    "physical": ("physical.",),
+    "temporal": ("temporal.",),
+    "horizon_decoder": ("horizon_decoder.",),
+    "head": ("head.",),
+}
+
+
+def _relation_module_adaptive_aggregate(
+    local_states: list[dict[str, torch.Tensor]],
+    round_initial_states: list[dict[str, torch.Tensor]],
+    server_names: tuple[str, ...],
+) -> tuple[dict[str, torch.Tensor], list[dict[str, torch.Tensor]], dict[str, object]]:
+    """Aggregate shared tensors with update-similarity module transfer weights.
+
+    This is an experiment-scoped relation-aware screen.  It deliberately keeps
+    the existing FedAvg/ModuleALA aggregation code untouched: each client gets
+    its own next shared state, while ``global_state`` is only a uniform summary
+    for auditability and compatibility with the runner's result schema.
+    """
+
+    client_count = len(local_states)
+    if client_count == 0:
+        raise ValueError("relation aggregation requires at least one client")
+    module_vectors: dict[str, list[torch.Tensor]] = {}
+    for module, prefixes in _RELATION_MODULE_PREFIXES.items():
+        names = [name for name in server_names if name.startswith(prefixes)]
+        if not names:
+            raise ValueError(f"relation module has no shape-compatible parameters: {module}")
+        vectors = []
+        for client_index in range(client_count):
+            vectors.append(torch.cat([
+                (local_states[client_index][name].float() - round_initial_states[client_index][name].float()).reshape(-1)
+                for name in names
+            ]))
+        module_vectors[module] = vectors
+
+    cosine_matrices: dict[str, torch.Tensor] = {}
+    module_stats: dict[str, dict[str, float]] = {}
+    module_lambdas: dict[str, float] = {}
+    for module, vectors in module_vectors.items():
+        matrix = torch.zeros((client_count, client_count), dtype=torch.float64)
+        norms = [float(torch.linalg.vector_norm(vector).item()) for vector in vectors]
+        for i in range(client_count):
+            for j in range(client_count):
+                if i == j:
+                    matrix[i, j] = 1.0
+                elif norms[i] > 0.0 and norms[j] > 0.0:
+                    matrix[i, j] = float(torch.dot(vectors[i], vectors[j]).item() / (norms[i] * norms[j]))
+        cosine_matrices[module] = matrix
+        off_diagonal = matrix[~torch.eye(client_count, dtype=torch.bool)]
+        if off_diagonal.numel():
+            off_mean = float(off_diagonal.mean().item())
+            stats = {
+                "mean": off_mean,
+                "min": float(off_diagonal.min().item()),
+                "max": float(off_diagonal.max().item()),
+            }
+        else:
+            stats = {"mean": 0.0, "min": 0.0, "max": 0.0}
+        module_stats[module] = stats
+        module_lambdas[module] = float(np.clip(stats["mean"], 0.0, 1.0))
+
+    relation_matrix = torch.stack(tuple(cosine_matrices.values()), dim=0).mean(dim=0).clamp_min(0.0)
+    row_sums = relation_matrix.sum(dim=1, keepdim=True)
+    identity = torch.eye(client_count, dtype=relation_matrix.dtype)
+    relation_matrix = torch.where(row_sums > 0.0, relation_matrix / row_sums.clamp_min(1e-12), identity)
+    other_lambda = float(np.mean(tuple(module_lambdas.values())))
+    next_shared_states: list[dict[str, torch.Tensor]] = [dict() for _ in range(client_count)]
+    for client_index in range(client_count):
+        for name in server_names:
+            module = next((module for module, prefixes in _RELATION_MODULE_PREFIXES.items() if name.startswith(prefixes)), None)
+            strength = module_lambdas[module] if module is not None else other_lambda
+            neighbor = sum(
+                relation_matrix[client_index, other_index].item() * local_states[other_index][name].float()
+                for other_index in range(client_count)
+            )
+            value = (1.0 - strength) * local_states[client_index][name].float() + strength * neighbor
+            next_shared_states[client_index][name] = value.to(dtype=local_states[client_index][name].dtype)
+    aggregated = weighted_average(local_states, None)
+    probabilities = relation_matrix.clamp_min(1e-12)
+    entropy = -(relation_matrix * probabilities.log()).sum(dim=1)
+    audit = {
+        "relation_matrix": relation_matrix.tolist(),
+        "module_lambdas": {**module_lambdas, "other_shared": other_lambda},
+        "module_pairwise_cosine": module_stats,
+        "cosine_matrices": {module: matrix.tolist() for module, matrix in cosine_matrices.items()},
+        "client_collaboration_entropy": [float(value) for value in entropy],
+        "client_self_weight": [float(relation_matrix[i, i]) for i in range(client_count)],
+        "aggregation": "module_transferability_relation_adaptive",
+        "functional_embeddings_aggregated": False,
+    }
+    return aggregated, next_shared_states, audit
+
 def _client_metric_stats(client_metrics: list[dict[str, float]]) -> dict[str, dict[str, float]]:
     """汇总每个客户端的均值、标准差和尾部误差分位数。
 
@@ -444,12 +539,15 @@ def federated(cfg: dict, device: torch.device) -> dict:
     algorithm = str(cfg["federated"].get("algorithm", "FedAvg")).lower()
     local_only = algorithm == "localonly"
     is_moduleala = algorithm == "moduleala"
+    is_relation_moduleadaptive = algorithm == "relationmoduleadaptive"
     is_modulelocal = algorithm == "modulelocal"
     is_vanilla_ala = algorithm in {"vanillafedala", "fedala"}
     is_ala = is_moduleala or is_vanilla_ala
-    is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala
-    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala", "modulelocal", "vanillafedala", "fedala"}:
-        raise ValueError("federated.algorithm must be LocalOnly, FedAvg, FedProx, ModuleALA, ModuleLocal, or VanillaFedALA")
+    is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala or is_relation_moduleadaptive
+    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala", "modulelocal", "vanillafedala", "fedala", "relationmoduleadaptive"}:
+        raise ValueError("unsupported federated.algorithm")
+    if is_relation_moduleadaptive and str(cfg["federated"].get("optimizer_state_mode", "reset")).lower() != "reset":
+        raise ValueError("RelationModuleAdaptive requires optimizer_state_mode=reset")
     if (is_moduleala or is_modulelocal) and personalized_head:
         raise ValueError("ModuleALA/ModuleLocal own head.* personalization; personalized_head must be false")
     mu = float(cfg["federated"].get("mu", 0.0))
@@ -519,6 +617,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
     selection_metric = _selection_metric(cfg["training"])
     privacy_cfg = cfg["privacy"]
     privacy_enabled = bool(privacy_cfg.get("enabled", False))
+    if is_relation_moduleadaptive and privacy_enabled:
+        raise ValueError("RelationModuleAdaptive screen does not support central privacy aggregation")
     if local_only and privacy_enabled:
         raise ValueError("LocalOnly has no server aggregation and cannot enable central DP")
     uniform_mean = bool(cfg["federated"].get("uniform_mean", True))
@@ -593,6 +693,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
             torch.cuda.synchronize(device)
         round_started = time.perf_counter()
         local_states: list[dict[str, torch.Tensor]] = []
+        round_initial_states: list[dict[str, torch.Tensor]] = []
         train_metrics: list[dict[str, float]] = []
         sample_weights: list[float] = []
         ala_round_stats: list[dict[str, object]] = []
@@ -614,6 +715,16 @@ def federated(cfg: dict, device: torch.device) -> dict:
         for client_index, (model, train_set, graph) in enumerate(
             zip(models, train_sets, graphs)
         ):
+            if is_relation_moduleadaptive:
+                if round_index == 1:
+                    load_shared_state(model, global_state)
+                else:
+                    model.load_state_dict(previous_local_states[client_index], strict=True)
+                round_initial_states.append({
+                    name: value.detach().cpu().clone()
+                    for name, value in model.state_dict().items()
+                    if name in global_state
+                })
             if is_ala:
                 if round_index == 1:
                     # 第一轮严格按 FedAvg 初始化，ALA 从第二轮才启用。
@@ -653,7 +764,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                     ala_round_stats.append(stats)
             elif is_modulelocal and round_index > 1:
                 _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names)
-            elif not local_only:
+            elif not local_only and not is_relation_moduleadaptive:
                 load_shared_state(model, global_state)
             local_started = time.perf_counter()
             if device.type == "cuda":
@@ -702,7 +813,18 @@ def federated(cfg: dict, device: torch.device) -> dict:
         if device.type == "cuda":
             torch.cuda.synchronize(device)
         aggregation_started = time.perf_counter()
-        if local_only:
+        relation_audit = None
+        relation_next_states = None
+        if is_relation_moduleadaptive:
+            aggregated, relation_next_states, relation_audit = _relation_module_adaptive_aggregate(
+                local_states, round_initial_states, server_names
+            )
+            aggregation_audit = {
+                "privacy_enabled": False,
+                "clients": float(len(local_states)),
+                "relation_moduleadaptive": relation_audit,
+            }
+        elif local_only:
             aggregation_audit = {
                 "privacy_enabled": False,
                 "clients": float(len(local_states)),
@@ -747,7 +869,15 @@ def federated(cfg: dict, device: torch.device) -> dict:
         for client_index, (model, val_set, graph) in enumerate(
             zip(models, val_sets, graphs)
         ):
-            if not local_only and not is_personalized_module:
+            if is_relation_moduleadaptive:
+                current = model.state_dict()
+                for name, value in relation_next_states[client_index].items():
+                    current[name].copy_(value.to(device=current[name].device, dtype=current[name].dtype))
+                model.load_state_dict(current, strict=True)
+                previous_local_states[client_index] = {
+                    name: value.detach().cpu().clone() for name, value in model.state_dict().items()
+                }
+            elif not local_only and not is_personalized_module:
                 load_shared_state(model, global_state)
             elif is_personalized_module:
                 # 聚合后的 global 只覆盖非 ALA、非 functional 参数，保留个性化状态。
@@ -820,6 +950,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "ala_seconds_total": float(sum(item.get("ala_seconds", 0.0) for item in ala_round_stats)),
                 "local_train_seconds_total": float(sum(item.get("local_train_seconds", 0.0) for item in ala_round_stats)),
             } if is_ala else None,
+            "relation_moduleadaptive": relation_audit,
         }
         history.append(record)
         print(
@@ -1066,11 +1197,15 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "personalized_head": personalized_head,
         },
         "federated_algorithm": str(cfg["federated"].get("algorithm", "FedAvg")),
+        "relation_moduleadaptive": bool(is_relation_moduleadaptive),
+        "relation_modules": {
+            module: list(prefixes) for module, prefixes in _RELATION_MODULE_PREFIXES.items()
+        } if is_relation_moduleadaptive else {},
         "optimizer_state_mode": optimizer_state_mode,
         "personalization_scope": (
             "gates_head_horizon_decoder"
             if is_moduleala and "horizon_decoder." in ala_prefixes
-            else ("gates_head" if is_moduleala else None)
+            else ("gates_head" if is_moduleala else ("module_transferability_relation" if is_relation_moduleadaptive else None))
         ),
         "fedprox_mu": float(cfg["federated"].get("mu", 0.0)),
         "effective_mu": float(mu if algorithm == "fedprox" else 0.0),
@@ -1116,6 +1251,11 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "diagnostics": diagnostics,
         "privacy": privacy_report,
         "history": history,
+        "relation_moduleadaptive_audit": [
+            record["relation_moduleadaptive"]
+            for record in history
+            if record.get("relation_moduleadaptive") is not None
+        ] if is_relation_moduleadaptive else [],
         "timing": {
             "cumulative": timing_totals,
             "average_per_round": timing_average_per_round,
