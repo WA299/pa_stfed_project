@@ -28,7 +28,8 @@
     "stattn_moduleala_converged_wl1_screen",
     "stattn_moduleala_layered_wl1_screen",
     "stattn_moduleala_wl1_screen",
-    "stattn_relation_moduleadaptive_wl1_screen"
+    "stattn_relation_moduleadaptive_wl1_screen",
+    "stattn_spatialshared_temporallocal_wl1_screen"
   ],
   "seed_count_by_experiment": {
     "gwnet_wl1_dev": 1,
@@ -54,7 +55,8 @@
     "stattn_moduleala_converged_wl1_screen": 1,
     "stattn_moduleala_layered_wl1_screen": 1,
     "stattn_moduleala_wl1_screen": 1,
-    "stattn_relation_moduleadaptive_wl1_screen": 1
+    "stattn_relation_moduleadaptive_wl1_screen": 1,
+    "stattn_spatialshared_temporallocal_wl1_screen": 1
   },
   "resume": false,
   "skip_dp": false,
@@ -811,6 +813,42 @@
           "wape": 40.406574964523315,
           "smape": 36.77050733566284,
           "mape": 53.66012787818909,
+          "mape_valid_ratio": 1.0
+        },
+        "test_macro": null,
+        "test_rmse_p90": null,
+        "privacy": {
+          "enabled": false,
+          "C": 1.0,
+          "sigma": 3.2,
+          "q": 1.0,
+          "R": 6,
+          "delta": 1e-05,
+          "epsilon": null,
+          "planned_epsilon": null,
+          "max_epsilon": 10.0,
+          "accountant_version": "PA-STFed Gaussian RDP q=1 v1",
+          "accountant_source": "privacy.py:68-99 (gaussian_rdp_epsilon); analytic full-participation q=1 accountant",
+          "adjacency_definition": "client add/remove with fixed denominator K",
+          "mean_noise_variance": 0.0
+        },
+        "best_round": 6
+      }
+    },
+    {
+      "experiment": "stattn_spatialshared_temporallocal_wl1_screen",
+      "seed": 2026,
+      "task": "federated",
+      "tag": "stattn_spatialshared_temporallocal_wl1_screen_seed2026",
+      "result_path": "E:\\pa_stfed_project\\results\\stattn_spatialshared_temporallocal_wl1_screen_seed2026_federated_result.json",
+      "status": "completed",
+      "result": {
+        "validation": {
+          "mae": 0.4650085121393204,
+          "rmse": 0.9362371414899826,
+          "wape": 40.42412042617798,
+          "smape": 36.923969984054565,
+          "mape": 53.64993643760681,
           "mape_valid_ratio": 1.0
         },
         "test_macro": null,

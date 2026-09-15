@@ -947,5 +947,44 @@
         "n": 1
       }
     }
+  },
+  "stattn_spatialshared_temporallocal_wl1_screen": {
+    "task": "federated",
+    "seeds": [
+      2026
+    ],
+    "n": 1,
+    "metrics": {
+      "mae": {
+        "mean": 0.4650085121393204,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape": {
+        "mean": 53.64993643760681,
+        "std": 0.0,
+        "n": 1
+      },
+      "mape_valid_ratio": {
+        "mean": 1.0,
+        "std": 0.0,
+        "n": 1
+      },
+      "rmse": {
+        "mean": 0.9362371414899826,
+        "std": 0.0,
+        "n": 1
+      },
+      "smape": {
+        "mean": 36.923969984054565,
+        "std": 0.0,
+        "n": 1
+      },
+      "wape": {
+        "mean": 40.42412042617798,
+        "std": 0.0,
+        "n": 1
+      }
+    }
   }
 }
