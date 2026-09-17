@@ -1463,6 +1463,7 @@ def config_brief(cfg: dict, task: str, name: str | None = None) -> dict:
                 "mean_module_update_cosine_clipped_row_normalized"
                 if algorithm_name == "relationmoduleadaptive" else None
             ),
+            "utility_gated_top1": algorithm_name == "utilitygatedtop1",
             "personalization_scope": (
                 "gates_head_horizon_decoder" if algorithm_name == "moduleala" and extra_ala_prefixes
                 else ("spatial_shared_temporal_local" if algorithm_name == "modulelocal" and local_extra_prefixes

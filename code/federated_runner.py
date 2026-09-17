@@ -72,6 +72,83 @@ def _modulelocal_prefixes(config: dict, algorithm: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys((*base, *extras)))
 
 
+def _utility_gated_select(
+    models: list[PA_STFed],
+    local_states: list[dict[str, torch.Tensor]],
+    calibration_sets: list[torch.utils.data.Dataset],
+    calibration_loaders: list[DataLoader],
+    graphs: list[GraphView],
+    device: torch.device,
+    training_config: dict,
+    global_state: dict[str, torch.Tensor],
+) -> tuple[list[dict[str, torch.Tensor]], dict[str, object]]:
+    """Select self or one 0.5 donor using recipient-only train calibration WL1."""
+    shared_names = tuple(global_state)
+    selected_states: list[dict[str, torch.Tensor]] = []
+    records: list[dict[str, object]] = []
+    for recipient, model in enumerate(models):
+        original = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
+        recipient_shared = {name: local_states[recipient][name] for name in shared_names}
+        candidates: list[tuple[int, float, dict[str, torch.Tensor]]] = []
+        for donor in range(len(models)):
+            if donor == recipient:
+                candidate_shared = recipient_shared
+            else:
+                candidate_shared = {
+                    name: 0.5 * recipient_shared[name].float() + 0.5 * local_states[donor][name].float()
+                    for name in shared_names
+                }
+            candidate_state = dict(original)
+            for name, value in candidate_shared.items():
+                candidate_state[name] = value.to(dtype=original[name].dtype)
+            model.load_state_dict(candidate_state, strict=True)
+            metric = _evaluate_wl1(model, calibration_sets[recipient], calibration_loaders[recipient], graphs[recipient], device, training_config)
+            candidates.append((donor, float(metric), candidate_state))
+        chosen_donor, chosen_loss, chosen_state = min(candidates, key=lambda item: item[1])
+        model.load_state_dict(chosen_state, strict=True)
+        selected_states.append({name: value.detach().cpu().clone() for name, value in model.state_dict().items()})
+        self_loss = next(loss for donor, loss, _ in candidates if donor == recipient)
+        records.append({
+            "recipient_id": recipient,
+            "self_calibration_wl1": self_loss,
+            "chosen_donor_id": -1 if chosen_donor == recipient else chosen_donor,
+            "chosen_utility_wl1": float(self_loss - chosen_loss),
+            "donor_utility_wl1": [
+                {"donor_id": donor, "utility_wl1": float(self_loss - loss)}
+                for donor, loss, _ in candidates if donor != recipient
+            ],
+        })
+    histogram = {}
+    for item in records:
+        donor = int(item["chosen_donor_id"])
+        histogram[str(donor)] = histogram.get(str(donor), 0) + 1
+    audit = {
+        "clients": records,
+        "self_selected_client_count": int(sum(int(item["chosen_donor_id"]) == -1 for item in records)),
+        "donor_selection_histogram": histogram,
+                "calibration_only": True,
+                "calibration_windows_per_client": 512,
+                "training_windows_per_client": 4096,
+                "calibration_training_index_overlap": 0,
+    }
+    return selected_states, audit
+
+
+def _evaluate_wl1(model, dataset, loader, graph, device, training_config) -> float:
+    model.eval()
+    adjacency, edge_features = graph_tensors(graph, device)
+    predictions, targets = [], []
+    with torch.inference_mode():
+        for inputs, target in loader:
+            with autocast_context(training_config, device):
+                prediction = model(inputs.to(device), adjacency, edge_features)["prediction"]
+            predictions.append(prediction.float().cpu()); targets.append(target.float())
+    if not predictions:
+        return float("inf")
+    base_dataset = getattr(dataset, "dataset", dataset)
+    return float(scale_aware_l1_loss(torch.cat(predictions), torch.cat(targets), base_dataset.scale).cpu())
+
+
 _RELATION_MODULE_PREFIXES = {
     "physical": ("physical.",),
     "temporal": ("temporal.",),
@@ -554,12 +631,15 @@ def federated(cfg: dict, device: torch.device) -> dict:
     modulelocal_prefixes = _modulelocal_prefixes(cfg, algorithm)
     is_spatialshared_temporallocal = is_modulelocal and modulelocal_prefixes != local_parameter_prefixes(False)
     is_vanilla_ala = algorithm in {"vanillafedala", "fedala"}
+    is_utility_gated = algorithm == "utilitygatedtop1"
     is_ala = is_moduleala or is_vanilla_ala
-    is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala or is_relation_moduleadaptive
-    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala", "modulelocal", "vanillafedala", "fedala", "relationmoduleadaptive"}:
+    is_personalized_module = is_moduleala or is_modulelocal or is_vanilla_ala or is_relation_moduleadaptive or is_utility_gated
+    if algorithm not in {"localonly", "fedavg", "fedprox", "moduleala", "modulelocal", "vanillafedala", "fedala", "relationmoduleadaptive", "utilitygatedtop1"}:
         raise ValueError("unsupported federated.algorithm")
     if is_relation_moduleadaptive and str(cfg["federated"].get("optimizer_state_mode", "reset")).lower() != "reset":
         raise ValueError("RelationModuleAdaptive requires optimizer_state_mode=reset")
+    if is_utility_gated and str(cfg["federated"].get("optimizer_state_mode", "reset")).lower() != "reset":
+        raise ValueError("UtilityGatedTop1 requires optimizer_state_mode=reset")
     if (is_moduleala or is_modulelocal) and personalized_head:
         raise ValueError("ModuleALA/ModuleLocal own head.* personalization; personalized_head must be false")
     mu = float(cfg["federated"].get("mu", 0.0))
@@ -584,6 +664,22 @@ def federated(cfg: dict, device: torch.device) -> dict:
 
     # 数据集与图在各轮之间不变，提前构造可避免重复拓扑计算。
     train_sets = [make_dataset(data, nodes, "train", cfg) for nodes in partitions]
+    utility_calibration_sets: list[Subset] = []
+    utility_training_subsets: list[Subset] = []
+    if is_utility_gated:
+        calibration_count = 512
+        full_cfg = deepcopy(cfg)
+        full_cfg["training"]["max_train_windows"] = None
+        full_train_sets = [make_dataset(data, nodes, "train", full_cfg) for nodes in partitions]
+        for client_index, dataset in enumerate(full_train_sets):
+            calibration_indices = np.linspace(0, len(dataset) - 1, min(calibration_count, len(dataset)), dtype=np.int64)
+            calibration_set = Subset(dataset, calibration_indices.tolist())
+            mask = np.ones(len(dataset), dtype=bool); mask[calibration_indices] = False
+            remaining = np.flatnonzero(mask)
+            training_indices = remaining[np.linspace(0, len(remaining) - 1, min(4096, len(remaining)), dtype=np.int64)]
+            utility_calibration_sets.append(calibration_set)
+            utility_training_subsets.append(Subset(dataset, training_indices.tolist()))
+        train_sets = full_train_sets
     val_sets = [make_dataset(data, nodes, "val", cfg) for nodes in partitions]
     # 测试集默认关闭；只有显式 *_test 任务才读取。
     evaluate_test = bool(cfg["training"].get("evaluate_test", False))
@@ -607,9 +703,16 @@ def federated(cfg: dict, device: torch.device) -> dict:
     train_batch_size = _batch_size(cfg["training"], "federated")
     eval_batch_size = _batch_size(cfg["training"], "federated", evaluation=True)
     train_loaders = [
-        make_data_loader(train_set, train_batch_size, True, cfg["training"])
-        for train_set in train_sets
+        make_data_loader(
+            utility_training_subsets[i] if is_utility_gated else train_set,
+            train_batch_size, True, cfg["training"]
+        )
+        for i, train_set in enumerate(train_sets)
     ]
+    utility_calibration_loaders = (
+        [make_data_loader(dataset, eval_batch_size, False, cfg["training"]) for dataset in utility_calibration_sets]
+        if is_utility_gated else []
+    )
     val_loaders = [
         make_data_loader(val_set, eval_batch_size, False, cfg["training"])
         for val_set in val_sets
@@ -727,7 +830,12 @@ def federated(cfg: dict, device: torch.device) -> dict:
         for client_index, (model, train_set, graph) in enumerate(
             zip(models, train_sets, graphs)
         ):
-            if is_relation_moduleadaptive:
+            if is_utility_gated:
+                if round_index == 1:
+                    load_shared_state(model, global_state)
+                else:
+                    model.load_state_dict(previous_local_states[client_index], strict=True)
+            elif is_relation_moduleadaptive:
                 if round_index == 1:
                     load_shared_state(model, global_state)
                 else:
@@ -778,7 +886,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 _load_modulelocal_state(model, previous_local_states[client_index], global_state, ala_prefixes, ala_eligible_names, modulelocal_prefixes)
             elif is_spatialshared_temporallocal and round_index == 1:
                 _load_modulelocal_state(model, previous_local_states[client_index], global_state, (), None, modulelocal_prefixes)
-            elif not local_only and not is_relation_moduleadaptive:
+            elif not local_only and not is_relation_moduleadaptive and not is_utility_gated:
                 load_shared_state(model, global_state)
             local_started = time.perf_counter()
             if device.type == "cuda":
@@ -828,8 +936,24 @@ def federated(cfg: dict, device: torch.device) -> dict:
             torch.cuda.synchronize(device)
         aggregation_started = time.perf_counter()
         relation_audit = None
+        utility_audit = None
         relation_next_states = None
-        if is_relation_moduleadaptive:
+        if is_utility_gated:
+            selected_states, utility_audit = _utility_gated_select(
+                models, local_states, utility_calibration_sets,
+                utility_calibration_loaders, graphs, device, cfg["training"], global_state,
+            )
+            for client_index, selected in enumerate(selected_states):
+                previous_local_states[client_index] = selected
+                models[client_index].load_state_dict(selected, strict=True)
+            aggregated = weighted_average(local_states, None)
+            aggregation_audit = {
+                "privacy_enabled": False,
+                "clients": float(len(local_states)),
+                "aggregation": "utility_gated_top1_selection",
+                "utility_gated": utility_audit,
+            }
+        elif is_relation_moduleadaptive:
             aggregated, relation_next_states, relation_audit = _relation_module_adaptive_aggregate(
                 local_states, round_initial_states, server_names
             )
@@ -862,7 +986,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "privacy_enabled": False,
                 "clients": float(len(local_states)),
             }
-        if not local_only:
+        if not local_only and not is_utility_gated:
             global_state.update(aggregated)
         if device.type == "cuda":
             torch.cuda.synchronize(device)
@@ -883,7 +1007,9 @@ def federated(cfg: dict, device: torch.device) -> dict:
         for client_index, (model, val_set, graph) in enumerate(
             zip(models, val_sets, graphs)
         ):
-            if is_relation_moduleadaptive:
+            if is_utility_gated:
+                model.load_state_dict(previous_local_states[client_index], strict=True)
+            elif is_relation_moduleadaptive:
                 current = model.state_dict()
                 for name, value in relation_next_states[client_index].items():
                     current[name].copy_(value.to(device=current[name].device, dtype=current[name].dtype))
@@ -965,6 +1091,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 "local_train_seconds_total": float(sum(item.get("local_train_seconds", 0.0) for item in ala_round_stats)),
             } if is_ala else None,
             "relation_moduleadaptive": relation_audit,
+            "utility_gated_top1": utility_audit,
         }
         history.append(record)
         print(

@@ -642,6 +642,26 @@ experiments:
         patience: 6
         optimizer_state_mode: reset
 
+  # Development-only selective collaboration screen: recipient train-only
+  # calibration utility chooses self or one 0.5 donor (FedFomo/pFedGraph-inspired).
+  stattn_utilitygated_top1_wl1_screen:
+    <<: *stattn_fedavg_wl1_dev_job
+    tag: stattn_utilitygated_top1_wl1_screen_seed{seed}
+    result_scope: development
+    include_in_all: false
+    overrides:
+      <<: *stattn_fedavg_wl1_dev_overrides
+      training:
+        <<: *stattn_wl1_training
+        eval_batch_size: 1024
+        max_train_windows: 4096
+      federated:
+        <<: *stattn_wl1_federated
+        algorithm: UtilityGatedTop1
+        rounds: 6
+        patience: 6
+        optimizer_state_mode: reset
+
   stattn_moduleala_wl1_screen:
     <<: *stattn_moduleala_wl1_dev_job
     tag: stattn_moduleala_wl1_screen_seed{seed}
