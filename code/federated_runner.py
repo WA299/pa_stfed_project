@@ -906,6 +906,8 @@ def federated(cfg: dict, device: torch.device) -> dict:
                 torch.cuda.synchronize(device)
             local_seconds = float(time.perf_counter() - local_started)
             metrics["local_train_seconds"] = local_seconds
+            if is_utility_gated:
+                metrics["samples"] = float(len(utility_training_subsets[client_index]))
             if is_ala:
                 ala_round_stats[client_index].update({
                     "ala_windows": float(ala_window_counts[client_index]),
@@ -1349,7 +1351,7 @@ def federated(cfg: dict, device: torch.device) -> dict:
         "personalization_scope": (
             "gates_head_horizon_decoder"
             if is_moduleala and "horizon_decoder." in ala_prefixes
-            else ("gates_head" if is_moduleala else ("spatial_shared_temporal_local" if is_spatialshared_temporallocal else ("module_transferability_relation" if is_relation_moduleadaptive else None)))
+            else ("gates_head" if is_moduleala else ("spatial_shared_temporal_local" if is_spatialshared_temporallocal else ("module_transferability_relation" if is_relation_moduleadaptive else ("utility_gated_top1_selective_collaboration" if is_utility_gated else None))))
         ),
         "fedprox_mu": float(cfg["federated"].get("mu", 0.0)),
         "effective_mu": float(mu if algorithm == "fedprox" else 0.0),
@@ -1366,7 +1368,13 @@ def federated(cfg: dict, device: torch.device) -> dict:
             "client_count": int(len(partitions)),
             "client_ids": list(range(len(partitions))),
             "client_partition_sha256": _hash_partitions(partitions),
-            "train_windows_per_client": [int(len(dataset)) for dataset in train_sets],
+            "train_windows_per_client": (
+                [int(len(subset)) for subset in utility_training_subsets]
+                if is_utility_gated else [int(len(dataset)) for dataset in train_sets]
+            ),
+            "calibration_windows_per_client": [int(len(dataset)) for dataset in utility_calibration_sets] if is_utility_gated else None,
+            "calibration_training_index_overlap": 0 if is_utility_gated else None,
+            "donor_selection_data": "train-only calibration windows; validation is evaluation/early-stopping only" if is_utility_gated else None,
             "validation_windows_per_client": [int(len(dataset)) for dataset in val_sets],
             "test_windows_per_client": (
                 [int(len(dataset)) for dataset in test_sets] if evaluate_test else None
