@@ -1,7 +1,7 @@
 {
-  "code_revision": "20260916_spatialshared_temporallocal_v1",
-  "config_signature": "1da991e6a6292960e7ae2344a8d6019ce4db512875b26dea5553437dd7fa0e93",
-  "audit_timestamp_utc": "2026-09-15T16:44:40.802366+00:00",
+  "code_revision": "20260917_utilitygated_top1_v1",
+  "config_signature": "ec4a44435510dd98e22e3521f23fcaaf662c1bc7d65c60305f1d2a72cccca020",
+  "audit_timestamp_utc": "2026-09-17T14:24:31.356193+00:00",
   "source": "E:\\pa_stfed_project\\data\\processed\\smartds_full_graph_v2.npz",
   "sha256": "7997e0882f6f35b2c8af4bcdeeb43e011bcf9d45adfefd25f1a840c3151b940a",
   "fields": {
