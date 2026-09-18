@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from data import archive_sha256
-from experiment_runtime import load_project_config, load_smartds
+from experiment_runtime import _hash_partitions, load_project_config, load_smartds
 
 
 def _summary(values: np.ndarray) -> dict[str, float]:
@@ -82,7 +82,7 @@ def run() -> dict:
     client_scales=np.asarray([item["average_load_scale"] for item in client_stats]); pair_mask=~np.eye(8,dtype=bool)
     report={
         "analysis":"data_federated_suitability_audit_trainonly", "train_only":True, "validation_accessed":False, "test_accessed":False,
-        "data_source_sha256":archive_sha256(data.source), "node_indices_sha256":_hash(active.astype(np.int64)), "client_partition_sha256":_hash(np.concatenate(clients).astype(np.int64)),
+        "data_source_sha256":archive_sha256(data.source), "node_indices_sha256":_hash(active.astype(np.int64)), "client_partition_sha256":_hash_partitions(clients),
         "split_bounds":{"train_end":int(bounds.train_end),"val_end":int(bounds.val_end),"total":int(bounds.total)}, "target_node_count":nodes, "client_count":8,
         "basic_quality":{"per_node":{"min":train.min(axis=0).tolist(),"max":train.max(axis=0).tolist(),"mean":mean.tolist(),"std":std.tolist(),"cv":cv.tolist(),"zero_ratio":(train==0).mean(axis=0).tolist()}, "constant_node_count":int(np.count_nonzero(std==0)), "near_constant_node_count":int(np.count_nonzero(std<=1e-8)), "nan_inf_count":int(np.count_nonzero(~np.isfinite(train))), "negative_value_count":int(np.count_nonzero(train<0)), "extreme_value_ratio":float(np.mean((train < median-8*iqr)|(train > median+8*iqr)))} ,
         "temporal_predictability":{"lag1":_summary(_autocorr(train,1)),"lag96":_summary(_autocorr(train,96)),"lag672":_summary(_autocorr(train,672)),"persistence_raw_wape":_wape(train[:-1],train[1:]),"daily_persistence_raw_wape":_wape(train[:-96],train[96:])},
